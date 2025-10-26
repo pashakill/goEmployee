@@ -42,3 +42,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("com.google.android.gms:play-services-location:19.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+}

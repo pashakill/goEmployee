@@ -7,10 +7,27 @@ class Routes {
   static const String login = '/login';
   static const String loginKaryawan = '/$login/karyawan';
 
+  static const String karyawan = '/karyawan';
+  static const String kehadiranPage = '$karyawan/kehadiran';
+  static const String cutiPage = '$karyawan/cuti';
+  static const String lemburPage = '$karyawan/lembur';
+  static const String dinasPage = '$karyawan/dinas';
+  static const String wfhPage = '$karyawan/wfh';
+  static const String izinPage = '$karyawan/izin';
+  static const String persetujuanPage = '$karyawan/persetujuan';
+
   // Daftar semua route
   static final pages = [
-    GetPage(name: home, page: () => const HomePage()),
-    GetPage(name: login, page: () => const LoginPage()),
+    GetPage(name: home, page: () => HomePage()),
+    GetPage(name: login, page: () => LoginPage()),
+    GetPage(name: loginKaryawan, page: () => LoginKaryawanPage()),
+    GetPage(name: kehadiranPage, page: () => KehadiranPage()),
+    GetPage(name: cutiPage, page: () => CutiPage()),
+    GetPage(name: lemburPage, page: () => LemburPage()),
+    GetPage(name: dinasPage, page: () => DinasPage()),
+    GetPage(name: wfhPage, page: () => WfhPage()),
+    GetPage(name: izinPage, page: () => IzinPage()),
+    GetPage(name: persetujuanPage, page: () => PersetujuanPage()),
   ];
 }
 
