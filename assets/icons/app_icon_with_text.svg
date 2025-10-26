@@ -1,0 +1,30 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 1000 600"
+    width="1000"
+    height="600"
+    fill="none">
+
+    <!-- Lingkaran dan ikon -->
+    <circle cx="256" cy="256" r="208" stroke="currentColor" stroke-width="28" fill="none" />
+    <circle cx="256" cy="190" r="44" fill="currentColor" />
+    <path d="M168 320c24-36 60-54 88-54s64 18 88 54"
+        stroke="currentColor" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M256 302v84"
+        stroke="currentColor" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M256 386l52-36"
+        stroke="currentColor" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M256 386l-52-36"
+        stroke="currentColor" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- Teks GoEmployee -->
+    <text x="520" y="300"
+        fill="currentColor"
+        font-family="Poppins, Segoe UI, Arial, sans-serif"
+        font-weight="700"
+        font-size="90"
+        letter-spacing="1"
+        dominant-baseline="middle">
+        GoEmployee
+    </text>
+</svg>
