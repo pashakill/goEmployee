@@ -5,3 +5,4 @@ export 'persetujuan_page.dart';
 export 'wfh_page.dart';
 export 'dinas_page.dart';
 export 'izin_page.dart';
+export 'tambah_cuti_page.dart';

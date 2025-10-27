@@ -15,7 +15,9 @@ class Routes {
   static const String wfhPage = '$karyawan/wfh';
   static const String izinPage = '$karyawan/izin';
   static const String persetujuanPage = '$karyawan/persetujuan';
+  static const String tambahCutiPage = '$karyawan/tambahCuti';
 
+  
   // Daftar semua route
   static final pages = [
     GetPage(name: home, page: () => HomePage()),
@@ -28,6 +30,8 @@ class Routes {
     GetPage(name: wfhPage, page: () => WfhPage()),
     GetPage(name: izinPage, page: () => IzinPage()),
     GetPage(name: persetujuanPage, page: () => PersetujuanPage()),
+    GetPage(name: tambahCutiPage, page: () => TambahCutiPage()),
+
   ];
 }
 
@@ -36,6 +40,7 @@ class AppNavigator {
   static void to(String routeName, {dynamic arguments}) {
     Get.toNamed(routeName, arguments: arguments);
   }
+
 
   /// Ganti halaman saat ini (hapus halaman sebelumnya)
   static void off(String routeName, {dynamic arguments}) {

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:goemployee/goemployee.dart';
+
 
 class KehadiranPage extends StatefulWidget {
   const KehadiranPage({super.key});
@@ -121,10 +123,47 @@ class _KehadiranPageState extends State<KehadiranPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kehadiran'),
-        backgroundColor: Colors.green,
-        centerTitle: true,
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(85),
+        child: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            color: Colors.white,
+            onPressed: () {
+              AppNavigator.back();
+            },
+          ),
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              SizedBox(height: 8,),
+              Text(
+                'Kehadiran',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Pastikan kordinat anda sudah sesuai',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.withOpacity(0.5), // 💚 transparan
+          elevation: 0,
+          centerTitle: true,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+        ),
       ),
       body: Stack(
         children: [
@@ -175,78 +214,169 @@ class _KehadiranPageState extends State<KehadiranPage> {
           // Bottom Sheet
           Align(
             alignment: Alignment.bottomCenter,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, -3),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Alamat
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.redAccent),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          _currentAddress,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        FloatingActionButton(
+                          heroTag: "btnCurrent",
+                          backgroundColor: Colors.green,
+                          mini: true,
+                          onPressed: () {
+                            if (_currentPosition != null && _mapController != null) {
+                              _mapController!.animateCamera(
+                                CameraUpdate.newCameraPosition(
+                                  CameraPosition(target: _currentPosition!, zoom: 17),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Icon(Icons.my_location, color: Colors.white),
                         ),
+                        FloatingActionButton(
+                          heroTag: "btnOffice",
+                          backgroundColor: Colors.red,
+                          mini: true,
+                          onPressed: () {
+                            if (_mapController != null) {
+                              _mapController!.animateCamera(
+                                CameraUpdate.newCameraPosition(
+                                  CameraPosition(target: _officeLocation, zoom: 17),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Icon(Icons.apartment, color: Colors.white),
+                        ),
+                      ],
+                    )),
+                // Bottom Sheet
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: Offset(0, -3),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // Jarak ke kantor
-                  if (_distanceInMeters != null)
-                    Text(
-                      'Jarak ke kantor: ${_distanceInMeters!.toStringAsFixed(1)} meter',
-                      style: TextStyle(
-                        color: (_distanceInMeters! <= checkInRadius) ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Alamat
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.redAccent),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              _currentAddress,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  const SizedBox(height: 16),
-
-                  // Tombol Check In
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
-                          ? Colors.green
-                          : Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                      const SizedBox(height: 16),
+                      // Jarak ke kantor
+                      if (_distanceInMeters != null)
+                        Text(
+                          'Jarak ke kantor: ${_distanceInMeters!.toStringAsFixed(1)} meter',
+                          style: TextStyle(
+                            color: (_distanceInMeters! <= checkInRadius) ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      CustomPaint(
+                        size: Size(double.infinity, 40),
+                        painter: LinePainter(color: Colors.grey, strokeWidth: 1, isDashed: false),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                    ),
-                    onPressed: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
-                        ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Check-In Berhasil ✅')),
-                      );
-                    }
-                        : null,
-                    icon: const Icon(Icons.login_rounded, color: Colors.white),
-                    label: const Text(
-                      'Check In',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                      Padding(padding: EdgeInsets.only(left: 16, right: 16,),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Text('Jadwal Mulai Kerja',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500)),
+                                      Text('--:--',
+
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold))
+                                    ],
+                                  ),
+                                  SizedBox(width: 30,),
+                                  Column(
+                                    children: [
+                                      Text('Jadwal Mulai Kerja',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500
+                                          )),
+                                      Text('--:--',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      )
+                                    ],
+                                  )
+                                ],
+                              )
+                            ],
+                          )
+                      ),
+                      SizedBox(height: 16,),
+                      // Tombol Check In
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
+                                ? Colors.green
+                                : Colors.grey,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14), // tidak perlu horizontal karena full width
+                          ),
+                          onPressed: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
+                              ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Check-In Berhasil ✅')),
+                            );
+                          }
+                              : null,
+                          icon: const Icon(Icons.login_rounded, color: Colors.white),
+                          label: const Text(
+                            'Check In',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16,),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              ],
+            )
           ),
         ],
       ),

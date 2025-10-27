@@ -7,3 +7,5 @@ export 'user/user.dart';
 export 'app/app.dart';
 export 'common_module/common_module.dart';
 export 'app/home/home.dart';
+export 'kehadiran/model/model.dart';
+export 'kehadiran/widget/widget.dart';
