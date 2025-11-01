@@ -1,55 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/widget/dinas_card.dart';
 import 'package:goemployee/kehadiran/widget/lembur_card.dart';
 
-class LemburPage extends StatefulWidget {
-  const LemburPage({super.key});
+class DinasPage extends StatefulWidget {
+  const DinasPage({super.key});
 
   @override
-  State<LemburPage> createState() => _LemburPageState();
+  State<DinasPage> createState() => _DinasPageState();
 }
 
-class _LemburPageState extends State<LemburPage> {
+class _DinasPageState extends State<DinasPage> {
 
-  List<LemburModel> lemburList = [
-    LemburModel(
-      jenisLembur: 'Lembur 1',
-      tanggalLembur: '2025-10-20',
-      waktuMulai: '17:00',
-      waktuSelesai: '19:00',
+  List<DinasModel> dinasList = [
+    DinasModel(
+      tanggalMulai : '2025-10-20',
+      tanggalSelesai : '2025-10-20',
+      alamat : 'Jl.Cendrawasih No.25',
+      latitude : '1231231312-12',
+      longTitude: '202012823918923',
+      radius: '2',
+      alasan: 'Pengen aja',
     ),
-    LemburModel(
-      jenisLembur: 'Lembur 2',
-      tanggalLembur: '2025-10-20',
-      waktuMulai: '17:00',
-      waktuSelesai: '20:00',
+    DinasModel(
+      tanggalMulai : '2025-10-20',
+      tanggalSelesai : '2025-10-20',
+      alamat : 'Jl.Cendrawasih No.25',
+      latitude : '1231231312-12',
+      longTitude: '202012823918923',
+      radius: '2',
+      alasan: 'Pengen aja',
     ),
-    LemburModel(
-      jenisLembur: 'Lembur 3',
-      tanggalLembur: '2025-10-20',
-      waktuMulai: '17:00-23',
-      waktuSelesai: '21:00',
+    DinasModel(
+      tanggalMulai : '2025-10-20',
+      tanggalSelesai : '2025-10-20',
+      alamat : 'Jl.Cendrawasih No.25',
+      latitude : '1231231312-12',
+      longTitude: '202012823918923',
+      radius: '2',
+      alasan: 'Pengen aja',
     ),
   ];
 
-  bool sortByJenis = false;
   bool sortByTanggal = false;
-
-  void _sortByJenis() {
-    setState(() {
-      sortByJenis = !sortByJenis;
-      lemburList.sort((a, b) => sortByJenis
-          ? a.jenisLembur.compareTo(b.jenisLembur)
-          : b.jenisLembur.compareTo(a.jenisLembur));
-    });
-  }
 
   void _sortByTanggal() {
     setState(() {
       sortByTanggal = !sortByTanggal;
-      lemburList.sort((a, b) {
-        final dateA = DateTime.parse(a.tanggalLembur);
-        final dateB = DateTime.parse(b.tanggalLembur);
+      dinasList.sort((a, b) {
+        final dateA = DateTime.parse(a.tanggalMulai);
+        final dateB = DateTime.parse(b.tanggalSelesai);
         return sortByTanggal
             ? dateA.compareTo(dateB)
             : dateB.compareTo(dateA);
@@ -68,9 +68,9 @@ class _LemburPageState extends State<LemburPage> {
             onPressed: () {
               AppNavigator.to(Routes.tambahCutiPage,
                   arguments: {
-                    'onCutiAdded': (LemburModel lemburModel) {
+                    'onCutiAdded': (DinasModel dinasModel) {
                       setState(() {
-                        lemburList.add(lemburModel);
+                        dinasList.add(dinasModel);
                       });
                     },
                   });
@@ -93,34 +93,6 @@ class _LemburPageState extends State<LemburPage> {
           // 🔼 Filter dan Sort bar
           Row(
             children: [
-              RoundedContainer(
-                color: Colors.green.withOpacity(0.3),
-                radius: 24,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                builder: (context) {
-                  return InkWell(
-                    onTap: _sortByJenis,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Jenis Lembur',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Icon(
-                          sortByJenis
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
               RoundedContainer(
                 color: Colors.green.withOpacity(0.3),
                 radius: 24,
@@ -151,9 +123,9 @@ class _LemburPageState extends State<LemburPage> {
           // 📋 Daftar Cuti
           Expanded(
             child: ListView.builder(
-              itemCount: lemburList.length,
+              itemCount: dinasList.length,
               itemBuilder: (context, index) {
-                return LemburCard(lemburModel: lemburList[index]);
+                return DinasCard(dinasModel: dinasList[index]);
               },
             ),
           ),
