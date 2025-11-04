@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/widget/dinas_card.dart';
-import 'package:goemployee/kehadiran/widget/lembur_card.dart';
 
 class DinasPage extends StatefulWidget {
   const DinasPage({super.key});
@@ -14,31 +12,31 @@ class _DinasPageState extends State<DinasPage> {
 
   List<DinasModel> dinasList = [
     DinasModel(
-      tanggalMulai : '2025-10-20',
-      tanggalSelesai : '2025-10-20',
+      tanggalMulai : '2025-11-21',
+      tanggalSelesai : '2025-11-24',
       alamat : 'Jl.Cendrawasih No.25',
       latitude : '1231231312-12',
       longTitude: '202012823918923',
       radius: '2',
-      alasan: 'Pengen aja',
+      alasan: 'Ke Bandung',
     ),
     DinasModel(
       tanggalMulai : '2025-10-20',
-      tanggalSelesai : '2025-10-20',
+      tanggalSelesai : '2025-10-22',
       alamat : 'Jl.Cendrawasih No.25',
       latitude : '1231231312-12',
       longTitude: '202012823918923',
       radius: '2',
-      alasan: 'Pengen aja',
+      alasan: 'Survey Cabang',
     ),
     DinasModel(
-      tanggalMulai : '2025-10-20',
-      tanggalSelesai : '2025-10-20',
+      tanggalMulai : '2025-10-05',
+      tanggalSelesai : '2025-10-06',
       alamat : 'Jl.Cendrawasih No.25',
       latitude : '1231231312-12',
       longTitude: '202012823918923',
       radius: '2',
-      alasan: 'Pengen aja',
+      alasan: 'Survey Tempat',
     ),
   ];
 
@@ -66,7 +64,7 @@ class _DinasPageState extends State<DinasPage> {
             icon: const Icon(Icons.add_circle),
             color: Colors.white,
             onPressed: () {
-              AppNavigator.to(Routes.tambahCutiPage,
+              AppNavigator.to(Routes.tambahDinasPage,
                   arguments: {
                     'onCutiAdded': (DinasModel dinasModel) {
                       setState(() {
@@ -78,7 +76,7 @@ class _DinasPageState extends State<DinasPage> {
           )
         ],
         backgroundColor: Colors.green,
-        title: const Text('Lembur', style: TextStyle(color: Colors.white)),
+        title: const Text('Dinas', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -91,7 +89,8 @@ class _DinasPageState extends State<DinasPage> {
       body: Column(
         children: [
           // 🔼 Filter dan Sort bar
-          Row(
+          Padding(padding: EdgeInsets.only(left: 16.0, right: 16.0),
+          child: Row(
             children: [
               RoundedContainer(
                 color: Colors.green.withOpacity(0.3),
@@ -116,11 +115,8 @@ class _DinasPageState extends State<DinasPage> {
                 },
               ),
             ],
-          ),
+          )),
 
-          const Divider(),
-
-          // 📋 Daftar Cuti
           Expanded(
             child: ListView.builder(
               itemCount: dinasList.length,

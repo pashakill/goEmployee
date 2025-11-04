@@ -47,43 +47,45 @@ class HomePage extends StatelessWidget {
                 RoundedCardWidget(widget: MenuGridWidget()),
                 // Expanded agar ListView punya tinggi terbatas
                 const SizedBox(height: 16),
-                RoundedCardWidget(widget:
-                Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                RoundedCardWidget(
+                    widget:
+                    Container(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              'Pemberitahuan'
                           ),
-                          'Pemberitahuan'
-                      ),
 
-                      SizedBox(height: 20,),
-                      Center(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/image/null_notifcation.jpg',
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                            Text(
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                          SizedBox(height: 20,),
+                          Center(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  'assets/image/null_notifcation.jpg',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
                                 ),
-                                'Tidak ada pemberitahuan'
-                            ),
-                          ],
-                        )
-                      ),
-                    ]
-                  ))
+                                Text(
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    'Tidak ada pemberitahuan'
+                                ),
+                              ],
+                            )
+                          ),
+                        ]
+                      )
+                    )
                 ),
               ],
             ),

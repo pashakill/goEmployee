@@ -17,20 +17,6 @@ class LemburCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Jenis Cuti
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  lemburModel.jenisLembur,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-                const Icon(Icons.event_note, color: Colors.green),
-              ],
-            ),
             const SizedBox(height: 8),
 
             // Tanggal mulai & selesai
@@ -40,12 +26,24 @@ class LemburCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   '${lemburModel.waktuMulai} → ${lemburModel.waktuSelesai}',
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 8)
+            const SizedBox(height: 8),
+            Text(
+              lemburModel.catatanLembur,
+              style: const TextStyle(fontSize: 14),
+            ),
+            Text(
+              'Durasi ${lemburModel.lamaLembur} jam',
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
       ),

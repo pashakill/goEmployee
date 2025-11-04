@@ -1,8 +1,7 @@
 export 'kehadiran_page.dart';
-export 'cuti_page.dart';
-export 'lembur_page.dart';
-export 'persetujuan_page.dart';
-export 'wfh_page.dart';
-export 'izin_page.dart';
-export 'tambah_cuti_page.dart';
-export 'dinas_page/dinas.dart';
+export 'wfh/wfh.dart';
+export 'dinas/dinas.dart';
+export 'cuti/cuti.dart';
+export 'izin/izin.dart';
+export 'lembur/lembur.dart';
+export 'persetujuan/persetujuan.dart';

@@ -1,14 +1,15 @@
 import 'package:intl/intl.dart';
 
 class LemburModel {
-  final String jenisLembur;
-  final String tanggalLembur;
+
+  final String catatanLembur;
   final String waktuMulai;
   final String waktuSelesai;
+  final String lamaLembur;
 
   LemburModel({
-    required this.jenisLembur,
-    required this.tanggalLembur,
+    required this.lamaLembur,
+    required this.catatanLembur,
     required this.waktuMulai,
     required this.waktuSelesai,
   });

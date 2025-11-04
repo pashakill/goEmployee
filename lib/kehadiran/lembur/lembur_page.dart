@@ -13,34 +13,34 @@ class _LemburPageState extends State<LemburPage> {
 
   List<LemburModel> lemburList = [
     LemburModel(
-      jenisLembur: 'Lembur 1',
-      tanggalLembur: '2025-10-20',
-      waktuMulai: '17:00',
-      waktuSelesai: '19:00',
+      lamaLembur: '1',
+      catatanLembur: 'Melakukan migrasi aplikasi A',
+      waktuMulai: '2025-10-20 17:00',
+      waktuSelesai: '2025-10-20 18:00',
     ),
     LemburModel(
-      jenisLembur: 'Lembur 2',
-      tanggalLembur: '2025-10-20',
-      waktuMulai: '17:00',
-      waktuSelesai: '20:00',
+      lamaLembur: '2',
+      catatanLembur: 'Menyelesaikan data-data KPI',
+      waktuMulai: '2025-10-22 17:00',
+      waktuSelesai: '2025-10-22 19:20',
     ),
     LemburModel(
-      jenisLembur: 'Lembur 3',
-      tanggalLembur: '2025-10-20',
-      waktuMulai: '17:00-23',
-      waktuSelesai: '21:00',
+      lamaLembur: '3',
+      catatanLembur: 'Membuat Laporan Bulanan',
+      waktuMulai: '2025-10-21 17:00',
+      waktuSelesai: '2025-10-21 19:00',
     ),
   ];
 
-  bool sortByJenis = false;
+  bool sortByDurasi = false;
   bool sortByTanggal = false;
 
-  void _sortByJenis() {
+  void _sortByDurasi() {
     setState(() {
-      sortByJenis = !sortByJenis;
-      lemburList.sort((a, b) => sortByJenis
-          ? a.jenisLembur.compareTo(b.jenisLembur)
-          : b.jenisLembur.compareTo(a.jenisLembur));
+      sortByDurasi = !sortByDurasi;
+      lemburList.sort((a, b) => sortByDurasi
+          ? a.lamaLembur.compareTo(b.lamaLembur)
+          : b.lamaLembur.compareTo(a.lamaLembur));
     });
   }
 
@@ -48,8 +48,8 @@ class _LemburPageState extends State<LemburPage> {
     setState(() {
       sortByTanggal = !sortByTanggal;
       lemburList.sort((a, b) {
-        final dateA = DateTime.parse(a.tanggalLembur);
-        final dateB = DateTime.parse(b.tanggalLembur);
+        final dateA = DateTime.parse(a.waktuMulai);
+        final dateB = DateTime.parse(b.waktuMulai);
         return sortByTanggal
             ? dateA.compareTo(dateB)
             : dateB.compareTo(dateA);
@@ -66,9 +66,9 @@ class _LemburPageState extends State<LemburPage> {
             icon: const Icon(Icons.add_circle),
             color: Colors.white,
             onPressed: () {
-              AppNavigator.to(Routes.tambahCutiPage,
+              AppNavigator.to(Routes.tambahLemburPage,
                   arguments: {
-                    'onCutiAdded': (LemburModel lemburModel) {
+                    'onLemburAdded': (LemburModel lemburModel) {
                       setState(() {
                         lemburList.add(lemburModel);
                       });
@@ -89,6 +89,7 @@ class _LemburPageState extends State<LemburPage> {
         ),
       ),
       body: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // 🔼 Filter dan Sort bar
           Row(
@@ -99,19 +100,19 @@ class _LemburPageState extends State<LemburPage> {
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 builder: (context) {
                   return InkWell(
-                    onTap: _sortByJenis,
+                    onTap: _sortByDurasi,
                     borderRadius: BorderRadius.circular(24),
                     child: Row(
                       children: [
                         Text(
-                          'Jenis Lembur',
+                          'Durasi Lembur',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Icon(
-                          sortByJenis
+                          sortByDurasi
                               ? Icons.arrow_upward
                               : Icons.arrow_downward,
                           size: 18,

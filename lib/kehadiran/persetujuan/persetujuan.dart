@@ -1,0 +1,1 @@
+export 'persetujuan_page.dart';

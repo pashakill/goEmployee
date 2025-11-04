@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:goemployee/goemployee.dart';
 
 class DinasCard extends StatelessWidget {
@@ -13,27 +14,41 @@ class DinasCard extends StatelessWidget {
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            // Jenis Cuti
-            const SizedBox(height: 8),
-
-            // Tanggal mulai & selesai
-            Row(
+            SvgPicture.asset(
+              'assets/icons/ic_maps.svg',
+              width: 24,
+            ),
+            SizedBox(width: 10,),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.date_range, size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
+                // Tanggal
+                Row(
+                  children: [
+                    const Icon(Icons.date_range, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${dinasModel.tanggalMulai} - ${dinasModel.tanggalSelesai}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  '${dinasModel.tanggalMulai} → ${dinasModel.tanggalSelesai}',
+                  '${dinasModel.alamat}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${dinasModel.alasan}',
                   style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),
-
-            const SizedBox(height: 8)
           ],
-        ),
+        )
       ),
     );
   }

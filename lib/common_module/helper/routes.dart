@@ -10,14 +10,16 @@ class Routes {
   static const String karyawan = '/karyawan';
   static const String kehadiranPage = '$karyawan/kehadiran';
   static const String cutiPage = '$karyawan/cuti';
+  static const String tambahCutiPage = '$cutiPage/tambahCuti';
   static const String lemburPage = '$karyawan/lembur';
+  static const String tambahLemburPage = '$lemburPage/tambahLembur';
   static const String dinasPage = '$karyawan/dinas';
+  static const String tambahDinasPage = '$dinasPage/tambahDinas';
   static const String wfhPage = '$karyawan/wfh';
   static const String izinPage = '$karyawan/izin';
   static const String persetujuanPage = '$karyawan/persetujuan';
-  static const String tambahCutiPage = '$karyawan/tambahCuti';
 
-  
+
   // Daftar semua route
   static final pages = [
     GetPage(name: home, page: () => HomePage()),
@@ -26,7 +28,9 @@ class Routes {
     GetPage(name: kehadiranPage, page: () => KehadiranPage()),
     GetPage(name: cutiPage, page: () => CutiPage()),
     GetPage(name: lemburPage, page: () => LemburPage()),
+    GetPage(name: tambahLemburPage, page: () => TambahLemburPage()),
     GetPage(name: dinasPage, page: () => DinasPage()),
+    GetPage(name: tambahDinasPage, page: () => TambahDinasPage()),
     GetPage(name: wfhPage, page: () => WfhPage()),
     GetPage(name: izinPage, page: () => IzinPage()),
     GetPage(name: persetujuanPage, page: () => PersetujuanPage()),
