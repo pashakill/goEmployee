@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:intl/intl.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,12 +13,25 @@ class _LoginPageState extends State<LoginPage> {
   // State untuk mengelola visibilitas password
   bool _isPasswordVisible = false;
 
+  // --- 1. DEKLARASIKAN CONTROLLER ---
+  // Buat satu controller untuk setiap TextField
+  final TextEditingController _employeeIdController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  // --- 2. TAMBAHKAN DISPOSE ---
+  // Selalu dispose controller Anda untuk menghindari kebocoran memori
+  @override
+  void dispose() {
+    _employeeIdController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // --- 1. Background Gradient yang Menarik ---
-        // Menggunakan gradien diagonal dari hijau tua ke hijau lebih terang
+        // ... (Background Gradient Anda tetap sama) ...
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -29,15 +43,13 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         child: Center(
-          // --- 2. SingleChildScrollView ---
-          // Agar form tidak terpotong saat keyboard muncul
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // --- 3. Logo atau Judul ---
-                Icon(
-                  Icons.shield_outlined, // Ganti dengan logo Anda
+                // ... (Logo dan Judul Anda tetap sama) ...
+                const Icon(
+                  Icons.shield_outlined,
                   size: 80,
                   color: Colors.white,
                 ),
@@ -60,16 +72,13 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // --- 4. Form Card (Efek Kaca) ---
-                // Menggunakan container dengan padding dan margin
+                // ... (Form Card Anda tetap sama) ...
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24.0),
                   padding: const EdgeInsets.all(24.0),
                   decoration: BoxDecoration(
-                    // Warna putih transparan untuk efek "glassmorphism"
                     color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16.0),
-                    // Border tipis untuk mempertegas
                     border: Border.all(
                       color: Colors.white.withOpacity(0.2),
                       width: 1.0,
@@ -77,18 +86,19 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: Column(
                     children: [
-                      // --- 5. Input Field Employee ID ---
+                      // --- 3. PASANG CONTROLLER (di pemanggilan widget) ---
                       _buildTextField(
                         label: 'Employee ID',
                         icon: Icons.person_outline,
+                        controller: _employeeIdController, // Kirim controller
                       ),
                       const SizedBox(height: 20),
 
-                      // --- 6. Input Field Password ---
-                      _buildPasswordField(),
+                      _buildPasswordField(
+                        controller: _passwordController, // Kirim controller
+                      ),
                       const SizedBox(height: 32),
 
-                      // --- 7. Tombol Login ---
                       _buildLoginButton(),
                     ],
                   ),
@@ -101,19 +111,22 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // --- Widget Helper untuk Input Field ---
-  Widget _buildTextField({required String label, required IconData icon}) {
+  // --- 3. TERIMA CONTROLLER (di helper method) ---
+  Widget _buildTextField({
+    required String label,
+    required IconData icon,
+    required TextEditingController controller, // Terima controller
+  }) {
     return TextField(
-      style: const TextStyle(color: Colors.white), // Warna teks input
+      controller: controller, // Pasang controller di sini
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white),
-        // Garis bawah saat tidak aktif
         enabledBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
         ),
-        // Garis bawah saat aktif (di-fokus)
         focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.white, width: 2),
         ),
@@ -121,16 +134,18 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // --- Widget Helper untuk Password Field ---
-  Widget _buildPasswordField() {
+  // --- 3. TERIMA CONTROLLER (di helper method) ---
+  Widget _buildPasswordField({
+    required TextEditingController controller, // Terima controller
+  }) {
     return TextField(
-      style: const TextStyle(color: Colors.white), // Warna teks input
-      obscureText: !_isPasswordVisible, // Sembunyikan/tampilkan password
+      controller: controller, // Pasang controller di sini
+      style: const TextStyle(color: Colors.white),
+      obscureText: !_isPasswordVisible,
       decoration: InputDecoration(
         labelText: 'Password',
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: const Icon(Icons.lock_outline, color: Colors.white),
-        // Tombol untuk toggle visibilitas
         suffixIcon: IconButton(
           icon: Icon(
             _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
@@ -158,15 +173,130 @@ class _LoginPageState extends State<LoginPage> {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white, // Warna tombol putih
-          foregroundColor: Colors.green.shade800, // Warna teks hijau tua
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.green.shade800,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30.0),
           ),
         ),
-        onPressed: () {
-          AppNavigator.offAll(Routes.home);
+        onPressed: () async {
+          /*
+          LOGIC JIKA DISURUH MEMBUAT USER DARI DATA OFFLINE
+          final String username = _employeeIdController.text;
+          final String password = _passwordController.text;
+
+          if (username.isEmpty || password.isEmpty) {
+            showAppSnackBar(context, 'Username atau Password tidak boleh kosong.', SnackBarType.error);
+            return;
+          }
+
+          // --- MULAI DARI SINI ---
+
+          // 1.  memanggil helper dengan username & password
+          final dbHelper = DatabaseHelper.instance;
+          final User? user = await dbHelper.getUserLogin(username, password);
+
+          // 2.  mengecek apakah 'user' ada (login berhasil)
+          if (user != null) {
+
+            // --- LOGIN BERHASIL ---
+            // 'user' adalah OBJEK LENGKAP dari database (hasil SELECT)
+            // Isinya: user.id, user.nama, user.username, user.role, dll.
+
+            // 3. INI JAWABANNYA: Ambil 'id' dari objek 'user'
+            // 'user.id' ini adalah 'user_id' yang Anda cari
+            final int? userId = user.id;
+
+            // 4. Cek apakah ID-nya valid
+            if (userId != null) {
+
+              await SessionManager().saveSession(userId.toString());
+
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+              }
+            } else {
+              // (Skenario error jika id dari db null)
+              showAppSnackBar(context, 'Login gagal: ID user tidak valid.', SnackBarType.error);
+            }
+          } else {
+            // --- LOGIN GAGAL ---
+            // 'user' adalah null karena tidak ada data yang cocok
+            showAppSnackBar(context, 'Username atau Password salah.', SnackBarType.error);
+          }
+
+           */
+
+
+          // --- 4. BACA TEXT DARI CONTROLLER ---
+          // Gunakan .text untuk mendapatkan nilai string-nya
+          final String username = _employeeIdController.text;
+          final String password = _passwordController.text;
+
+          // Sekarang Anda bisa gunakan variabel ini
+          print('--- Tombol Login Ditekan ---');
+          print('Employee ID: $username');
+          print('Password: $password'); // <-- Jangan print password di production!
+
+          // Contoh validasi sederhana
+          if (username.isEmpty) {
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Employee ID tidak boleh kosong!', style: TextStyle(color: Colors.black),),
+                backgroundColor: Colors.white, // Beri warna untuk error
+                duration: Duration(seconds: 2), // Tampilkan selama 2 detik
+              ),
+            );
+
+            return;
+          }
+
+          if(password.isEmpty){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Password tidak boleh kosong!', style: TextStyle(color: Colors.black),),
+                backgroundColor: Colors.white, // Beri warna untuk error
+                duration: Duration(seconds: 2), // Tampilkan selama 2 detik
+              ),
+            );
+
+            return;
+          }
+
+          final newUser = User(
+            nama: "Barry Vasyah S.kom, M.Kom",
+            username: username,
+            password: password,
+            companyName: "PT.Jatelindo Perkasa Abadi",
+            role: "Dosen",
+            dateNow: DateFormat('yyyy-MM-dd').format(DateTime.now()), // Tanggal hari ini
+          );
+
+
+          // 2. Panggil DatabaseHelper untuk insert
+          try {
+            final dbHelper = DatabaseHelper.instance;
+            int id = await dbHelper.insertUser(newUser);
+            print("Sukses! User baru '$id - ${newUser.nama}' berhasil disimpan.");
+            // TODO: Navigasi ke halaman home
+            AppNavigator.offAll(Routes.login);
+          } catch (e) {
+            print("Gagal menyimpan user: $e");
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Gagal menyimpan data user',
+                  style: TextStyle(color: Colors.black),),
+                backgroundColor: Colors.white,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         },
         child: const Text(
           'LOGIN',

@@ -10,18 +10,37 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
 
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+
   @override
   void initState() {
     super.initState();
-    _navigateToOnboarding();
+
+    _checkIfUsersExist();
   }
 
-  // Fungsi untuk navigasi setelah 3 detik
-  _navigateToOnboarding() async {
-    await Future.delayed(const Duration(milliseconds: 3000)); // Jeda 3 detik
+  /// Memeriksa apakah tabel user sudah terisi
+  Future<void> _checkIfUsersExist() async {
+    // Beri jeda 2 detik agar logo tetap terlihat
+    await Future.delayed(const Duration(seconds: 2));
 
-    // Pastikan widget masih ada (mounted) sebelum navigasi
-    if (mounted) {
+    // 1. Panggil fungsi yang baru kita buat
+    final bool isUserTableFilled = await _dbHelper.hasUsers();
+
+    // 2. Tentukan halaman tujuan
+    if (isUserTableFilled) {
+      // --- SUDAH TERISI ---
+      // Arahkan ke Halaman Login untuk validasi
+      print("SplashScreen: Tabel 'users' sudah terisi. Mengalihkan ke Login.");
+      AppNavigator.offAll(Routes.home);
+    } else {
+      // --- MASIH KOSONG ---
+      // Arahkan ke Halaman Register untuk membuat user pertama
+      print("SplashScreen: Tabel 'users' kosong. Mengalihkan ke Register.");
+      // Anda perlu membuat halaman RegisterPage()
+      // _navigateTo(const RegisterPage());
+
+      // Untuk sementara, kita bisa arahkan ke Login juga jika RegisterPage belum ada
       AppNavigator.offAll(Routes.login);
     }
   }
