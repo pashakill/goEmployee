@@ -145,4 +145,62 @@ class DatabaseHelper {
     final db = await instance.database;
     return await db.query('users');
   }
+
+  Future<User?> getUserById(int id) async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      // Jika user ditemukan, kembalikan sebagai User object
+      return User.fromMap(maps.first);
+    } else {
+      // Jika tidak ditemukan
+      return null;
+    }
+  }
+
+
+  Future<User?> getCurrentLoggedInUser() async {
+    // 1. Buat instance SessionManager
+    final sessionManager = SessionManager();
+
+    try {
+      // 2. Ambil ID dari sesi
+      final String? userIdString = await sessionManager.getSession();
+
+      if (userIdString == null || userIdString.isEmpty) {
+        // Tidak ada sesi, kembalikan null
+        print("DB Helper: Tidak ada sesi aktif.");
+        return null;
+      }
+
+      // 3. Ubah ID string menjadi integer
+      final int userId = int.parse(userIdString);
+
+      // 4. Panggil fungsi getUserById (yang sudah Anda buat)
+      final User? user = await getUserById(userId);
+
+      if (user != null) {
+        // Sukses! Kembalikan data user
+        print("DB Helper: User '${user.nama}' ditemukan.");
+        return user;
+      } else {
+        // Sesi ada, tapi data user tidak ada (sesi invalid)
+        print("DB Helper: Sesi invalid, user $userId tidak ada di DB.");
+        await sessionManager.clearSession(); // Hapus sesi buruk
+        return null;
+      }
+    } catch (e) {
+      // Error (misal: parsing, db error)
+      print("DB Helper (getCurrentLoggedInUser) Error: $e");
+      await sessionManager.clearSession(); // Hapus sesi buruk
+      return null;
+    }
+  }
+
 }

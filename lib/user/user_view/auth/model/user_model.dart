@@ -1,12 +1,12 @@
 class User {
-  int? id; // Boleh kosong saat membuat, akan diisi oleh database
+  int? id;
   String nama;
   String username;
-  String password; // Sebaiknya simpan password yang sudah di-hash
+  String password;
   String companyName;
   String role;
-  String dateNow; // Format: 'yyyy-MM-dd'
-  String? timeCheckin; // Format: 'HH:mm:ss'
+  String dateNow;
+  String? timeCheckin;
   String? timeCheckout;
   String? lateCheckin;
   String? photo;
@@ -25,8 +25,6 @@ class User {
     this.photo,
   });
 
-  // Konversi dari User Object ke Map
-  // Ini adalah yang akan kita gunakan untuk insert ke database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -41,5 +39,23 @@ class User {
       'late_checkin': lateCheckin,
       'photo': photo,
     };
+  }
+
+  // --- TAMBAHKAN FUNGSI INI ---
+  /// Konversi dari Map (hasil database) ke User Object
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'],
+      nama: map['nama'],
+      username: map['username'],
+      password: map['password'],
+      companyName: map['company_name'],
+      role: map['role'],
+      dateNow: map['date_now'],
+      timeCheckin: map['time_checkin'],
+      timeCheckout: map['time_checkout'],
+      lateCheckin: map['late_checkin'],
+      photo: map['photo'],
+    );
   }
 }
