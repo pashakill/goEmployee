@@ -64,19 +64,13 @@ class DatabaseHelper {
     return count != null && count > 0;
   }
 
-  Future<int> updateUserCheckIn(int userId, String checkInTime) async {
+  Future<int> updateUserCheckIn(int userId, String checkInTime, String? lateDuration) async {
     final db = await instance.database;
-
-    // Ambil tanggal hari ini
-    final String dateNow = DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now());
-
     final int rowsAffected = await db.update(
-      'users', // Nama tabel
+      'users',
       {
         'time_checkin': checkInTime,
-        'date_now': dateNow,
-        // Anda juga bisa menambahkan logika untuk 'late_checkin' di sini
-        // 'late_checkin': ...
+        'late_checkin': lateDuration,
       },
       where: 'id = ?',
       whereArgs: [userId],
@@ -133,7 +127,9 @@ class DatabaseHelper {
         time_checkin TEXT,
         time_checkout TEXT,
         late_checkin TEXT,
-        photo TEXT
+        photo TEXT,
+        jadwal_mulai_kerja TEXT,
+        jadwal_selesai_kerja TEXT
       )
     ''');
 

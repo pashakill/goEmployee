@@ -275,7 +275,9 @@ class _LoginPageState extends State<LoginPage> {
             password: password,
             companyName: "PT.Jatelindo Perkasa Abadi",
             role: "Dosen",
-            dateNow: DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now()), // Tanggal hari ini
+            dateNow: DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now()),
+            jadwalMulaiKerja: '08:00',
+            jadwalSelesaiKerja: '17:00'
           );
 
 

@@ -67,7 +67,7 @@ class AttendanceTimeline extends StatelessWidget {
                   // Jam
                   Text(
                     item["time"]!,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                 ],
               ),

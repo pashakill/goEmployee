@@ -22,7 +22,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
   double checkInRadius = 50; // radius check-in dalam meter
 
   // Titik lokasi kantor (ubah sesuai kebutuhan)
-  final LatLng _officeLocation = const LatLng(-6.346573973424763, 106.69124384012088); // contoh
+  final LatLng _officeLocation = const LatLng(-6.3289706, 106.7574791); // contoh
 
   StreamSubscription<Position>? _positionStream;
 
@@ -58,29 +58,106 @@ class _KehadiranPageState extends State<KehadiranPage> {
       return;
     }
 
-    // Ambil waktu saat ini
-    final String checkInTime = DateFormat('HH:mm:ss', 'id_ID').format(DateTime.now());
+    // --- 1. VALIDASI BARU ---
+    // Cek apakah data check-in hari ini sudah ada
+    final String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // Cek jika tanggal di DB SAMA DENGAN hari ini
+    // DAN timeCheckin TIDAK kosong
+    if (_currentUser!.dateNow == todayDate &&
+        _currentUser!.timeCheckin != null &&
+        _currentUser!.timeCheckin!.isNotEmpty) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Anda sudah check-in hari ini pada jam ${_currentUser!.timeCheckin}'),
+          backgroundColor: Colors.orange[700],
+        ),
+      );
+      return; // Hentikan fungsi
+    }
+    // --- AKHIR VALIDASI ---
+
+    // --- LOGIKA PERHITUNGAN KETERLAMBATAN ---
+    // 1. Ambil data dari database (misal: "08:00")
+    final String? jadwalMasukString = _currentUser?.jadwalMulaiKerja;
+
+    // 2. Ambil waktu saat ini
+    final DateTime now = DateTime.now();
+    final String checkInTimeString =
+    DateFormat('HH:mm:ss').format(now); // misal: "08:30:15"
+
+    String? lateCheckinDuration; // Variabel untuk menyimpan durasi
+
+    // 3. Bandingkan (hanya jika jadwal masuk ada)
+    if (jadwalMasukString != null && jadwalMasukString.isNotEmpty) {
+      try {
+        final format = DateFormat('HH:mm'); // Format jadwal ("08:00")
+        final jadwalTime = format.parse(jadwalMasukString);
+
+        // Parse waktu check-in (tanpa detik, agar formatnya sama)
+        final checkinTimeParsed =
+        format.parse(checkInTimeString.substring(0, 5)); // "08:30"
+
+        // Cek apakah waktu check-in SETELAH jadwal masuk
+        if (checkinTimeParsed.isAfter(jadwalTime)) {
+          // Hitung selisihnya
+          final Duration difference =
+          checkinTimeParsed.difference(jadwalTime);
+
+          // Ubah durasi menjadi format "HH:mm:ss" (misal: "00:30:00")
+          lateCheckinDuration = _formatDuration(difference);
+          print('Status: TERLAMBAT ${lateCheckinDuration}');
+        } else {
+          print('Status: TEPAT WAKTU');
+          lateCheckinDuration = null; // Tidak terlambat
+        }
+      } catch (e) {
+        print('Gagal membandingkan waktu: $e');
+      }
+    }
+    // --- AKHIR LOGIKA KETERLAMBATAN ---
 
     try {
-      // Panggil DatabaseHelper
+      // 4. Panggil helper (fungsi ini sekarang juga menyimpan date_now)
       await _dbHelper.updateUserCheckIn(
         _currentUser!.id!,
-        checkInTime,
+        checkInTimeString,
+        lateCheckinDuration,
       );
 
-      // Tampilkan notifikasi sukses
+      // 5. (Opsional) Perbarui state UI agar sinkron
+      setState(() {
+        _currentUser!.timeCheckin = checkInTimeString;
+        _currentUser!.lateCheckin = lateCheckinDuration;
+        _currentUser!.dateNow = todayDate;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Check-In Berhasil pada $checkInTime ✅')),
+        SnackBar(
+            content: Text(
+                'Check-In Berhasil pada $checkInTimeString ${lateCheckinDuration != null ? "(Terlambat)" : ""} ✅')),
       );
 
-      // (Opsional) Kembali ke halaman sebelumnya setelah check-in
-      // AppNavigator.back();
+      // Kembali ke home
+      AppNavigator.offAll(Routes.home);
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menyimpan check-in: $e')),
       );
     }
+  }
+
+  /// Mengubah Durasi (misal: 0:30:00.000) menjadi String "HH:mm:ss"
+  String _formatDuration(Duration duration) {
+    // Ambil bagian "0:30:00"
+    String twoDigit(int n) => n.toString().padLeft(2, '0');
+    final String twoDigitMinutes = twoDigit(duration.inMinutes.remainder(60));
+    final String twoDigitSeconds = twoDigit(duration.inSeconds.remainder(60));
+    // Format menjadi "HH:mm:ss"
+    return "${twoDigit(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
   @override
@@ -354,46 +431,44 @@ class _KehadiranPageState extends State<KehadiranPage> {
                         size: Size(double.infinity, 40),
                         painter: LinePainter(color: Colors.grey, strokeWidth: 1, isDashed: false),
                       ),
-                      Padding(padding: EdgeInsets.only(left: 16, right: 16,),
-                          child: Column(
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                mainAxisSize: MainAxisSize.min,
+                              Column(
                                 children: [
-                                  Column(
-                                    children: [
-                                      Text('Jadwal Mulai Kerja',
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500)),
-                                      Text('--:--',
+                                  Text('Jadwal Mulai Kerja',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500)),
+                                  Text(_currentUser?.jadwalMulaiKerja ?? '--:--',
 
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold))
-                                    ],
-                                  ),
-                                  SizedBox(width: 30,),
-                                  Column(
-                                    children: [
-                                      Text('Jadwal Mulai Kerja',
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500
-                                          )),
-                                      Text('--:--',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold),
-                                      )
-                                    ],
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold))
+                                ],
+                              ),
+                              SizedBox(width: 30,),
+                              Column(
+                                children: [
+                                  Text('Jadwal Selesai Kerja',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500
+                                      )),
+                                  Text(_currentUser?.jadwalSelesaiKerja ?? '--:--',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
                                   )
                                 ],
                               )
                             ],
                           )
+                        ],
                       ),
                       SizedBox(height: 16,),
                       // Tombol Check In
@@ -411,9 +486,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
                           ),
                           onPressed: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
                               ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Check-In Berhasil ✅')),
-                            );
+                            _processCheckIn();
                           }
                               : null,
                           icon: const Icon(Icons.login_rounded, color: Colors.white),

@@ -10,6 +10,8 @@ class User {
   String? timeCheckout;
   String? lateCheckin;
   String? photo;
+  String? jadwalMulaiKerja;
+  String? jadwalSelesaiKerja;
 
   User({
     this.id,
@@ -23,6 +25,8 @@ class User {
     this.timeCheckout,
     this.lateCheckin,
     this.photo,
+    this.jadwalMulaiKerja,
+    this.jadwalSelesaiKerja,
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +42,8 @@ class User {
       'time_checkout': timeCheckout,
       'late_checkin': lateCheckin,
       'photo': photo,
+      'jadwal_mulai_kerja' : jadwalMulaiKerja,
+      'jadwal_selesai_kerja' : jadwalSelesaiKerja,
     };
   }
 
@@ -56,6 +62,8 @@ class User {
       timeCheckout: map['time_checkout'],
       lateCheckin: map['late_checkin'],
       photo: map['photo'],
+      jadwalMulaiKerja: map['jadwal_mulai_kerja'],
+      jadwalSelesaiKerja: map['jadwal_selesai_kerja'],
     );
   }
 }
