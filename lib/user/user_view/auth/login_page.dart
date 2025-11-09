@@ -268,6 +268,7 @@ class _LoginPageState extends State<LoginPage> {
             return;
           }
 
+
           final newUser = User(
             nama: "Barry Vasyah S.kom, M.Kom",
             username: username,
@@ -281,8 +282,9 @@ class _LoginPageState extends State<LoginPage> {
           // 2. Panggil DatabaseHelper untuk insert
           try {
             final dbHelper = DatabaseHelper.instance;
-            int id = await dbHelper.insertUser(newUser);
-            print("Sukses! User baru '$id - ${newUser.nama}' berhasil disimpan.");
+            int userId = await dbHelper.insertUser(newUser);
+            await SessionManager().saveSession(userId.toString());
+            print("Sukses! User baru '$userId - ${newUser.nama}' berhasil disimpan.");
             // TODO: Navigasi ke halaman home
             AppNavigator.offAll(Routes.home);
           } catch (e) {

@@ -113,7 +113,7 @@ class ContentCardHomePage extends StatelessWidget {
             bgColor: Colors.green,
           ),
         ),
-        AttendanceTimeline()
+        AttendanceTimeline(user: user,)
       ],
     );
   }

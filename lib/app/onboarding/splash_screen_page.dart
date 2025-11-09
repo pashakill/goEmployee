@@ -10,13 +10,13 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
 
+  final SessionManager _sessionManager = SessionManager();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   @override
   void initState() {
     super.initState();
-
-    _checkIfUsersExist();
+    _checkSessionAndNavigate();
   }
 
   /// Memeriksa apakah tabel user sudah terisi
@@ -41,6 +41,49 @@ class _SplashScreenState extends State<SplashScreen> {
       // _navigateTo(const RegisterPage());
 
       // Untuk sementara, kita bisa arahkan ke Login juga jika RegisterPage belum ada
+      AppNavigator.offAll(Routes.login);
+    }
+  }
+
+  Future<void> _checkSessionAndNavigate() async {
+    // Beri jeda 1-2 detik agar logo terlihat
+    await Future.delayed(const Duration(seconds: 2));
+
+    try {
+      // --- INI ADALAH FUNGSI ANDA ---
+      // 1. Mencoba mengambil ID user dari secure storage
+      final String? userIdString = await _sessionManager.getSession();
+      // -----------------------------
+
+      if (userIdString != null) {
+        // 2. SESI DITEMUKAN
+        //    Sekarang, validasi ID ini ke database
+        final int userId = int.parse(userIdString);
+        final User? user = await _dbHelper.getUserById(userId);
+
+        if (user != null) {
+          // 3. VALIDASI SUKSES (User ada di database)
+          //    Arahkan ke HomePage
+          print("SplashScreen: Sesi valid. Navigasi ke Home.");
+          AppNavigator.offAll(Routes.home);
+        } else {
+          // 4. VALIDASI GAGAL (Sesi invalid, user tidak ada di DB)
+          //    Hapus sesi buruk dan arahkan ke Login
+          print("SplashScreen: Sesi invalid. Navigasi ke Login.");
+          await _sessionManager.clearSession();
+          AppNavigator.offAll(Routes.login);
+        }
+      } else {
+        // 5. SESI TIDAK DITEMUKAN
+        //    Arahkan ke LoginPage
+        print("SplashScreen: Sesi tidak ditemukan. Navigasi ke Login.");
+        AppNavigator.offAll(Routes.login);
+      }
+    } catch (e) {
+      // 6. TERJADI ERROR (Misal: DB error, parsing ID gagal)
+      //    Selalu aman untuk menghapus sesi dan ke Login
+      print("SplashScreen: Error validasi. $e");
+      await _sessionManager.clearSession();
       AppNavigator.offAll(Routes.login);
     }
   }
@@ -73,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 20),
             // Opsional: Tambahkan loading indicator
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Colors.blue),
+              valueColor: AlwaysStoppedAnimation(Colors.white),
             ),
           ],
         ),

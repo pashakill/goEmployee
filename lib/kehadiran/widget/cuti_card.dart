@@ -49,7 +49,7 @@ class CutiCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 22, top: 4),
               child: Text(
-                'Lama cuti_page: ${cuti.lamaCuti} hari',
+                'Lama cuti : ${cuti.lamaCuti} hari',
                 style: const TextStyle(
                   fontSize: 13,
                   color: Colors.grey,

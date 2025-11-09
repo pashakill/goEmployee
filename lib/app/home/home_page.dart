@@ -51,12 +51,9 @@ class _HomePageState extends State<HomePage> {
   // --- 5. TAMBAHKAN FUNGSI LOGOUT ---
   /// Fungsi untuk logout dan kembali ke Login
   Future<void> _forceLogout() async {
-    await _sessionManager.clearSession(); // Hapus sesi jika ada
+    await _dbHelper.deleteCurrentUserAndLogout();
     if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      AppNavigator.offAll(Routes.login);
     }
   }
 

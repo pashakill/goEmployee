@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
 
+
 class TambahCutiPage extends StatefulWidget {
   Function(CutiModel)? get onCutiAdded => Get.arguments?['onCutiAdded'];
 
@@ -19,6 +20,8 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   String? _alasan;
   String? _dokumen;
   int _lamaCuti = 0;
+
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   final List<String> _jenisCutiList = [
     'Semua Cuti',
@@ -47,13 +50,13 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
           _lamaCuti = _tanggalSelesai!
               .difference(_tanggalMulai!)
               .inDays
-              .abs() + 1; // +1 agar hitung hari penuh
+              .abs() + 1;
         }
       });
     }
   }
 
-  void _simpanCuti() {
+  void _simpanCuti() async { // 1. Tambahkan 'async'
     if (_formKey.currentState!.validate()) {
       if (_tanggalMulai == null || _tanggalSelesai == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,21 +65,46 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         return;
       }
 
-      final cutiBaru = CutiModel(
-        jenisCuti: _jenisCuti!,
-        tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
-        tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
-        alasan: _alasan ?? '',
-        dokumenUrl: _dokumen ?? '',
-      );
+      try {
+        // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+        final User? currentUser = await _dbHelper.getSingleUser();
+        if (currentUser == null || currentUser.id == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
+          );
+          return;
+        }
 
-      widget.onCutiAdded!(cutiBaru);
-      Navigator.pop(context);
+        // 3. Buat model Cuti (kode Anda sudah benar)
+        final cutiBaru = CutiModel(
+          jenisCuti: _jenisCuti!,
+          tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
+          tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
+          alasan: _alasan ?? '',
+          dokumenUrl: _dokumen ?? '',
+        );
+
+        // 4. PANGGIL FUNGSI INSERT DARI DATABASEHELPER
+        //    Ini akan menyimpan data ke database SQLCipher
+        final int cutiId = await _dbHelper.insertCuti(cutiBaru, currentUser.id!);
+        print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
+
+        // 5. PANGGIL CALLBACK (kode Anda sudah benar)
+        //    Ini akan meng-update UI di halaman DaftarCutiPage
+        widget.onCutiAdded?.call(cutiBaru); // (Saya ganti '!' jadi '?.call' agar lebih aman)
+        Get.back();
+      } catch (e) {
+        // Tangani jika ada error saat simpan ke DB
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // ... (UI Anda sisanya sudah benar, tidak perlu diubah) ...
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah Cuti', style: TextStyle(color: Colors.white)),
@@ -168,7 +196,6 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
               // Dokumen Upload (simulasi)
               ElevatedButton.icon(
                 onPressed: () {
-                  // bisa integrasi dengan file picker nanti
                   setState(() {
                     _dokumen = 'dokumen_cuti.pdf';
                   });

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -63,6 +64,28 @@ class DatabaseHelper {
     return count != null && count > 0;
   }
 
+  Future<int> updateUserCheckIn(int userId, String checkInTime) async {
+    final db = await instance.database;
+
+    // Ambil tanggal hari ini
+    final String dateNow = DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now());
+
+    final int rowsAffected = await db.update(
+      'users', // Nama tabel
+      {
+        'time_checkin': checkInTime,
+        'date_now': dateNow,
+        // Anda juga bisa menambahkan logika untuk 'late_checkin' di sini
+        // 'late_checkin': ...
+      },
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+
+    print('DatabaseHelper: Check-in user $userId berhasil. ($rowsAffected baris)');
+    return rowsAffected;
+  }
+
 
 
   // Fungsi untuk mengambil atau membuat key
@@ -123,7 +146,71 @@ class DatabaseHelper {
         alasan TEXT
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE cuti (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        jenis_cuti TEXT NOT NULL,
+        tanggal_mulai TEXT NOT NULL,
+        tanggal_selesai TEXT NOT NULL,
+        alasan TEXT NOT NULL,
+        dokumen_url TEXT,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        tanggal_pengajuan TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    ''');
     print("DatabaseHelper: Tabel berhasil dibuat.");
+  }
+
+  Future<int> insertCuti(CutiModel cuti, int userId) async {
+    final db = await instance.database;
+
+    // 1. Siapkan data yang akan di-insert
+    //    Ini adalah gabungan dari CutiModel + data sistem
+    final Map<String, dynamic> data = {
+      'user_id': userId, // <-- ID dari user yang login
+      'jenis_cuti': cuti.jenisCuti,
+      'tanggal_mulai': cuti.tanggalMulai,
+      'tanggal_selesai': cuti.tanggalSelesai,
+      'alasan': cuti.alasan,
+      'dokumen_url': cuti.dokumenUrl,
+      // 'status' akan otomatis 'PENDING' (sesuai DEFAULT)
+      'tanggal_pengajuan': DateFormat('yyyy-MM-dd').format(DateTime.now()), // Tanggal hari ini
+    };
+
+    // 2. Lakukan insert ke tabel 'cuti'
+    final int id = await db.insert(
+      'cuti',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    print('DatabaseHelper: Cuti baru (ID: $id) untuk user $userId berhasil disimpan.');
+    return id;
+  }
+
+  /// Mengambil semua riwayat cuti milik satu user
+  Future<List<CutiModel>> getRiwayatCuti(int userId) async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'cuti',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'tanggal_mulai DESC', // Tampilkan yang terbaru dulu
+    );
+
+    // Jika tidak ada data, kembalikan list kosong
+    if (maps.isEmpty) {
+      return [];
+    }
+
+    // Ubah List<Map> menjadi List<CutiModel>
+    return List.generate(maps.length, (i) {
+      return CutiModel.fromMap(maps[i]);
+    });
   }
 
   // --- CRUD METHODS (Contoh) ---
@@ -203,6 +290,52 @@ class DatabaseHelper {
     }
   }
 
+  Future<int> deleteAllUsers() async {
+    final db = await instance.database;
+    final int rowsDeleted = await db.delete('users');
+
+    // Hapus juga sesi yang mungkin masih tersimpan
+    await SessionManager().clearSession();
+
+    print('DatabaseHelper: ALL users deleted ($rowsDeleted rows). Session cleared.');
+    return rowsDeleted;
+  }
+
+  Future<int> deleteUserById(int id) async {
+    final db = await instance.database;
+    final int rowsDeleted = await db.delete(
+      'users',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    print('DatabaseHelper: User $id deleted, $rowsDeleted rows affected.');
+    return rowsDeleted;
+  }
+
+  Future<void> deleteCurrentUserAndLogout() async {
+    final sessionManager = SessionManager();
+    try {
+      // 1. Ambil ID dari sesi
+      final String? userIdString = await sessionManager.getSession();
+
+      if (userIdString != null) {
+        final int userId = int.parse(userIdString);
+
+        // 2. Hapus user dari database menggunakan ID
+        await deleteUserById(userId);
+      }
+
+      // 3. Hapus sesi (baik jika user ditemukan atau tidak)
+      await sessionManager.clearSession();
+
+      print('DatabaseHelper: Current user deleted and session cleared.');
+    } catch (e) {
+      print('DatabaseHelper: Error during user deletion: $e');
+      // Jika terjadi error, tetap paksa hapus sesi
+      await sessionManager.clearSession();
+    }
+  }
+
   Future<User?> getSingleUser() async {
     final db = await instance.database;
 
@@ -216,5 +349,61 @@ class DatabaseHelper {
       return null;
     }
   }
+
+
+  /*
+
+  void _showDeleteAccountDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Hapus Akun?'),
+        content: const Text(
+          'Apakah Anda yakin ingin menghapus akun Anda? '
+          'Semua data Anda akan hilang secara permanen dan tidak dapat dikembalikan.',
+        ),
+        actions: [
+          // Tombol Batal
+          TextButton(
+            child: const Text('Batal'),
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // Tutup dialog
+            },
+          ),
+          // Tombol Hapus
+          TextButton(
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+            onPressed: () async {
+              // 1. Panggil fungsi hapus dari DatabaseHelper
+              await _dbHelper.deleteCurrentUserAndLogout();
+
+              // 2. Arahkan kembali ke LoginPage
+              if (mounted) {
+                // Tutup dialog
+                Navigator.of(dialogContext).pop();
+                // Panggil _forceLogout (yang sudah ada) untuk navigasi
+                _forceLogout();
+              }
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+// (Fungsi _forceLogout Anda yang sudah ada)
+Future<void> _forceLogout() async {
+  await _sessionManager.clearSession(); // Pastikan sesi bersih
+  if (mounted) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+}
+
+   */
 
 }

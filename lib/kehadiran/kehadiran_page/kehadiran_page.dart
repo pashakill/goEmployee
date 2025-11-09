@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:intl/intl.dart';
 
 
 class KehadiranPage extends StatefulWidget {
@@ -25,10 +26,61 @@ class _KehadiranPageState extends State<KehadiranPage> {
 
   StreamSubscription<Position>? _positionStream;
 
+  //STATE UNTUK AMBIL DATA USER
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  User? _currentUser;
+  bool _isUserDataLoading = true;
+
+  Future<void> _loadUserData() async {
+    // Asumsi Anda menggunakan getSingleUser (sesuai request terakhir)
+    _currentUser = await _dbHelper.getSingleUser();
+    setState(() {
+      _isUserDataLoading = false;
+      // Anda bisa set jadwal kerja di sini jika ada di data user
+      // contoh: _jadwalMulaiKerja = _currentUser?.jadwalMasuk ?? '--:--';
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _initLocation();
+    _loadUserData();
+  }
+
+  // --- 5. FUNGSI BARU UNTUK PROSES CHECK-IN ---
+  Future<void> _processCheckIn() async {
+    // Pastikan user sudah di-load dan tidak null
+    if (_currentUser == null || _currentUser!.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal: Data user tidak ditemukan!')),
+      );
+      return;
+    }
+
+    // Ambil waktu saat ini
+    final String checkInTime = DateFormat('HH:mm:ss', 'id_ID').format(DateTime.now());
+
+    try {
+      // Panggil DatabaseHelper
+      await _dbHelper.updateUserCheckIn(
+        _currentUser!.id!,
+        checkInTime,
+      );
+
+      // Tampilkan notifikasi sukses
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Check-In Berhasil pada $checkInTime ✅')),
+      );
+
+      // (Opsional) Kembali ke halaman sebelumnya setelah check-in
+      // AppNavigator.back();
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan check-in: $e')),
+      );
+    }
   }
 
   @override
@@ -158,7 +210,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
               ),
             ],
           ),
-          backgroundColor: Colors.green.withOpacity(0.5), // 💚 transparan
+          backgroundColor: Colors.green.withOpacity(0.5),
           elevation: 0,
           centerTitle: true,
           surfaceTintColor: Colors.transparent,

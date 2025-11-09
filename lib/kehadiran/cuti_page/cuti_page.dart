@@ -9,32 +9,60 @@ class CutiPage extends StatefulWidget {
 }
 
 class _CutiPageState extends State<CutiPage> {
-  List<CutiModel> cutiList = [
-    CutiModel(
-      jenisCuti: 'Cuti Tahunan',
-      tanggalMulai: '2025-10-20',
-      tanggalSelesai: '2025-10-23',
-      alasan: 'Liburan keluarga',
-      dokumenUrl: '',
-    ),
-    CutiModel(
-      jenisCuti: 'Cuti Sakit',
-      tanggalMulai: '2025-09-15',
-      tanggalSelesai: '2025-09-18',
-      alasan: 'Sakit demam tinggi',
-      dokumenUrl: 'surat_dokter.pdf',
-    ),
-    CutiModel(
-      jenisCuti: 'Cuti Melahirkan',
-      tanggalMulai: '2025-08-01',
-      tanggalSelesai: '2025-09-30',
-      alasan: 'Persalinan',
-      dokumenUrl: '',
-    ),
-  ];
+  // List sekarang dimulai sebagai list kosong
+  List<CutiModel> cutiList = [];
+  // State untuk helper
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  bool _isLoading = true; // State untuk loading
 
   bool sortByJenis = false;
   bool sortByTanggal = false;
+
+  // --- (FUNGSI LOAD DATA) ---
+  @override
+  void initState() {
+    super.initState();
+    _loadRiwayatCuti();
+  }
+
+  /// Mengambil data cuti dari database
+  Future<void> _loadRiwayatCuti() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+      final User? currentUser = await _dbHelper.getSingleUser();
+      if (currentUser == null || currentUser.id == null) {
+        // Handle error: user tidak ditemukan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User tidak ditemukan!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Ambil riwayat cuti berdasarkan ID user
+      final List<CutiModel> riwayat = await _dbHelper.getRiwayatCuti(currentUser.id!);
+
+      // 3. Update UI dengan data baru
+      setState(() {
+        cutiList = riwayat;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat riwayat: $e')),
+        );
+      }
+    }
+  }
+  // ------------------------------------
 
   void _sortByJenis() {
     setState(() {
@@ -53,7 +81,7 @@ class _CutiPageState extends State<CutiPage> {
         final dateB = DateTime.parse(b.tanggalMulai);
         return sortByTanggal
             ? dateA.compareTo(dateB)
-            : dateB.compareTo(dateA);
+            : dateB.compareTo(DateTime.parse(a.tanggalMulai));
       });
     });
   }
@@ -67,14 +95,16 @@ class _CutiPageState extends State<CutiPage> {
             icon: const Icon(Icons.add_circle),
             color: Colors.white,
             onPressed: () {
-              AppNavigator.to(Routes.tambahCutiPage,
-                arguments: {
-                  'onCutiAdded': (CutiModel newCuti) {
-                    setState(() {
-                      cutiList.add(newCuti);
-                    });
-                  },
-                });
+              // Logika navigasi Anda sudah benar
+              AppNavigator.to(Routes.tambahCutiPage, arguments: {
+                'onCutiAdded': (CutiModel newCuti) {
+                  // Ini akan menambah CutiModel baru ke list secara instan
+                  // (tanpa perlu load ulang dari DB, UI terasa cepat)
+                  setState(() {
+                    cutiList.add(newCuti);
+                  });
+                },
+              });
             },
           )
         ],
@@ -92,6 +122,7 @@ class _CutiPageState extends State<CutiPage> {
       body: Column(
         children: [
           Row(
+            // ... (Tombol sort Anda sudah benar) ...
             children: [
               RoundedContainer(
                 color: Colors.green.withOpacity(0.3),
@@ -145,14 +176,24 @@ class _CutiPageState extends State<CutiPage> {
               ),
             ],
           ),
-
           const Divider(),
 
           // 📋 Daftar Cuti
           Expanded(
-            child: ListView.builder(
+            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : cutiList.isEmpty
+                ? const Center(
+              child: Text(
+                'Belum ada riwayat cuti.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            )
+                : ListView.builder(
               itemCount: cutiList.length,
               itemBuilder: (context, index) {
+                // Panggilan CutiCard Anda sudah benar
                 return CutiCard(cuti: cutiList[index]);
               },
             ),
