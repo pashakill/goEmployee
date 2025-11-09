@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/izin/tambah_izin_page.dart';
+import 'package:goemployee/kehadiran/wfh/tambah_wfh_page.dart';
 
 class Routes {
   // Nama semua route (biar konsisten)
@@ -16,7 +18,9 @@ class Routes {
   static const String dinasPage = '$karyawan/dinas';
   static const String tambahDinasPage = '$dinasPage/tambahDinas';
   static const String wfhPage = '$karyawan/wfh';
+  static const String tambahWfh = '$wfhPage/tambahWfh';
   static const String izinPage = '$karyawan/izin';
+  static const String tambahIzinPage = '$izinPage/tambahIzin';
   static const String persetujuanPage = '$karyawan/persetujuan';
 
 
@@ -35,7 +39,8 @@ class Routes {
     GetPage(name: izinPage, page: () => IzinPage()),
     GetPage(name: persetujuanPage, page: () => PersetujuanPage()),
     GetPage(name: tambahCutiPage, page: () => TambahCutiPage()),
-
+    GetPage(name: tambahWfh, page: () => TambahWfhPage()),
+    GetPage(name: tambahIzinPage, page: () => TambahIzinPage())
   ];
 }
 

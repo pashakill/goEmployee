@@ -91,7 +91,6 @@ class _CutiPageState extends State<CutiPage> {
       ),
       body: Column(
         children: [
-          // 🔼 Filter dan Sort bar
           Row(
             children: [
               RoundedContainer(
