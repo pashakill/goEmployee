@@ -1,1 +1,0 @@
-export 'izin_page.dart';

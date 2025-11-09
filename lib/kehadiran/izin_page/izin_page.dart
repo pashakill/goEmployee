@@ -9,7 +9,6 @@ class IzinPage extends StatefulWidget {
 }
 
 class _IzinPageState extends State<IzinPage> {
-  late Future<List<IzinConverterModel>> _futureIzin;
   List<IzinConverterModel> izinList = [
     IzinConverterModel(
         id: "123",

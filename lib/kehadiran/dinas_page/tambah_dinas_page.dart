@@ -49,7 +49,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
     LocationPermission permission;
 
     try {
-      // Cek izin
+      // Cek izin_page
       permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -394,7 +394,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                           controller: _alasanController,
                           maxLines: 3,
                           decoration: const InputDecoration(
-                            hintText: 'Masukkan alasan dinas...',
+                            hintText: 'Masukkan alasan dinas_page...',
                             border: OutlineInputBorder(),
                           ),
                         ),

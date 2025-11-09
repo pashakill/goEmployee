@@ -1,7 +1,5 @@
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/izin/tambah_izin_page.dart';
-import 'package:goemployee/kehadiran/wfh/tambah_wfh_page.dart';
 
 class Routes {
   // Nama semua route (biar konsisten)
@@ -11,17 +9,17 @@ class Routes {
 
   static const String karyawan = '/karyawan';
   static const String kehadiranPage = '$karyawan/kehadiran';
-  static const String cutiPage = '$karyawan/cuti';
+  static const String cutiPage = '$karyawan/cuti_page';
   static const String tambahCutiPage = '$cutiPage/tambahCuti';
-  static const String lemburPage = '$karyawan/lembur';
+  static const String lemburPage = '$karyawan/lembur_page';
   static const String tambahLemburPage = '$lemburPage/tambahLembur';
-  static const String dinasPage = '$karyawan/dinas';
+  static const String dinasPage = '$karyawan/dinas_page';
   static const String tambahDinasPage = '$dinasPage/tambahDinas';
   static const String wfhPage = '$karyawan/wfh';
   static const String tambahWfh = '$wfhPage/tambahWfh';
-  static const String izinPage = '$karyawan/izin';
+  static const String izinPage = '$karyawan/izin_page';
   static const String tambahIzinPage = '$izinPage/tambahIzin';
-  static const String persetujuanPage = '$karyawan/persetujuan';
+  static const String persetujuanPage = '$karyawan/persetujuan_page';
 
 
   // Daftar semua route

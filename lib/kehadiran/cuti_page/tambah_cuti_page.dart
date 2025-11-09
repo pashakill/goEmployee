@@ -108,7 +108,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                   });
                 },
                 validator: (value) =>
-                value == null ? 'Pilih jenis cuti' : null,
+                value == null ? 'Pilih jenis cuti_page' : null,
               ),
               const SizedBox(height: 16),
 

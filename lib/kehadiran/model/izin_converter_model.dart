@@ -21,7 +21,7 @@ class IzinConverterModel {
   final String id;
   final IzinTipe tipe;
   final IzinStatus status;
-  final DateTime tanggal; // Bisa jadi tanggal izin atau tanggal pengajuan
+  final DateTime tanggal; // Bisa jadi tanggal izin_page atau tanggal pengajuan
   final String alasan;
   final DateTime? jam; // Opsional, hanya untuk telat/pulang awal
 

@@ -15,7 +15,7 @@ class CutiModel {
     required this.dokumenUrl,
   });
 
-  /// Hitung lama cuti (dalam hari)
+  /// Hitung lama cuti_page (dalam hari)
   int get lamaCuti {
     try {
       final start = DateFormat('yyyy-MM-dd').parse(tanggalMulai);
