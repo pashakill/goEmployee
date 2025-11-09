@@ -9,8 +9,16 @@ class HomePage extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         body: Container(
-          color: Colors.green,
-          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.green.shade800, // Hijau tua
+                Colors.green.shade400, // Hijau lebih terang
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),          width: double.infinity,
           height: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: SingleChildScrollView(
@@ -20,9 +28,24 @@ class HomePage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                   SvgImageWithColor(color: Colors.white,
-                     path: 'assets/icons/app_icon_with_text.svg',
-                     width: 90,
+                   Row(
+                     children: [
+                       Icon(
+                         Icons.shield_outlined,
+                         size: 40,
+                         color: Colors.white,
+                       ),
+                       const SizedBox(height: 8),
+                       const Text(
+                         'GoEmployee',
+                         style: TextStyle(
+                           color: Colors.white,
+                           fontSize: 12,
+                           fontWeight: FontWeight.bold,
+                           letterSpacing: 1.5,
+                         ),
+                       ),
+                     ],
                    ),
                    Row(
                      children: [

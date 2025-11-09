@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
+import 'package:goemployee/app/onboarding/onboarding.dart';
 import 'package:goemployee/goemployee.dart';
 
 class Routes {
   // Nama semua route (biar konsisten)
+  static const String splashScreen = '/splashScreen';
   static const String home = '/home';
   static const String login = '/login';
   static const String loginKaryawan = '/$login/karyawan';
@@ -24,6 +26,7 @@ class Routes {
 
   // Daftar semua route
   static final pages = [
+    GetPage(name: splashScreen, page: () => SplashScreen()),
     GetPage(name: home, page: () => HomePage()),
     GetPage(name: login, page: () => LoginPage()),
     GetPage(name: loginKaryawan, page: () => LoginKaryawanPage()),
