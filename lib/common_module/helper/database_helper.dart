@@ -203,4 +203,18 @@ class DatabaseHelper {
     }
   }
 
+  Future<User?> getSingleUser() async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'users',
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return User.fromMap(maps.first);
+    } else {
+      return null;
+    }
+  }
+
 }

@@ -274,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
             password: password,
             companyName: "PT.Jatelindo Perkasa Abadi",
             role: "Dosen",
-            dateNow: DateFormat('yyyy-MM-dd').format(DateTime.now()), // Tanggal hari ini
+            dateNow: DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now()), // Tanggal hari ini
           );
 
 
@@ -284,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
             int id = await dbHelper.insertUser(newUser);
             print("Sukses! User baru '$id - ${newUser.nama}' berhasil disimpan.");
             // TODO: Navigasi ke halaman home
-            AppNavigator.offAll(Routes.login);
+            AppNavigator.offAll(Routes.home);
           } catch (e) {
             print("Gagal menyimpan user: $e");
 
