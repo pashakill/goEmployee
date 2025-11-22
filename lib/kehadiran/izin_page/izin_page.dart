@@ -9,36 +9,51 @@ class IzinPage extends StatefulWidget {
 }
 
 class _IzinPageState extends State<IzinPage> {
-  List<IzinConverterModel> izinList = [
-    IzinConverterModel(
-        id: "123",
-        tipe: IzinTipe.telatMasuk,
-        status: IzinStatus.approved,
-        tanggal: DateTime.parse("2025-11-10T00:00:00Z"),
-        jam: DateTime.parse("2025-11-10T09:30:00Z"), // Jam 9:30
-        alasan: "Ada urusan keluarga sebentar di pagi hari."
-    ),
-    IzinConverterModel(
-        id: "124",
-        tipe: IzinTipe.tidakMasuk,
-        status: IzinStatus.pending,
-        tanggal: DateTime.parse("2025-11-09T00:00:00Z"),
-        jam: null,
-        alasan: "Sakit demam, surat dokter menyusul."
-    ),
-    IzinConverterModel(
-        id: "125",
-        tipe: IzinTipe.pulangAwal,
-        status: IzinStatus.rejected,
-        tanggal: DateTime.parse("2025-11-08T00:00:00Z"),
-        jam: DateTime.parse("2025-11-08T15:00:00Z"),
-        alasan: "Ingin menonton film."
-    ),
-  ];
+  List<IzinConverterModel> izinList = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  bool _isLoading = true; // State untuk loading
 
   @override
   void initState() {
     super.initState();
+    _loadRiwayatIzin();
+  }
+
+  Future<void> _loadRiwayatIzin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+      final User? currentUser = await _dbHelper.getSingleUser();
+      if (currentUser == null || currentUser.id == null) {
+        // Handle error: user tidak ditemukan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User tidak ditemukan!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Ambil riwayat lembur berdasarkan ID user
+      final List<IzinConverterModel> riwayatIzin = await _dbHelper.getRiwayatIzin(currentUser.id!);
+
+      // 3. Update UI dengan data baru
+      setState(() {
+        izinList = riwayatIzin;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat riwayat: $e')),
+        );
+      }
+    }
   }
 
   bool sortByJenis = false;
@@ -156,14 +171,23 @@ class _IzinPageState extends State<IzinPage> {
 
           const Divider(),
           Expanded(
-              child: Padding(padding: EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: ListView.builder(
-                    itemCount: izinList.length,
-                    itemBuilder: (context, index) {
-                      return IzinCard(izinConverter: izinList[index]);
-                    },
-                  )
-              )
+            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : izinList.isEmpty
+                ? const Center(
+              child: Text(
+                'Belum ada riwayat Dinas.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            )
+                : ListView.builder(
+              itemCount: izinList.length,
+              itemBuilder: (context, index) {
+                // Panggilan CutiCard Anda sudah benar
+                return IzinCard(izinConverter: izinList[index]);
+              },
+            ),
           ),
         ],
       )

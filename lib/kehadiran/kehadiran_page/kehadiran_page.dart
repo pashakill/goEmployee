@@ -19,10 +19,10 @@ class _KehadiranPageState extends State<KehadiranPage> {
   LatLng? _currentPosition;
   String _currentAddress = "Mendeteksi lokasi...";
   double? _distanceInMeters;
-  double checkInRadius = 50; // radius check-in dalam meter
+  double checkInRadius = 100; // radius check-in dalam meter
 
   // Titik lokasi kantor (ubah sesuai kebutuhan)
-  final LatLng _officeLocation = const LatLng(-6.3289706, 106.7574791); // contoh
+  final LatLng _officeLocation = const LatLng(-6.3464815, 106.6917637); // contoh
 
   StreamSubscription<Position>? _positionStream;
 

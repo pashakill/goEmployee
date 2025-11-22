@@ -14,13 +14,24 @@ class TambahWfhPage extends StatefulWidget {
 
 class _TambahWfhPageState extends State<TambahWfhPage> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   String? _alasanWfh;
   DateTime? _tanggalMulai;
   DateTime? _tanggalSelesai;
   int lamaWfh = 0;
+  late DateTime _tanggalPengajuan;
+  final TextEditingController _tglPengajuanController = TextEditingController();
 
   // Format tanggal dan waktu lokal Indonesia
   final DateFormat _dateTimeFormat = DateFormat('dd MMM yyyy HH:mm', 'id');
+
+
+  @override
+  void initState() {
+    super.initState();
+    _tanggalPengajuan = DateTime.now();
+    _tglPengajuanController.text = DateFormat('dd-MM-yyyy').format(_tanggalPengajuan);
+  }
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
     // Pilih tanggal dulu
@@ -57,7 +68,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
     });
   }
 
-  void _simpanWfh() {
+  Future<void> _simpanWfh() async {
     if (_formKey.currentState!.validate()) {
       if (_tanggalMulai == null || _tanggalSelesai == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -66,15 +77,38 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
         return;
       }
 
-      final wfhBaru = WfhModel(
-        lamaWfh: lamaWfh.toString(),
-        alsanWfh: _alasanWfh ?? '',
-        waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
-        waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!),
-      );
+      try {
+        // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+        final User? currentUser = await _dbHelper.getSingleUser();
+        if (currentUser == null || currentUser.id == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
+          );
+          return;
+        }
 
-      widget.onWfhAdded?.call(wfhBaru);
-      Navigator.pop(context);
+        // 3. Buat model wfh
+        final wfhBaru = WfhModel(
+            userId: currentUser.id!,
+            lamaWfh: lamaWfh.toString(), alasanWfh: _alasanWfh ?? '',
+            waktuMulai: _tanggalMulai.toString(), waktuSelesai: _tanggalSelesai.toString(),
+            tanggalPengajuan: _tglPengajuanController.text
+        );
+
+        // 4. PANGGIL FUNGSI INSERT DARI DATABASEHELPER
+        //    Ini akan menyimpan data ke database SQLCipher
+        final int dinasId = await _dbHelper.insertWfh(wfhBaru);
+        print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
+        // 5. PANGGIL CALLBACK (kode Anda sudah benar)
+        //    Ini akan meng-update UI di halaman DaftarCutiPage
+        widget.onWfhAdded?.call(wfhBaru);
+        Navigator.pop(context);
+      } catch (e) {
+        // Tangani jika ada error saat simpan ke DB
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 

@@ -25,7 +25,7 @@ class LemburCard extends StatelessWidget {
                 const Icon(Icons.date_range, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
                 Text(
-                  '${lemburModel.waktuMulai} → ${lemburModel.waktuSelesai}',
+                  '${lemburModel.waktuMulai} - ${lemburModel.waktuSelesai}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

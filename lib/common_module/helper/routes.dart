@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/app/onboarding/onboarding.dart';
 import 'package:goemployee/goemployee.dart';
@@ -28,7 +29,7 @@ class Routes {
   static final pages = [
     GetPage(name: splashScreen, page: () => SplashScreen()),
     GetPage(name: home, page: () => HomePage()),
-    GetPage(name: login, page: () => LoginPage()),
+    GetPage(name: login, page: () => BlocProvider(create: (context) => getIt<LoginBloc>(), child: LoginPage())),
     GetPage(name: loginKaryawan, page: () => LoginKaryawanPage()),
     GetPage(name: kehadiranPage, page: () => KehadiranPage()),
     GetPage(name: cutiPage, page: () => CutiPage()),

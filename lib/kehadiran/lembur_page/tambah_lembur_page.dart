@@ -18,6 +18,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
   DateTime? _tanggalMulai;
   DateTime? _tanggalSelesai;
   int lamaLembur = 0;
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Format tanggal dan waktu lokal Indonesia
   final DateFormat _dateTimeFormat = DateFormat('dd MMM yyyy HH:mm', 'id');
@@ -67,7 +68,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
     });
   }
 
-  void _simpanLembur() {
+  Future<void> _simpanLembur() async {
     if (_formKey.currentState!.validate()) {
       if (_tanggalMulai == null || _tanggalSelesai == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,15 +77,30 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         return;
       }
 
-      final lemburBaru = LemburModel(
-        lamaLembur: lamaLembur.toString(),
-        catatanLembur: _catatanLembur ?? '',
-        waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
-        waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!),
-      );
+      try{
+        final User? currentUser = await _dbHelper.getSingleUser();
+        if (currentUser == null || currentUser.id == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
+          );
+          return;
+        }
 
-      widget.onLemburAdded?.call(lemburBaru);
-      Navigator.pop(context);
+        final lemburBaru = LemburModel(
+          lamaLembur: lamaLembur.toString(),
+          catatanLembur: _catatanLembur ?? '',
+          waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
+          waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser.id!,
+        );
+        _dbHelper.insertLembur(lemburBaru);
+        widget.onLemburAdded?.call(lemburBaru);
+        Navigator.pop(context);
+      }catch(e){
+        e.printError();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 

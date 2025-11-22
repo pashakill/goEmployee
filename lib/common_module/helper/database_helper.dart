@@ -157,6 +157,63 @@ class DatabaseHelper {
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE lembur (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        tanggal_pengajuan TEXT NOT NULL,
+        waktu_mulai TEXT NOT NULL,
+        waktu_selesai TEXT NOT NULL,
+        lama_lembur TEXT NOT NULL,
+        catatan_lembur TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE dinas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        tanggal_mulai TEXT NOT NULL,
+        tanggal_selesai TEXT NOT NULL,
+        alamat TEXT NOT NULL,
+        latitude TEXT NOT NULL,
+        longTitude TEXT NOT NULL,
+        radius TEXT NOT NULL,
+        alasan TEXT NOT NULL,
+        tanggal_pengajuan TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE wfh (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        tanggal_pengajuan TEXT NOT NULL,
+        waktu_mulai TEXT NOT NULL,
+        waktu_selesai TEXT NOT NULL,
+        lama_wfh TEXT NOT NULL,
+        alasan_wfh TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE pengajuan_izin (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        tipe TEXT NOT NULL, 
+        tanggal_pengajuan TEXT NOT NULL, 
+        tanggal_efektif TEXT NOT NULL, 
+        jam_efektif TEXT, 
+        alasan TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    ''');
+
     print("DatabaseHelper: Tabel berhasil dibuat.");
   }
 
@@ -286,6 +343,54 @@ class DatabaseHelper {
     }
   }
 
+  Future<int> insertLembur(LemburModel lembur) async {
+    final db = await instance.database;
+
+    // 1. Siapkan data yang akan di-insert, ambil data toMap() dari model
+    final Map<String, dynamic> data = lembur.toMap();
+
+    // 2. Tambahkan field tanggal_pengajuan secara manual
+    data['tanggal_pengajuan'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // 3. Lakukan insert ke tabel 'lembur'
+    final int id = await db.insert(
+      'lembur',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    print('DatabaseHelper: Lembur baru (ID: $id) untuk user ${lembur.userId} berhasil disimpan.');
+    return id;
+  }
+
+  // DI DALAM class DatabaseHelper
+
+  /// Mengambil semua riwayat lembur milik satu user
+  Future<List<LemburModel>> getRiwayatLembur(int userId) async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'lembur',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      // Urutkan berdasarkan tanggal_pengajuan
+      orderBy: 'tanggal_pengajuan DESC, waktu_mulai DESC',
+    );
+
+    // Jika tidak ada data, kembalikan list kosong
+    if (maps.isEmpty) {
+      return [];
+    }
+
+    // Ubah List<Map> menjadi List<LemburModel>
+    return List.generate(maps.length, (i) {
+      // PENTING: Meskipun kita mengambil tanggal_pengajuan dari DB,
+      // kita tidak memasukkannya kembali ke LemburModel karena sudah kita hapus
+      // dari factory constructor. Jadi, pastikan pemanggilan fromMap tetap aman.
+      return LemburModel.fromMap(maps[i]);
+    });
+  }
+
   Future<int> deleteAllUsers() async {
     final db = await instance.database;
     final int rowsDeleted = await db.delete('users');
@@ -346,7 +451,205 @@ class DatabaseHelper {
     }
   }
 
+  Future<int> insertDinas(DinasModel dinas) async {
+    final db = await instance.database;
 
+    // 1. Siapkan data yang akan di-insert (dari toMap() model)
+    final Map<String, dynamic> data = dinas.toMap();
+
+    // 2. Lakukan insert ke tabel 'dinas'
+    final int id = await db.insert(
+      'dinas',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    print('DatabaseHelper: Permintaan Dinas baru (ID: $id) untuk user ${dinas.userId} berhasil disimpan.');
+    return id;
+  }
+
+  Future<List<DinasModel>> getRiwayatDinas(int userId) async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'dinas',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'tanggal_mulai DESC', // Tampilkan yang terbaru dulu
+    );
+
+    // Jika tidak ada data, kembalikan list kosong
+    if (maps.isEmpty) {
+      return [];
+    }
+
+    // Ubah List<Map> menjadi List<DinasModel>
+    return List.generate(maps.length, (i) {
+      return DinasModel.fromMap(maps[i]);
+    });
+  }
+
+  Future<int> insertWfh(WfhModel wfh) async {
+    final db = await instance.database;
+
+    // 1. Siapkan data yang akan di-insert (dari toMap() model)
+    final Map<String, dynamic> data = wfh.toMap();
+
+    // 2. Lakukan insert ke tabel 'wfh'
+    final int id = await db.insert(
+      'wfh',
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    print('DatabaseHelper: Permintaan WFH baru (ID: $id) untuk user ${wfh.userId} berhasil disimpan.');
+    return id;
+  }
+
+  Future<List<WfhModel>> getRiwayatWfh(int userId) async {
+    final db = await instance.database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'wfh',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'tanggal_pengajuan DESC', // Tampilkan yang terbaru dulu
+    );
+
+    // Jika tidak ada data, kembalikan list kosong
+    if (maps.isEmpty) {
+      return [];
+    }
+
+    // Ubah List<Map> menjadi List<WfhModel>
+    return List.generate(maps.length, (i) {
+      return WfhModel.fromMap(maps[i]);
+    });
+  }
+
+  Future<int> insertIzin(IzinConverterModel izinData) async {
+    final db = await instance.database;
+    // 1. Validasi Kunci Dasar Database
+    if (izinData.userId == null) {
+      throw Exception("IzinConverterModel harus memiliki userId yang valid untuk disimpan.");
+    }
+    // 2. Lakukan insert ke tabel 'pengajuan_izin'
+    // Gunakan toMap() dari IzinConverterModel yang menangani konversi Enum ke String DB
+    final int id = await db.insert(
+      'pengajuan_izin',
+      izinData.toMap(), // <-- MENGGUNAKAN toMap() BARU
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    print('DatabaseHelper: Pengajuan izin (${izinData.tipe}, ID: $id) berhasil disimpan.');
+    return id;
+  }
+
+  Future<void> submitNewIzin(dynamic modelRequest) async {
+    final dbHelper = DatabaseHelper.instance;
+    final currentUser = await dbHelper.getCurrentLoggedInUser();
+
+    if (currentUser == null || currentUser.id == null) {
+      throw Exception("Pengguna tidak terautentikasi.");
+    }
+
+    final String currentTanggalPengajuan = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    IzinConverterModel izinData;
+
+    // Logika konversi dari Request Model ke IzinConverterModel
+    switch (modelRequest.runtimeType) {
+      case IzinTelatRequest:
+        final req = modelRequest as IzinTelatRequest;
+        final fullTime = DateTime(
+          req.tanggal.year, req.tanggal.month, req.tanggal.day,
+          req.jam.hour, req.jam.minute,
+        );
+        izinData = IzinConverterModel(
+          id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          userId: currentUser.id,
+          tipe: IzinTipe.telatMasuk,
+          status: IzinStatus.pending,
+          tanggal: req.tanggal,
+          alasan: req.alasan,
+          jam: fullTime,
+          tanggalPengajuan: currentTanggalPengajuan,
+        );
+        break;
+
+    // Tambahkan case lainnya di sini (PulangAwalRequest, TidakMasukRequest...)
+
+      default:
+        throw Exception("Jenis request izin (${modelRequest.runtimeType}) tidak dikenali.");
+    }
+
+    // Panggil fungsi insert utama
+    await insertIzin(izinData);
+  }
+
+  Future<List<IzinConverterModel>> getRiwayatIzin(int userId) async {
+    final db = await instance.database;
+    print('userId ${userId}');
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'pengajuan_izin',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'tanggal_efektif DESC, tanggal_pengajuan DESC',
+    );
+
+    if (maps.isEmpty) {
+      return [];
+    }
+
+    return List.generate(maps.length, (i) {
+      final Map<String, dynamic> dbMap = maps[i];
+
+      // --- Penanganan Jam (Tetap Sama) ---
+      final String? jamString = dbMap['jam_efektif'] as String?;
+      String? fullIsoDateTime;
+
+      if (jamString != null) {
+        fullIsoDateTime = '${dbMap['tanggal_efektif']}T$jamString';
+      }
+      // ------------------------------------
+
+      // 1. Rekonstruksi Map dengan Null Coalescing ('??')
+      final Map<String, dynamic> reconstructedJson = {
+        // Pastikan semua field String utama mendapatkan nilai default jika NULL
+        'id': dbMap['id']?.toString() ?? '0',
+
+        // IzinConverterModel.fromJson() mengharapkan 'tipe' dan 'tanggal'
+        // sebagai String non-null untuk parsing
+        'tipe': dbMap['tipe'] as String? ?? 'UNKNOWN', // Gunakan 'UNKNOWN' sebagai default tipe
+        'status': dbMap.containsKey('status') ? dbMap['status'] as String? ?? 'PENDING' : 'PENDING',
+
+        'tanggal': dbMap['tanggal_efektif'] as String? ?? DateFormat('yyyy-MM-dd').format(DateTime.now()), // Harus ada tanggal
+        'alasan': dbMap['alasan'] as String? ?? 'Tidak ada alasan tercatat.', // Beri nilai default
+
+        'user_id': dbMap['user_id'],
+        'tanggal_pengajuan': dbMap['tanggal_pengajuan'],
+        'jam': fullIsoDateTime,
+      };
+
+      // 2. Gunakan fromJson untuk konversi
+      try {
+        return IzinConverterModel.fromJson(reconstructedJson);
+      } catch (e) {
+        // Tangkap error parsing DateTime jika data tanggal tidak valid
+        print("ERROR PARSING IZIN ID ${dbMap['id']}: $e. Data mentah: $dbMap");
+
+        // Kembalikan model yang diisi dengan nilai 'unknown'
+        return IzinConverterModel(
+          id: dbMap['id']?.toString() ?? '0',
+          tipe: IzinTipe.unknown,
+          status: IzinStatus.unknown,
+          tanggal: DateTime.now(),
+          alasan: 'Data Korup (ID: ${dbMap['id']})',
+          tanggalPengajuan: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        );
+      }
+    });
+  }
   /*
 
   void _showDeleteAccountDialog(BuildContext context) {

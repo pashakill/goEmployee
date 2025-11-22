@@ -10,35 +10,9 @@ class DinasPage extends StatefulWidget {
 
 class _DinasPageState extends State<DinasPage> {
 
-  List<DinasModel> dinasList = [
-    DinasModel(
-      tanggalMulai : '2025-11-21',
-      tanggalSelesai : '2025-11-24',
-      alamat : 'Jl.Cendrawasih No.25',
-      latitude : '1231231312-12',
-      longTitude: '202012823918923',
-      radius: '2',
-      alasan: 'Ke Bandung',
-    ),
-    DinasModel(
-      tanggalMulai : '2025-10-20',
-      tanggalSelesai : '2025-10-22',
-      alamat : 'Jl.Cendrawasih No.25',
-      latitude : '1231231312-12',
-      longTitude: '202012823918923',
-      radius: '2',
-      alasan: 'Survey Cabang',
-    ),
-    DinasModel(
-      tanggalMulai : '2025-10-05',
-      tanggalSelesai : '2025-10-06',
-      alamat : 'Jl.Cendrawasih No.25',
-      latitude : '1231231312-12',
-      longTitude: '202012823918923',
-      radius: '2',
-      alasan: 'Survey Tempat',
-    ),
-  ];
+  List<DinasModel> dinasList = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  bool _isLoading = true; // State untuk loading
 
   bool sortByTanggal = false;
 
@@ -53,6 +27,50 @@ class _DinasPageState extends State<DinasPage> {
             : dateB.compareTo(dateA);
       });
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRiwayatLembur();
+  }
+
+  /// Mengambil data lembur dari database
+  Future<void> _loadRiwayatLembur() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+      final User? currentUser = await _dbHelper.getSingleUser();
+      if (currentUser == null || currentUser.id == null) {
+        // Handle error: user tidak ditemukan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User tidak ditemukan!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Ambil riwayat lembur berdasarkan ID user
+      final List<DinasModel> riwayatLembur = await _dbHelper.getRiwayatDinas(currentUser.id!);
+
+      // 3. Update UI dengan data baru
+      setState(() {
+        dinasList = riwayatLembur;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat riwayat: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -118,9 +136,20 @@ class _DinasPageState extends State<DinasPage> {
           )),
 
           Expanded(
-            child: ListView.builder(
+            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : dinasList.isEmpty
+                ? const Center(
+              child: Text(
+                'Belum ada riwayat Dinas.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            )
+                : ListView.builder(
               itemCount: dinasList.length,
               itemBuilder: (context, index) {
+                // Panggilan CutiCard Anda sudah benar
                 return DinasCard(dinasModel: dinasList[index]);
               },
             ),

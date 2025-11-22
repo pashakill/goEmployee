@@ -17,6 +17,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
   // --- State untuk Dropdown ---
   final List<String> _izinTypes = ['Telat Masuk', 'Pulang Awal', 'Tidak Masuk'];
   late String _selectedIzinType;
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // --- State Form ---
   final TextEditingController _telatTanggalController = TextEditingController();
@@ -110,71 +111,102 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
   }
 
   // --- Logika Submit ---
-  void _handleSubmit() {
-    // 1. Buat variabel untuk menampung model yang akan dikirim
-    IzinConverterModel? modelToSubmit;
+  Future<void> _handleSubmit() async {
+    final currentUser = await _dbHelper.getCurrentLoggedInUser();
+    if (currentUser == null || currentUser.id == null) {
+      _showSnackBar("Gagal: Sesi pengguna tidak ditemukan. Silakan login ulang.", isError: true);
+      Get.back();
+      return;
+    }
 
-    // 2. Gunakan switch untuk memvalidasi dan membuat model
+    final int userId = currentUser.id!;
+    final String currentTanggalPengajuan = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    IzinConverterModel? izinModelFinal; // Gunakan ini sebagai model final untuk DB
+
+    // 2. Gunakan switch untuk memvalidasi dan membuat IzinConverterModel
     switch (_selectedIzinType) {
       case 'Telat Masuk':
-      // Validasi
-        if (_telatTanggal == null ||
-            _telatJam == null ||
-            _telatAlasanController.text.isEmpty) {
-          print('Harap lengkapi semua field Izin Telat');
-          // TODO: Tampilkan SnackBar error
-          return; // Hentikan fungsi
+        if (_telatTanggal == null || _telatJam == null || _telatAlasanController.text.isEmpty) {
+          _showSnackBar('Harap lengkapi semua field Izin Telat.', isError: true);
+          return;
         }
 
-        // Buat model request
-        final modelRequest = IzinTelatRequest(
-          tanggal: _telatTanggal!,
-          jam: _telatJam!,
-          alasan: _telatAlasanController.text,
+        final fullTime = DateTime(
+          _telatTanggal!.year, _telatTanggal!.month, _telatTanggal!.day,
+          _telatJam!.hour, _telatJam!.minute,
         );
-        // Konversi ke model terpadu
-        modelToSubmit = IzinConverterModel.fromJson(modelRequest.toJson());
+
+        izinModelFinal = IzinConverterModel(
+          id: 'local_${DateTime.now().millisecondsSinceEpoch}', // ID unik sementara
+          userId: userId, // ID Pengguna
+          tipe: IzinTipe.telatMasuk,
+          status: IzinStatus.pending,
+          tanggal: _telatTanggal!,
+          alasan: _telatAlasanController.text,
+          jam: fullTime,
+          tanggalPengajuan: currentTanggalPengajuan, // Tanggal hari ini
+        );
         break;
 
       case 'Pulang Awal':
-      // Validasi
-        if (_pulangTanggal == null ||
-            _pulangJam == null ||
-            _pulangAlasanController.text.isEmpty) {
-          print('Harap lengkapi semua field Pulang Awal');
-          // TODO: Tampilkan SnackBar error
-          return; // Hentikan fungsi
+        if (_pulangTanggal == null || _pulangJam == null || _pulangAlasanController.text.isEmpty) {
+          _showSnackBar('Harap lengkapi semua field Pulang Awal.', isError: true);
+          return;
         }
 
-        final modelRequest = IzinPulangAwalRequest(
-          tanggal: _pulangTanggal!,
-          jam: _pulangJam!,
-          alasan: _pulangAlasanController.text,
+        final fullTime = DateTime(
+          _pulangTanggal!.year, _pulangTanggal!.month, _pulangTanggal!.day,
+          _pulangJam!.hour, _pulangJam!.minute,
         );
-        modelToSubmit = IzinConverterModel.fromJson(modelRequest.toJson());
+
+        izinModelFinal = IzinConverterModel(
+          id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          userId: userId,
+          tipe: IzinTipe.pulangAwal,
+          status: IzinStatus.pending,
+          tanggal: _pulangTanggal!,
+          alasan: _pulangAlasanController.text,
+          jam: fullTime,
+          tanggalPengajuan: currentTanggalPengajuan,
+        );
         break;
 
       case 'Tidak Masuk':
-      // Validasi
         if (_absenTanggal == null || _absenAlasanController.text.isEmpty) {
-          print('Harap lengkapi semua field Izin Tidak Masuk');
-          // TODO: Tampilkan SnackBar error
-          return; // Hentikan fungsi
+          _showSnackBar('Harap lengkapi semua field Izin Tidak Masuk.', isError: true);
+          return;
         }
 
-        final modelRequest = IzinTidakMasukRequest(
+        izinModelFinal = IzinConverterModel(
+          id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          userId: userId,
+          tipe: IzinTipe.tidakMasuk,
+          status: IzinStatus.pending,
           tanggal: _absenTanggal!,
           alasan: _absenAlasanController.text,
+          jam: null,
+          tanggalPengajuan: currentTanggalPengajuan,
         );
-        modelToSubmit = IzinConverterModel.fromJson(modelRequest.toJson());
         break;
+
+      default:
+        _showSnackBar('Gagal: Jenis izin tidak valid.', isError: true);
+        return;
     }
 
-    // 3. Kirim data HANYA jika model berhasil dibuat
-    if (modelToSubmit != null) {
-      widget.onIzinAdded?.call(modelToSubmit);
-      // Setelah berhasil, kembali ke halaman sebelumnya
-      Get.back();
+    // 4. Kirim data ke DatabaseHelper
+    if (izinModelFinal != null) {
+      try {
+        final int newDbId = await _dbHelper.insertIzin(izinModelFinal); // Panggil fungsi insert DB
+        // Panggil callback (jika ada) dan kembali
+        widget.onIzinAdded?.call(izinModelFinal.copyWith(id: newDbId.toString()));
+        _showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
+        Get.back();
+
+      } catch (e) {
+        _showSnackBar('Gagal menyimpan pengajuan Izin: ${e.toString()}', isError: true);
+      }
     }
   }
 
@@ -388,5 +420,17 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
         ),
       ),
     );
+  }
+
+  // Helper untuk menampilkan SnackBar
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : Colors.green,
+        ),
+      );
+    }
   }
 }

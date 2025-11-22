@@ -7,6 +7,7 @@ import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platf
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
+  setupLocator();
 
   WidgetsFlutterBinding.ensureInitialized();
   final GoogleMapsFlutterPlatform mapsImplementation =
@@ -15,7 +16,7 @@ void main() async {
     mapsImplementation.useAndroidViewSurface = true;
   }
 
-  await initializeDateFormatting('id', null); // 🔥 tambahkan ini
+  await initializeDateFormatting('id', null);
 
   runApp(const MyApp());
 }

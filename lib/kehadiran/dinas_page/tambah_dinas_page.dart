@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
@@ -20,10 +22,13 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
   final TextEditingController _latController = TextEditingController();
   final TextEditingController _longController = TextEditingController();
   final TextEditingController _alasanController = TextEditingController();
+  final TextEditingController _alamatController = TextEditingController(); // BARU
+  final TextEditingController _tglPengajuanController = TextEditingController(); // BARU
 
   DateTime? _tanggalMulai;
   DateTime? _tanggalAkhir;
   String _kunciLokasi = 'yes';
+  late DateTime _tanggalPengajuan;
 
   // --- State untuk Google Map ---
   final Completer<GoogleMapController> _mapController = Completer();
@@ -37,11 +42,56 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
   bool _isLoading = true; // State untuk loading
   // --- Akhir Perubahan State ---
 
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+
   @override
   void initState() {
     super.initState();
     // 3. Panggil fungsi untuk mengambil lokasi saat init
+    _tanggalPengajuan = DateTime.now(); // BARU
+    _tglPengajuanController.text = DateFormat('dd-MM-yyyy').format(_tanggalPengajuan); // BARU
     _fetchCurrentLocation();
+  }
+
+  void _updateLatLongFields(LatLng position) async { // Tambahkan async
+    setState(() {
+      _currentMapPosition = position;
+      _latController.text = position.latitude.toStringAsFixed(6);
+      _longController.text = position.longitude.toStringAsFixed(6);
+    });
+
+    // --- Reverse Geocoding untuk Alamat --- (BARU)
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        // Gabungkan detail alamat yang relevan
+        String fullAddress = [
+          place.street,
+          place.subLocality,
+          place.locality,
+          place.country,
+        ].where((e) => e != null && e.isNotEmpty).join(', ');
+
+        setState(() {
+          _alamatController.text = fullAddress;
+        });
+      } else {
+        setState(() {
+          _alamatController.text = "Alamat tidak ditemukan.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _alamatController.text = "Gagal mengambil alamat (Jaringan Error)";
+      });
+      print("Geocoding Error: $e");
+    }
+    // --- Akhir Reverse Geocoding ---
   }
 
   // --- 4. FUNGSI BARU UNTUK AMBIL LOKASI ---
@@ -134,14 +184,6 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
         _tglAkhirController.text = DateFormat('dd-MM-yyyy').format(picked);
       });
     }
-  }
-
-  void _updateLatLongFields(LatLng position) {
-    setState(() {
-      _currentMapPosition = position;
-      _latController.text = position.latitude.toStringAsFixed(6);
-      _longController.text = position.longitude.toStringAsFixed(6);
-    });
   }
 
   @override
@@ -297,6 +339,10 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                         ),
                         const SizedBox(height: 16),
 
+                        _buildReadOnlyTextField(_tglPengajuanController, 'Tanggal Pengajuan'),
+
+                        const SizedBox(height: 16),
+
                         // --- Input Tanggal ---
                         Row(
                           children: [
@@ -381,6 +427,17 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                             ),
                           ],
                         ),
+
+                        const SizedBox(height: 16),
+
+                        // --- Field Alamat (BARU) ---
+                        const Text(
+                          'Alamat Lokasi Dinas',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildReadOnlyTextField(_alamatController, 'Alamat (Otomatis)'),
+
                         const SizedBox(height: 16),
 
                         // --- Field Alasan ---
@@ -394,10 +451,11 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                           controller: _alasanController,
                           maxLines: 3,
                           decoration: const InputDecoration(
-                            hintText: 'Masukkan alasan dinas_page...',
+                            hintText: 'Masukkan alasan...',
                             border: OutlineInputBorder(),
                           ),
                         ),
+
                         const SizedBox(height: 24),
 
                         // --- Tombol Submit ---
@@ -411,8 +469,41 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            onPressed: () {
-                              // TODO: Logika submit form di sini
+                            onPressed: () async {
+                              try {
+                                // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+                                final User? currentUser = await _dbHelper.getSingleUser();
+                                if (currentUser == null || currentUser.id == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
+                                  );
+                                  return;
+                                }
+
+                                // 3. Buat model Cuti (kode Anda sudah benar)
+                                final dinasBaru = DinasModel(
+                                    userId: currentUser.id!,
+                                    tanggalMulai: _tglMulaiController.text,
+                                    tanggalSelesai: _tglAkhirController.text,
+                                    alamat: _alamatController.text, latitude: _latController.text,
+                                    longTitude: _longController.text, radius: '',
+                                    alasan: _alasanController.text, tanggalPengajuan: _tanggalPengajuan.toString()
+
+                                );
+
+                                // 4. PANGGIL FUNGSI INSERT DARI DATABASEHELPER
+                                //    Ini akan menyimpan data ke database SQLCipher
+                                final int dinasId = await _dbHelper.insertDinas(dinasBaru);
+                                print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
+                                // 5. PANGGIL CALLBACK (kode Anda sudah benar)
+                                //    Ini akan meng-update UI di halaman DaftarCutiPage
+                                Get.back();
+                              } catch (e) {
+                                // Tangani jika ada error saat simpan ke DB
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: $e')),
+                                );
+                              }
                             },
                             child: const Text(
                               'Submit Pengajuan',

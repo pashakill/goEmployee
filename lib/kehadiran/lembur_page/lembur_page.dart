@@ -11,26 +11,10 @@ class LemburPage extends StatefulWidget {
 
 class _LemburPageState extends State<LemburPage> {
 
-  List<LemburModel> lemburList = [
-    LemburModel(
-      lamaLembur: '1',
-      catatanLembur: 'Melakukan migrasi aplikasi A',
-      waktuMulai: '2025-10-20 17:00',
-      waktuSelesai: '2025-10-20 18:00',
-    ),
-    LemburModel(
-      lamaLembur: '2',
-      catatanLembur: 'Menyelesaikan data-data KPI',
-      waktuMulai: '2025-10-22 17:00',
-      waktuSelesai: '2025-10-22 19:20',
-    ),
-    LemburModel(
-      lamaLembur: '3',
-      catatanLembur: 'Membuat Laporan Bulanan',
-      waktuMulai: '2025-10-21 17:00',
-      waktuSelesai: '2025-10-21 19:00',
-    ),
-  ];
+  // List sekarang dimulai sebagai list kosong
+  List<LemburModel> lemburList = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  bool _isLoading = true; // State untuk loading
 
   bool sortByDurasi = false;
   bool sortByTanggal = false;
@@ -55,6 +39,51 @@ class _LemburPageState extends State<LemburPage> {
             : dateB.compareTo(dateA);
       });
     });
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRiwayatLembur();
+  }
+
+  /// Mengambil data lembur dari database
+  Future<void> _loadRiwayatLembur() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+      final User? currentUser = await _dbHelper.getSingleUser();
+      if (currentUser == null || currentUser.id == null) {
+        // Handle error: user tidak ditemukan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User tidak ditemukan!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Ambil riwayat lembur berdasarkan ID user
+      final List<LemburModel> riwayatLembur = await _dbHelper.getRiwayatLembur(currentUser.id!);
+
+      // 3. Update UI dengan data baru
+      setState(() {
+        lemburList = riwayatLembur;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat riwayat: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -149,11 +178,22 @@ class _LemburPageState extends State<LemburPage> {
 
           const Divider(),
 
-          // 📋 Daftar Cuti
+          // 📋 Daftar Lembur
           Expanded(
-            child: ListView.builder(
+            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : lemburList.isEmpty
+                ? const Center(
+              child: Text(
+                'Belum ada riwayat Lembur.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            )
+                : ListView.builder(
               itemCount: lemburList.length,
               itemBuilder: (context, index) {
+                // Panggilan CutiCard Anda sudah benar
                 return LemburCard(lemburModel: lemburList[index]);
               },
             ),

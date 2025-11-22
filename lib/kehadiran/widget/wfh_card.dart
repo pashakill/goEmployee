@@ -37,7 +37,7 @@ class WfhCard extends StatelessWidget {
 
             const SizedBox(height: 8),
             Text(
-              wfhModel.alsanWfh,
+              wfhModel.alasanWfh,
               style: const TextStyle(fontSize: 14),
             ),
             Text(

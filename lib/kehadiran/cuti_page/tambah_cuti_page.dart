@@ -88,7 +88,6 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         //    Ini akan menyimpan data ke database SQLCipher
         final int cutiId = await _dbHelper.insertCuti(cutiBaru, currentUser.id!);
         print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
-
         // 5. PANGGIL CALLBACK (kode Anda sudah benar)
         //    Ini akan meng-update UI di halaman DaftarCutiPage
         widget.onCutiAdded?.call(cutiBaru); // (Saya ganti '!' jadi '?.call' agar lebih aman)

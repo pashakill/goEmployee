@@ -11,29 +11,56 @@ class WfhPage extends StatefulWidget {
 
 class _WfhPageState extends State<WfhPage> {
 
-  List<WfhModel> wfhList = [
-    WfhModel(
-      lamaWfh: '1',
-      alsanWfh: 'Sakit',
-      waktuMulai: '2025-10-20 17:00',
-      waktuSelesai: '2025-10-20 18:00',
-    ),
-    WfhModel(
-      lamaWfh: '2',
-      alsanWfh: 'Mengantarkan anak ke sekolaj',
-      waktuMulai: '2025-10-22 17:00',
-      waktuSelesai: '2025-10-22 19:20',
-    ),
-    WfhModel(
-      lamaWfh: '3',
-      alsanWfh: 'Menjaga rumah',
-      waktuMulai: '2025-10-21 17:00',
-      waktuSelesai: '2025-10-21 19:00',
-    ),
-  ];
+  List<WfhModel> wfhList = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  bool _isLoading = true; // State untuk loading
 
   bool sortByDurasi = false;
   bool sortByTanggal = false;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRiwayatLembur();
+  }
+
+  Future<void> _loadRiwayatLembur() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+      final User? currentUser = await _dbHelper.getSingleUser();
+      if (currentUser == null || currentUser.id == null) {
+        // Handle error: user tidak ditemukan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User tidak ditemukan!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Ambil riwayat lembur berdasarkan ID user
+      final List<WfhModel> riwayatWfh = await _dbHelper.getRiwayatWfh(currentUser.id!);
+
+      // 3. Update UI dengan data baru
+      setState(() {
+        wfhList = riwayatWfh;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat riwayat: $e')),
+        );
+      }
+    }
+  }
 
   void _sortByDurasi() {
     setState(() {
@@ -149,11 +176,21 @@ class _WfhPageState extends State<WfhPage> {
 
           const Divider(),
 
-          // 📋 Daftar Cuti
           Expanded(
-            child: ListView.builder(
+            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : wfhList.isEmpty
+                ? const Center(
+              child: Text(
+                'Belum ada riwayat Wfh.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            )
+                : ListView.builder(
               itemCount: wfhList.length,
               itemBuilder: (context, index) {
+                // Panggilan CutiCard Anda sudah benar
                 return WfhCard(wfhModel: wfhList[index]);
               },
             ),

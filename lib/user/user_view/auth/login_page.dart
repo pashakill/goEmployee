@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:intl/intl.dart';
 
@@ -10,7 +11,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // State untuk mengelola visibilitas password
   bool _isPasswordVisible = false;
 
   // --- 1. DEKLARASIKAN CONTROLLER ---
@@ -30,83 +30,99 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        // ... (Background Gradient Anda tetap sama) ...
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.green.shade800, // Hijau tua
-              Colors.green.shade400, // Hijau lebih terang
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // ... (Logo dan Judul Anda tetap sama) ...
-                const Icon(
-                  Icons.shield_outlined,
-                  size: 80,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'GoEmployee',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const Text(
-                  'Silakan login untuk melanjutkan',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // ... (Form Card Anda tetap sama) ...
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24.0),
-                  padding: const EdgeInsets.all(24.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // --- 3. PASANG CONTROLLER (di pemanggilan widget) ---
-                      _buildTextField(
-                        label: 'Employee ID',
-                        icon: Icons.person_outline,
-                        controller: _employeeIdController, // Kirim controller
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildPasswordField(
-                        controller: _passwordController, // Kirim controller
-                      ),
-                      const SizedBox(height: 32),
-
-                      _buildLoginButton(),
-                    ],
-                  ),
-                ),
-              ],
+      body: BlocConsumer<LoginBloc, LoginState>(
+        listener: (context, state) {
+          if (state is LoginSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Login Berhasil!')),
+            );
+            // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+          } else if (state is LoginFailure) {
+            // Tampilkan pesan error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Login Gagal: ${state.error}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.green.shade800, // Hijau tua
+                  Colors.green.shade400, // Hijau lebih terang
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-          ),
-        ),
+            child: Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // ... (Logo dan Judul Anda tetap sama) ...
+                    const Icon(
+                      Icons.shield_outlined,
+                      size: 80,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'GoEmployee',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const Text(
+                      'Silakan login untuk melanjutkan',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // ... (Form Card Anda tetap sama) ...
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24.0),
+                      padding: const EdgeInsets.all(24.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          // --- 3. PASANG CONTROLLER (di pemanggilan widget) ---
+                          _buildTextField(
+                            label: 'Employee ID',
+                            icon: Icons.person_outline,
+                            controller: _employeeIdController, // Kirim controller
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildPasswordField(
+                            controller: _passwordController, // Kirim controller
+                          ),
+                          const SizedBox(height: 32),
+
+                          _buildLoginButton(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -264,11 +280,14 @@ class _LoginPageState extends State<LoginPage> {
                 duration: Duration(seconds: 2), // Tampilkan selama 2 detik
               ),
             );
-
             return;
           }
-
-
+          context.read<LoginBloc>().add(
+            LoginButtonPressed(
+              password: _passwordController.text, username: _employeeIdController.text,
+            ),
+          );
+          /*
           final newUser = User(
             nama: "Barry Vasyah S.kom, M.Kom",
             username: username,
@@ -301,6 +320,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           }
+           */
         },
         child: const Text(
           'LOGIN',
