@@ -129,7 +129,10 @@ class DatabaseHelper {
         late_checkin TEXT,
         photo TEXT,
         jadwal_mulai_kerja TEXT,
-        jadwal_selesai_kerja TEXT
+        jadwal_selesai_kerja TEXT,
+        latitude TEXT,
+        longitude TEXT,
+        radius TEXT
       )
     ''');
 

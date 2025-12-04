@@ -1,18 +1,16 @@
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/user/user_view/auth/model/login_model.dart';
 
 class AuthApi {
   final NetworkHelper network;
 
   AuthApi({required this.network});
 
-  Future<void> login({required String username, required String password}) async {
-    final response = await network.post("/api/auth/login", {
+  Future<LoginModel> login({required String username, required String password}) async {
+    final response = await network.post("/login", {
       "username": username,
-      "password_hash": password,
+      "password": password,
     });
-
-    if (response["status"] != true) {
-      throw Exception(response["message"] ?? "Login gagal");
-    }
+    return LoginModel.fromJson(response);
   }
 }

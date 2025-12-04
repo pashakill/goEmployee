@@ -15,15 +15,14 @@ class LoginInitial extends LoginState {}
 class LoginLoading extends LoginState {}
 
 class LoginSuccess extends LoginState {
-  final String user;
-  const LoginSuccess({required this.user});
+  final UserModels loginResponse;
+  const LoginSuccess({required this.loginResponse});
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [loginResponse];
 }
 
 class LoginFailure extends LoginState {
   final String error;
-
   const LoginFailure({required this.error});
 
   @override

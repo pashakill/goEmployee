@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/app/onboarding/onboarding.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
+import 'package:goemployee/kehadiran/kehadiran_page/bloc/bloc.dart';
 
 class Routes {
   // Nama semua route (biar konsisten)
@@ -31,7 +33,7 @@ class Routes {
     GetPage(name: home, page: () => HomePage()),
     GetPage(name: login, page: () => BlocProvider(create: (context) => getIt<LoginBloc>(), child: LoginPage())),
     GetPage(name: loginKaryawan, page: () => LoginKaryawanPage()),
-    GetPage(name: kehadiranPage, page: () => KehadiranPage()),
+    GetPage(name: kehadiranPage, page: () => BlocProvider(create: (context) => getIt<KehadiranBloc>(), child: KehadiranPage())),
     GetPage(name: cutiPage, page: () => CutiPage()),
     GetPage(name: lemburPage, page: () => LemburPage()),
     GetPage(name: tambahLemburPage, page: () => TambahLemburPage()),
@@ -40,7 +42,7 @@ class Routes {
     GetPage(name: wfhPage, page: () => WfhPage()),
     GetPage(name: izinPage, page: () => IzinPage()),
     GetPage(name: persetujuanPage, page: () => PersetujuanPage()),
-    GetPage(name: tambahCutiPage, page: () => TambahCutiPage()),
+    GetPage(name: tambahCutiPage, page: () => BlocProvider(create: (context) => getIt<CutiBloc>(), child: TambahCutiPage())),
     GetPage(name: tambahWfh, page: () => TambahWfhPage()),
     GetPage(name: tambahIzinPage, page: () => TambahIzinPage())
   ];

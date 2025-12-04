@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
 
 
 class TambahCutiPage extends StatefulWidget {
@@ -110,117 +112,160 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              // Jenis Cuti
-              DropdownButtonFormField<String>(
-                value: _jenisCuti,
-                decoration: const InputDecoration(
-                  labelText: 'Jenis Cuti',
-                  border: OutlineInputBorder(),
-                ),
-                items: _jenisCutiList.map((jenis) {
-                  return DropdownMenuItem(
-                    value: jenis,
-                    child: Text(jenis),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _jenisCuti = value;
-                  });
-                },
-                validator: (value) =>
-                value == null ? 'Pilih jenis cuti_page' : null,
-              ),
-              const SizedBox(height: 16),
+      body: BlocConsumer<CutiBloc, CutiState>(
+        listener: (context, state) async {
+          if (state is CutiPageLoadingState) {
 
-              // Tanggal Mulai
-              InkWell(
-                onTap: () => _selectDate(context, true),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Mulai',
-                    border: OutlineInputBorder(),
+          }
+
+          if (state is AddCutiSuccessState) {
+
+            final cutiBaru = CutiModel(
+              jenisCuti: _jenisCuti!,
+              tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
+              tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
+              alasan: _alasan ?? '',
+              dokumenUrl: _dokumen ?? '',
+            );
+
+            final User? currentUser = await _dbHelper.getSingleUser();
+            final int cutiId = await _dbHelper.insertCuti(cutiBaru, currentUser!.id!);
+            print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
+            widget.onCutiAdded?.call(cutiBaru);
+            Get.back();
+          } else if (state is CutiPageFailedState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  // Jenis Cuti
+                  DropdownButtonFormField<String>(
+                    value: _jenisCuti,
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis Cuti',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _jenisCutiList.map((jenis) {
+                      return DropdownMenuItem(
+                        value: jenis,
+                        child: Text(jenis),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _jenisCuti = value;
+                      });
+                    },
+                    validator: (value) =>
+                    value == null ? 'Pilih jenis cuti_page' : null,
                   ),
-                  child: Text(_tanggalMulai == null
-                      ? 'Pilih tanggal mulai'
-                      : _tanggalMulai!.toString().split(' ')[0]),
-                ),
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // Tanggal Selesai
-              InkWell(
-                onTap: () => _selectDate(context, false),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Selesai',
-                    border: OutlineInputBorder(),
+                  // Tanggal Mulai
+                  InkWell(
+                    onTap: () => _selectDate(context, true),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Mulai',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(_tanggalMulai == null
+                          ? 'Pilih tanggal mulai'
+                          : _tanggalMulai!.toString().split(' ')[0]),
+                    ),
                   ),
-                  child: Text(_tanggalSelesai == null
-                      ? 'Pilih tanggal selesai'
-                      : _tanggalSelesai!.toString().split(' ')[0]),
-                ),
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // Lama Cuti
-              TextFormField(
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Lama Cuti (hari)',
-                  border: OutlineInputBorder(),
-                ),
-                controller:
-                TextEditingController(text: _lamaCuti.toString()),
-              ),
-              const SizedBox(height: 16),
+                  // Tanggal Selesai
+                  InkWell(
+                    onTap: () => _selectDate(context, false),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Selesai',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(_tanggalSelesai == null
+                          ? 'Pilih tanggal selesai'
+                          : _tanggalSelesai!.toString().split(' ')[0]),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-              // Alasan
-              TextFormField(
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Alasan Cuti',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (val) => _alasan = val,
-              ),
-              const SizedBox(height: 16),
+                  // Lama Cuti
+                  TextFormField(
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Lama Cuti (hari)',
+                      border: OutlineInputBorder(),
+                    ),
+                    controller:
+                    TextEditingController(text: _lamaCuti.toString()),
+                  ),
+                  const SizedBox(height: 16),
 
-              // Dokumen Upload (simulasi)
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _dokumen = 'dokumen_cuti.pdf';
-                  });
-                },
-                icon: const Icon(Icons.upload_file),
-                label: Text(
-                    _dokumen == null ? 'Upload Dokumen' : 'File: $_dokumen'),
-              ),
+                  // Alasan
+                  TextFormField(
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Alasan Cuti',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (val) => _alasan = val,
+                  ),
+                  const SizedBox(height: 16),
 
-              const SizedBox(height: 24),
+                  // Dokumen Upload (simulasi)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      _dokumen = await CameraHelper.pickFromCamera();
+                    },
+                    icon: const Icon(Icons.upload_file),
+                    label: Text(_dokumen == null ? 'Upload Dokumen' : 'File: Memilih Gambar Dari Camera'),
+                  ),
 
-              // Tombol Simpan
-              ElevatedButton(
-                onPressed: _simpanCuti,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Simpan Cuti',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+                  const SizedBox(height: 24),
+
+                  // Tombol Simpan
+                  ElevatedButton(
+                    onPressed: () async {
+                      final User? currentUser = await _dbHelper.getSingleUser();
+                      final cutiBaru = CutiModel(
+                        jenisCuti: _jenisCuti!,
+                        tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
+                        tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
+                        alasan: _alasan ?? '',
+                        dokumenUrl: _dokumen ?? '',
+                      );
+
+                      context.read<CutiBloc>().add(
+                        AddCutiEvent(userId: currentUser!.id!,
+                            kategori: _jenisCuti!, tanggal_mulai: _tanggalMulai!.toIso8601String().split('T').first,
+                            tanggal_selesai: _tanggalSelesai!.toIso8601String().split('T').first,
+                            alasan: _alasan ?? '', berkas: _dokumen ?? '', cutiModel: cutiBaru),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Simpan Cuti',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

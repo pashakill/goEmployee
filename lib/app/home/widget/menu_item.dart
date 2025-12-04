@@ -15,9 +15,9 @@ class MenuItem {
 }
 
 class MenuGridWidget extends StatelessWidget {
-  MenuGridWidget({super.key});
+  final bool canCheckIn;
+  MenuGridWidget({super.key, required this.canCheckIn});
 
-  // Semua menu aplikasi
   final List<MenuItem> allMenuItems = [
     MenuItem(iconPath: 'assets/icons/ic_absen.svg', title: 'Kehadiran', routeName: Routes.kehadiranPage),
     MenuItem(iconPath: 'assets/icons/ic_cuti.svg', title: 'Cuti', routeName: Routes.cutiPage),
@@ -28,7 +28,6 @@ class MenuGridWidget extends StatelessWidget {
     MenuItem(iconPath: 'assets/icons/ic_persetujuan.svg', title: 'Persetujuan', routeName: Routes.persetujuanPage),
     MenuItem(iconPath: 'assets/icons/ic_others.svg', title: 'Lainnya', routeName: null),
 
-    // Menu tambahan di bawah ini akan muncul di bottom sheet
     MenuItem(iconPath: 'assets/icons/ic_history.svg', title: 'Riwayat', routeName: '/riwayat'),
     MenuItem(iconPath: 'assets/icons/ic_salary.svg', title: 'Gaji', routeName: '/gaji'),
     MenuItem(iconPath: 'assets/icons/ic_task.svg', title: 'Tugas', routeName: '/tugas'),
@@ -38,7 +37,6 @@ class MenuGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tampilkan hanya 8 item pertama (termasuk “Lainnya”)
     final displayItems = allMenuItems.length > 8 ? allMenuItems.sublist(0, 8) : allMenuItems;
 
     return Center(
@@ -57,8 +55,14 @@ class MenuGridWidget extends StatelessWidget {
           itemCount: displayItems.length,
           itemBuilder: (context, index) {
             final item = displayItems[index];
+
+            // Disable menu Kehadiran jika canCheckIn = false
+            final isDisabled = item.title == 'Kehadiran' && !canCheckIn;
+
             return GestureDetector(
-              onTap: () {
+              onTap: isDisabled
+                  ? null
+                  : () {
                 if (item.title == 'Lainnya') {
                   _showAllMenuBottomSheet(context);
                 } else if (item.routeName != null) {
@@ -112,7 +116,6 @@ class MenuGridWidget extends StatelessWidget {
     );
   }
 
-  /// Bottom sheet untuk menampilkan semua menu
   void _showAllMenuBottomSheet(BuildContext context) {
     final otherMenus = allMenuItems.skip(8).toList();
 
@@ -159,6 +162,7 @@ class MenuGridWidget extends StatelessWidget {
                   itemCount: otherMenus.length,
                   itemBuilder: (context, index) {
                     final menu = otherMenus[index];
+
                     return GestureDetector(
                       onTap: () {
                         Navigator.pop(context);

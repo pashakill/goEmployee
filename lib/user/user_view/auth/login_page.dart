@@ -13,13 +13,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
 
-  // --- 1. DEKLARASIKAN CONTROLLER ---
-  // Buat satu controller untuk setiap TextField
   final TextEditingController _employeeIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // --- 2. TAMBAHKAN DISPOSE ---
-  // Selalu dispose controller Anda untuk menghindari kebocoran memori
   @override
   void dispose() {
     _employeeIdController.dispose();
@@ -31,12 +27,26 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocConsumer<LoginBloc, LoginState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is LoginSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Login Berhasil!')),
-            );
-            // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+            //init Data Login
+            final newUser = User.fromLogin(state.loginResponse);
+            // 2. Panggil DatabaseHelper untuk insert
+            try {
+              final dbHelper = DatabaseHelper.instance;
+              int userId = await dbHelper.insertUser(newUser);
+              await SessionManager().saveSession(userId.toString());
+              AppNavigator.offAll(Routes.home);
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Gagal menyimpan data user',
+                    style: TextStyle(color: Colors.black),),
+                  backgroundColor: Colors.white,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
           } else if (state is LoginFailure) {
             // Tampilkan pesan error
             ScaffoldMessenger.of(context).showSnackBar(
@@ -283,44 +293,8 @@ class _LoginPageState extends State<LoginPage> {
             return;
           }
           context.read<LoginBloc>().add(
-            LoginButtonPressed(
-              password: _passwordController.text, username: _employeeIdController.text,
-            ),
+            LoginButtonPressed(password: _passwordController.text, username: _employeeIdController.text),
           );
-          /*
-          final newUser = User(
-            nama: "Barry Vasyah S.kom, M.Kom",
-            username: username,
-            password: password,
-            companyName: "PT.Jatelindo Perkasa Abadi",
-            role: "Dosen",
-            dateNow: DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now()),
-            jadwalMulaiKerja: '08:00',
-            jadwalSelesaiKerja: '17:00'
-          );
-
-
-          // 2. Panggil DatabaseHelper untuk insert
-          try {
-            final dbHelper = DatabaseHelper.instance;
-            int userId = await dbHelper.insertUser(newUser);
-            await SessionManager().saveSession(userId.toString());
-            print("Sukses! User baru '$userId - ${newUser.nama}' berhasil disimpan.");
-            // TODO: Navigasi ke halaman home
-            AppNavigator.offAll(Routes.home);
-          } catch (e) {
-            print("Gagal menyimpan user: $e");
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Gagal menyimpan data user',
-                  style: TextStyle(color: Colors.black),),
-                backgroundColor: Colors.white,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-           */
         },
         child: const Text(
           'LOGIN',

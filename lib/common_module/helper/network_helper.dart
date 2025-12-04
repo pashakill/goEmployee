@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 // Ganti dengan IP PC/Laptop tempat server Dart berjalan
-const String _baseUrl = 'http://192.168.76.245:8080';
+const String _baseUrl = 'http://172.20.10.2:8080';
 const String _apiKey = 'RAHASIA123456';
 
 class NetworkHelper {
@@ -43,9 +43,9 @@ class NetworkHelper {
   // -------------------
   // GET GENERIK
   // -------------------
-  Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? queryParams}) async {
+  Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? data}) async {
     try {
-      final response = await _dio.get(endpoint, queryParameters: queryParams);
+      final response = await _dio.get(endpoint, queryParameters: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw NetworkException(_handleDioError(e));

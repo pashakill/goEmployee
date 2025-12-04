@@ -30,13 +30,14 @@ class _HomePageState extends State<HomePage> {
     try {
       // Panggil fungsi getSingleUser (sesuai permintaan terakhir Anda)
       final User? user = await _dbHelper.getSingleUser();
-
+      print('data Home ${user.toString()}');
       if (user != null) {
         // Sukses! Simpan data ke state
         setState(() {
           _currentUser = user;
           _isLoading = false;
         });
+        print('data _currentUser ${_currentUser.toString()}');
       } else {
         // Gagal (Tabel 'users' ternyata kosong)
         _forceLogout(); // Paksa kembali ke login
@@ -166,7 +167,7 @@ class _HomePageState extends State<HomePage> {
             // (Pastikan ContentCardHomePage bisa menerima 'user')
             RoundedCardWidget(widget: ContentCardHomePage(user: _currentUser!)),
             const SizedBox(height: 16),
-            RoundedCardWidget(widget: MenuGridWidget()),
+            RoundedCardWidget(widget: MenuGridWidget(canCheckIn: _currentUser?.timeCheckin == null || _currentUser!.timeCheckin!.isEmpty),),
             // Expanded agar ListView punya tinggi terbatas
             const SizedBox(height: 16),
             RoundedCardWidget(

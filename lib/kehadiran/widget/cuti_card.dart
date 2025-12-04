@@ -74,7 +74,9 @@ class CutiCard extends StatelessWidget {
                 const Icon(Icons.attach_file, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(
+                  child: cuti.dokumenUrl.isNotEmpty
+                      ? Base64ImageWidget(base64String: cuti.dokumenUrl)
+                      : Text(
                     cuti.dokumenUrl.isNotEmpty
                         ? cuti.dokumenUrl
                         : 'Belum ada dokumen',

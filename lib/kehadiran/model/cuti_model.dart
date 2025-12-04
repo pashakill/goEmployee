@@ -1,3 +1,4 @@
+import 'package:goemployee/goemployee.dart';
 import 'package:intl/intl.dart';
 
 class CutiModel {
@@ -34,6 +35,24 @@ class CutiModel {
     } catch (e) {
       return 0;
     }
+  }
+
+  factory CutiModel.fromApi(PengajuanData data, String userId) {
+    return CutiModel(
+      id: data.id,
+      userId: int.tryParse(userId) ?? 0,
+      jenisCuti: data.kategori,
+      tanggalMulai: data.tanggal_mulai.isNotEmpty
+          ? data.tanggal_mulai
+          : "0000-00-00",
+      tanggalSelesai: data.tanggal_selesai.isNotEmpty
+          ? data.tanggal_selesai
+          : "0000-00-00",
+      alasan: data.alasan,
+      dokumenUrl: data.berkas.isNotEmpty ? data.berkas : '',
+      status: data.status_hrd,
+      tanggalPengajuan: data.created_at,
+    );
   }
 
   /// Factory constructor untuk membuat CutiModel dari Map (hasil database)

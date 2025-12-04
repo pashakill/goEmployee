@@ -49,5 +49,9 @@
     <string>Aplikasi ini membutuhkan lokasi Anda untuk menentukan titik awal peta.</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Aplikasi ini membutuhkan lokasi Anda untuk menentukan titik awal peta.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>App membutuhkan akses kamera</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>App membutuhkan akses galeri</string>
 </dict>
 </plist>

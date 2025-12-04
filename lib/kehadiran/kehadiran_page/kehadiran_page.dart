@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:goemployee/kehadiran/kehadiran_page/bloc/bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -19,10 +21,10 @@ class _KehadiranPageState extends State<KehadiranPage> {
   LatLng? _currentPosition;
   String _currentAddress = "Mendeteksi lokasi...";
   double? _distanceInMeters;
-  double checkInRadius = 100; // radius check-in dalam meter
+  double? checkInRadius; // radius check-in dalam meter
 
-  // Titik lokasi kantor (ubah sesuai kebutuhan)
-  final LatLng _officeLocation = const LatLng(-6.3464815, 106.6917637); // contoh
+  // Titik lokasi kantor
+  LatLng? _officeLocation;
 
   StreamSubscription<Position>? _positionStream;
 
@@ -33,23 +35,28 @@ class _KehadiranPageState extends State<KehadiranPage> {
 
   Future<void> _loadUserData() async {
     // Asumsi Anda menggunakan getSingleUser (sesuai request terakhir)
-    _currentUser = await _dbHelper.getSingleUser();
+    final User? user = await _dbHelper.getSingleUser();
+    print(_currentUser.toString());
     setState(() {
+      _currentUser = user;
       _isUserDataLoading = false;
-      // Anda bisa set jadwal kerja di sini jika ada di data user
-      // contoh: _jadwalMulaiKerja = _currentUser?.jadwalMasuk ?? '--:--';
+      _officeLocation = LatLng(
+        double.parse(_currentUser!.latitude ?? "0"),
+        double.parse(_currentUser!.longitude ?? "0"),
+      );
+      checkInRadius = double.parse(_currentUser!.radius ?? "0");
     });
+    _initLocation();
   }
 
   @override
   void initState() {
     super.initState();
-    _initLocation();
     _loadUserData();
   }
 
   // --- 5. FUNGSI BARU UNTUK PROSES CHECK-IN ---
-  Future<void> _processCheckIn() async {
+  Future<void> _processCheckIn(String checkInTimeString, String lateCheckinDuration) async {
     // Pastikan user sudah di-load dan tidak null
     if (_currentUser == null || _currentUser!.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +65,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
       return;
     }
 
-    // --- 1. VALIDASI BARU ---
+    // --- 1. VALIDASI ---
     // Cek apakah data check-in hari ini sudah ada
     final String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
@@ -77,6 +84,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
       );
       return; // Hentikan fungsi
     }
+    /*
     // --- AKHIR VALIDASI ---
 
     // --- LOGIKA PERHITUNGAN KETERLAMBATAN ---
@@ -118,7 +126,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
       }
     }
     // --- AKHIR LOGIKA KETERLAMBATAN ---
-
+     */
     try {
       // 4. Panggil helper (fungsi ini sekarang juga menyimpan date_now)
       await _dbHelper.updateUserCheckIn(
@@ -218,8 +226,8 @@ class _KehadiranPageState extends State<KehadiranPage> {
     _distanceInMeters = Geolocator.distanceBetween(
       position.latitude,
       position.longitude,
-      _officeLocation.latitude,
-      _officeLocation.longitude,
+      _officeLocation!.latitude,
+      _officeLocation!.longitude,
     );
 
     // Ambil alamat
@@ -294,217 +302,248 @@ class _KehadiranPageState extends State<KehadiranPage> {
           scrolledUnderElevation: 0,
         ),
       ),
-      body: Stack(
-        children: [
-          // Google Map
-          _currentPosition == null
-              ? const Center(child: CircularProgressIndicator())
-              : GoogleMap(
-            mapType: MapType.normal,
-            initialCameraPosition: CameraPosition(
-              target: _currentPosition!,
-              zoom: 17,
-            ),
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            markers: {
-              Marker(
-                markerId: const MarkerId("current"),
-                position: _currentPosition!,
-                infoWindow: const InfoWindow(title: "Lokasi Anda"),
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-              ),
-              Marker(
-                markerId: const MarkerId("office"),
-                position: _officeLocation,
-                infoWindow: const InfoWindow(title: "Kantor"),
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-              ),
-            },
-            circles: {
-              Circle(
-                circleId: const CircleId("officeRadius"),
-                center: _officeLocation,
-                radius: checkInRadius,
-                fillColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.red.withOpacity(0.2),
-                strokeColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
-                    ? Colors.green
-                    : Colors.red,
-                strokeWidth: 2,
-              ),
-            },
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
-          ),
+      body: BlocConsumer<KehadiranBloc, KehadiranState>(
+          listener: (context, state) {
+            if (state is CheckinSuccess) {
+              _processCheckIn(state.kehadiranModel.kehadiranResponse?.jamMasuk ?? '',
+                  state.kehadiranModel.kehadiranResponse?.terlambat ?? '');
+            }
 
-          // Bottom Sheet
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            if(state is CheckinLoading){
+
+            }
+
+            if(state is CheckinFailure){
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Login Gagal: ${state.error}')),
+              );
+            }
+
+          },
+          builder: (context, state){
+            return Stack(
               children: [
-                Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        FloatingActionButton(
-                          heroTag: "btnCurrent",
-                          backgroundColor: Colors.green,
-                          mini: true,
-                          onPressed: () {
-                            if (_currentPosition != null && _mapController != null) {
-                              _mapController!.animateCamera(
-                                CameraUpdate.newCameraPosition(
-                                  CameraPosition(target: _currentPosition!, zoom: 17),
-                                ),
-                              );
-                            }
-                          },
-                          child: const Icon(Icons.my_location, color: Colors.white),
-                        ),
-                        FloatingActionButton(
-                          heroTag: "btnOffice",
-                          backgroundColor: Colors.red,
-                          mini: true,
-                          onPressed: () {
-                            if (_mapController != null) {
-                              _mapController!.animateCamera(
-                                CameraUpdate.newCameraPosition(
-                                  CameraPosition(target: _officeLocation, zoom: 17),
-                                ),
-                              );
-                            }
-                          },
-                          child: const Icon(Icons.apartment, color: Colors.white),
-                        ),
-                      ],
-                    )),
-                // Bottom Sheet
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, -3),
-                      ),
-                    ],
+                // Google Map
+                _currentPosition == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : GoogleMap(
+                  mapType: MapType.normal,
+                  initialCameraPosition: CameraPosition(
+                    target: _currentPosition!,
+                    zoom: 17,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Alamat
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.location_on, color: Colors.redAccent),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              _currentAddress,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                            ),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  markers: {
+                    Marker(
+                      markerId: const MarkerId("current"),
+                      position: _currentPosition!,
+                      infoWindow: const InfoWindow(title: "Lokasi Anda"),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                    ),
+                    Marker(
+                      markerId: const MarkerId("office"),
+                      position: _officeLocation!,
+                      infoWindow: const InfoWindow(title: "Kantor"),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    ),
+                  },
+                  circles: {
+                    Circle(
+                      circleId: const CircleId("officeRadius"),
+                      center: _officeLocation!,
+                      radius: checkInRadius!,
+                      fillColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius!)
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.red.withOpacity(0.2),
+                      strokeColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius!)
+                          ? Colors.green
+                          : Colors.red,
+                      strokeWidth: 2,
+                    ),
+                  },
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                  },
+                ),
+
+                // Bottom Sheet
+                Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                FloatingActionButton(
+                                  heroTag: "btnCurrent",
+                                  backgroundColor: Colors.green,
+                                  mini: true,
+                                  onPressed: () {
+                                    if (_currentPosition != null && _mapController != null) {
+                                      _mapController!.animateCamera(
+                                        CameraUpdate.newCameraPosition(
+                                          CameraPosition(target: _currentPosition!, zoom: 17),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: const Icon(Icons.my_location, color: Colors.white),
+                                ),
+                                FloatingActionButton(
+                                  heroTag: "btnOffice",
+                                  backgroundColor: Colors.red,
+                                  mini: true,
+                                  onPressed: () {
+                                    if (_mapController != null) {
+                                      _mapController!.animateCamera(
+                                        CameraUpdate.newCameraPosition(
+                                          CameraPosition(target: _officeLocation!, zoom: 17),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: const Icon(Icons.apartment, color: Colors.white),
+                                ),
+                              ],
+                            )),
+                        // Bottom Sheet
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: Offset(0, -3),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Jarak ke kantor
-                      if (_distanceInMeters != null)
-                        Text(
-                          'Jarak ke kantor: ${_distanceInMeters!.toStringAsFixed(1)} meter',
-                          style: TextStyle(
-                            color: (_distanceInMeters! <= checkInRadius) ? Colors.green : Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      CustomPaint(
-                        size: Size(double.infinity, 40),
-                        painter: LinePainter(color: Colors.grey, strokeWidth: 1, isDashed: false),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Column(
+                              // Alamat
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text('Jadwal Mulai Kerja',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500)),
-                                  Text(_currentUser?.jadwalMulaiKerja ?? '--:--',
-
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold))
+                                  const Icon(Icons.location_on, color: Colors.redAccent),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      _currentAddress,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
                                 ],
                               ),
-                              SizedBox(width: 30,),
+                              const SizedBox(height: 16),
+                              // Jarak ke kantor
+                              if (_distanceInMeters != null)
+                                Text(
+                                  'Jarak ke kantor: ${_distanceInMeters!.toStringAsFixed(1)} meter',
+                                  style: TextStyle(
+                                    color: (_distanceInMeters! <= checkInRadius!) ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              CustomPaint(
+                                size: Size(double.infinity, 40),
+                                painter: LinePainter(color: Colors.grey, strokeWidth: 1, isDashed: false),
+                              ),
                               Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('Jadwal Selesai Kerja',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500
-                                      )),
-                                  Text(_currentUser?.jadwalSelesaiKerja ?? '--:--',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          Text('Jadwal Mulai Kerja',
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w500)),
+                                          Text(_currentUser?.jadwalMulaiKerja ?? '--:--',
+
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold))
+                                        ],
+                                      ),
+                                      SizedBox(width: 30,),
+                                      Column(
+                                        children: [
+                                          Text('Jadwal Selesai Kerja',
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w500
+                                              )),
+                                          Text(_currentUser?.jadwalSelesaiKerja ?? '--:--',
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold),
+                                          )
+                                        ],
+                                      )
+                                    ],
                                   )
                                 ],
-                              )
+                              ),
+                              SizedBox(height: 16,),
+                              // Tombol Check In
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: (_distanceInMeters != null &&
+                                        _distanceInMeters! <= checkInRadius! &&
+                                        (_currentUser?.timeCheckin == null || _currentUser!.timeCheckin!.isEmpty))
+                                        ? Colors.green
+                                        : Colors.grey,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                  onPressed: (_distanceInMeters != null &&
+                                      _distanceInMeters! <= checkInRadius! &&
+                                      (_currentUser?.timeCheckin == null || _currentUser!.timeCheckin!.isEmpty))
+                                      ? () {
+                                    context.read<KehadiranBloc>().add(
+                                      CheckinButtonPressed(
+                                        user_id: _currentUser?.id.toString() ?? '',
+                                        longitude: _currentPosition?.longitude.toString() ?? '',
+                                        latitude: _currentPosition?.latitude.toString() ?? '',
+                                      ),
+                                    );
+                                  }
+                                      : null,
+                                  icon: const Icon(Icons.login_rounded, color: Colors.white),
+                                  label: const Text(
+                                    'Check In',
+                                    style: TextStyle(color: Colors.white, fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16,),
                             ],
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 16,),
-                      // Tombol Check In
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
-                                ? Colors.green
-                                : Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14), // tidak perlu horizontal karena full width
-                          ),
-                          onPressed: (_distanceInMeters != null && _distanceInMeters! <= checkInRadius)
-                              ? () {
-                            _processCheckIn();
-                          }
-                              : null,
-                          icon: const Icon(Icons.login_rounded, color: Colors.white),
-                          label: const Text(
-                            'Check In',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
                           ),
                         ),
-                      ),
-                      SizedBox(height: 16,),
-                    ],
-                  ),
+                      ],
+                    )
                 ),
               ],
-            )
-          ),
-        ],
-      ),
+            );
+          },
+          )
     );
   }
 }

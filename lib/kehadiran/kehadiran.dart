@@ -5,3 +5,6 @@ export 'cuti_page/cuti.dart';
 export 'izin_page/izin.dart';
 export 'lembur_page/lembur.dart';
 export 'persetujuan_page/persetujuan.dart';
+export 'kehadiran_page/api/api.dart';
+export 'kehadiran_page/repo/repo.dart';
+export 'kehadiran_page/model/model.dart';

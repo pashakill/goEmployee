@@ -15,14 +15,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   void _onLoginButtonPressed(LoginButtonPressed event, Emitter<LoginState> emit) async {
     emit(LoginLoading());
-    try {
-      await authApi.login(
-        username: event.username,
-        password: event.password,
-      );
-      emit(LoginSuccess(user: 'User Login Success'));
-    } catch (e) {
-      emit(LoginFailure(error: e.toString()));
+    var data = await authApi.login(username: event.username,
+        password: event.password);
+
+    print('data login ${data.toString()}');
+    if(data.success){
+      emit(LoginSuccess(loginResponse: data.loginResponse!));
+    }else{
+      emit(LoginFailure(error: 'Login Gagal'));
     }
   }
 }
