@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:intl/intl.dart';
 
 class CutiCard extends StatelessWidget {
   final CutiModel cuti;
@@ -38,9 +39,12 @@ class CutiCard extends StatelessWidget {
               children: [
                 const Icon(Icons.date_range, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text(
-                  '${cuti.tanggalMulai} → ${cuti.tanggalSelesai}',
-                  style: const TextStyle(fontSize: 14),
+                Expanded(
+                  child: Text(
+                    '${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(cuti.tanggalMulai))} - ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(cuti.tanggalSelesai))}',
+                    style: const TextStyle(fontSize: 14),
+                    softWrap: true,
+                  ),
                 ),
               ],
             ),
@@ -48,22 +52,31 @@ class CutiCard extends StatelessWidget {
             // Lama cuti
             Padding(
               padding: const EdgeInsets.only(left: 22, top: 4),
-              child: Text(
-                'Lama cuti : ${cuti.lamaCuti} hari',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Lama cuti : ${cuti.lamaCuti} hari',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              )
             ),
 
-            const SizedBox(height: 8),
-
             // Alasan
-            Text(
-              'Alasan: ${cuti.alasan}',
-              style: const TextStyle(fontSize: 14),
+            Padding(
+                padding: const EdgeInsets.only(left: 22, top: 4),
+                child: Column(
+                  children: [
+                    Text(
+                      'Alasan: ${cuti.alasan}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                )
             ),
 
             const SizedBox(height: 8),

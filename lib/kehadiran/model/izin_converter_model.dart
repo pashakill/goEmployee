@@ -4,6 +4,8 @@
 
 import 'package:intl/intl.dart';
 
+import '../../common_module/repo/pengajuan_response.dart';
+
 enum IzinTipe {
   telatMasuk,
   pulangAwal,
@@ -18,6 +20,21 @@ enum IzinStatus {
   unknown
 }
 
+extension IzinTipeExtension on IzinTipe {
+  String get value {
+    switch (this) {
+      case IzinTipe.telatMasuk:
+        return 'TELAT_MASUK';
+      case IzinTipe.pulangAwal:
+        return 'PULANG_AWAL';
+      case IzinTipe.tidakMasuk:
+        return 'TIDAK_MASUK';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+}
+
 // 2. Buat Model Izin Terpadu
 class IzinConverterModel {
   final String id;
@@ -25,7 +42,7 @@ class IzinConverterModel {
   final IzinStatus status;
   final DateTime tanggal; // Bisa jadi tanggal izin_page atau tanggal pengajuan
   final String alasan;
-  final DateTime? jam; // Opsional, hanya untuk telat/pulang awal
+  final String? jam; // Opsional, hanya untuk telat/pulang awal
   final int? userId; // Diperlukan untuk FOREIGN KEY ke tabel users
   final String tanggalPengajuan; // Format: YYYY-MM-DD (Kapan pengajuan dilakukan)
 
@@ -61,7 +78,7 @@ class IzinConverterModel {
       alasan: json['alasan'] ?? 'Tidak ada alasan',
 
       // Cek jika field 'jam' ada, lalu parse
-      jam: json['jam'] != null ? DateTime.parse(json['jam']) : null,
+      jam: json['jam'] != null ? '' : null,
     );
   }
 
@@ -71,7 +88,7 @@ class IzinConverterModel {
     IzinStatus? status,
     DateTime? tanggal,
     String? alasan,
-    DateTime? jam,
+    String? jam,
     int? userId,
     String? tanggalPengajuan,
   }) {
@@ -85,6 +102,19 @@ class IzinConverterModel {
       jam: jam ?? this.jam,
       userId: userId ?? this.userId,
       tanggalPengajuan: tanggalPengajuan ?? this.tanggalPengajuan,
+    );
+  }
+
+  factory IzinConverterModel.fromApi(PengajuanData data, String userId) {
+    return IzinConverterModel(
+      id: data.id.toString(),
+      userId: int.tryParse(userId) ?? 0,
+      tipe: _parseTipe(data.izin_kategori),
+      status: _parseStatus(data.status_hrd),
+      tanggal: DateTime.parse(data.tanggal_mulai),
+      alasan: data.alasan,
+      jam: data.jam_izin,
+      tanggalPengajuan: data.tanggal_pengajuan,
     );
   }
 
@@ -104,7 +134,7 @@ class IzinConverterModel {
       // Konversi DateTime jam? ke String HH:mm:ss
       // Field jam di IzinConverterModel adalah DateTime?, jadi kita harus format jam-nya
       'jam_efektif': jam != null
-          ? DateFormat('HH:mm:ss').format(jam!)
+          ? ''
           : null,
     };
   }
@@ -149,6 +179,8 @@ class IzinConverterModel {
         return 'UNKNOWN';
     }
   }
+
+
 
   static String _statusToString(IzinStatus status) {
     switch (status) {

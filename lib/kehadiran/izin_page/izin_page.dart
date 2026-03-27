@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 
 class IzinPage extends StatefulWidget {
   const IzinPage({super.key});
@@ -12,11 +15,45 @@ class _IzinPageState extends State<IzinPage> {
   List<IzinConverterModel> izinList = [];
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   bool _isLoading = true; // State untuk loading
+  User? _currentUser;
+  late IzinBloc _bloc;
 
   @override
   void initState() {
     super.initState();
-    _loadRiwayatIzin();
+    //_loadRiwayatIzin();
+    _bloc = IzinBloc(pengajuanApi: GetIt.I<PengajuanApi>());
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      // Panggil fungsi getSingleUser (sesuai permintaan terakhir Anda)
+      final User? user = await _dbHelper.getSingleUser();
+      if (user != null) {
+        // Sukses! Simpan data ke state
+        setState(() {
+          _currentUser = user;
+          _isLoading = false;
+        });
+
+        _fetchHistory();
+      } else {
+        // Gagal (Tabel 'users' ternyata kosong)
+        _forceLogout(); // Paksa kembali ke login
+      }
+    } catch (e) {
+      // Error saat loading data
+      print("CutiPage Erorr: $e");
+      _forceLogout();
+    }
+  }
+
+  void _fetchHistory() {
+    if (_currentUser == null) return;
+    _bloc.add(IzinFetchedEvent(
+        userId: _currentUser!.id!
+    ));
   }
 
   Future<void> _loadRiwayatIzin() async {
@@ -112,85 +149,125 @@ class _IzinPageState extends State<IzinPage> {
         title: const Text('Pengajuan Izin', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
       ),
-      body: Column(
-        children: [
-          Row(
+      body: BlocConsumer<IzinBloc,
+          IzinState>(
+        bloc: _bloc,
+        listener: (context, state) {
+          if(state is IzinPageLoadingState){
+
+          }
+
+          if(state is GetDataListIzinSuccessState){
+            print('kesini masuk');
+            List<IzinConverterModel> listFromServer = state.dataCutiModel.data!.pengajuan
+                .map((p) => IzinConverterModel.fromApi(p, _currentUser!.id.toString()))
+                .toList();
+
+            setState(() {
+              izinList.addAll(listFromServer);
+              _isLoading = false;
+            });
+          }
+
+          if(state is IzinPageFailedState){
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
+              );
+
+              _loadRiwayatIzin();
+            }
+          }
+
+        },
+        builder: (context, state) {
+          return Column(
             children: [
-              RoundedContainer(
-                color: Colors.green.withOpacity(0.3),
-                radius: 24,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                builder: (context) {
-                  return InkWell(
-                    onTap: _sortByJenis,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Jenis Cuti',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+              Row(
+                children: [
+                  RoundedContainer(
+                    color: Colors.green.withOpacity(0.3),
+                    radius: 24,
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    builder: (context) {
+                      return InkWell(
+                        onTap: _sortByJenis,
+                        borderRadius: BorderRadius.circular(24),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Jenis Cuti',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Icon(
+                              sortByJenis
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              size: 18,
+                            ),
+                          ],
                         ),
-                        Icon(
-                          sortByJenis
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 18,
+                      );
+                    },
+                  ),
+                  RoundedContainer(
+                    color: Colors.green.withOpacity(0.3),
+                    radius: 24,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    builder: (context) {
+                      return InkWell(
+                        onTap: _sortByTanggal,
+                        borderRadius: BorderRadius.circular(24),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month),
+                            Icon(
+                              sortByTanggal
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              size: 18,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ],
               ),
-              RoundedContainer(
-                color: Colors.green.withOpacity(0.3),
-                radius: 24,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                builder: (context) {
-                  return InkWell(
-                    onTap: _sortByTanggal,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_month),
-                        Icon(
-                          sortByTanggal
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  );
-                },
+
+              const Divider(),
+              Expanded(
+                // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : izinList.isEmpty
+                    ? const Center(
+                  child: Text(
+                    'Belum ada riwayat Izin.',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                )
+                    : ListView.builder(
+                  itemCount: izinList.length,
+                  itemBuilder: (context, index) {
+                    return IzinCard(izinConverter: izinList[index]);
+                  },
+                ),
               ),
             ],
-          ),
-
-          const Divider(),
-          Expanded(
-            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : izinList.isEmpty
-                ? const Center(
-              child: Text(
-                'Belum ada riwayat Dinas.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            )
-                : ListView.builder(
-              itemCount: izinList.length,
-              itemBuilder: (context, index) {
-                // Panggilan CutiCard Anda sudah benar
-                return IzinCard(izinConverter: izinList[index]);
-              },
-            ),
-          ),
-        ],
-      )
+          );
+        },
+      ),
     );
+  }
+
+  Future<void> _forceLogout() async {
+    await _dbHelper.deleteCurrentUserAndLogout();
+    if (mounted) {
+      AppNavigator.offAll(Routes.login);
+    }
   }
 }

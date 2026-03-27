@@ -19,9 +19,10 @@ class AddCutiEvent extends CutiEvent {
   final String tanggal_selesai;
   final String alasan;
   final String berkas;
+  final String jenis_cuti;
   final CutiModel cutiModel;
 
   const AddCutiEvent({required this.userId, required this.kategori,
     required this.tanggal_mulai, required this.tanggal_selesai, required this.alasan,
-    required this.berkas, required this.cutiModel});
+    required this.berkas, required this.cutiModel, required this.jenis_cuti});
 }

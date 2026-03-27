@@ -1,6 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-
-import '../repo/pengajuan_response.dart';
+import 'package:goemployee/goemployee.dart';
 
 part 'data_pengajuan.g.dart';
 

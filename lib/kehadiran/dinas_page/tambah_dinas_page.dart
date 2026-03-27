@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/dinas_page/bloc/bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart'; // <-- 1. IMPORT BARU
@@ -41,8 +43,9 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
   late LatLng _currentMapPosition;
   bool _isLoading = true; // State untuk loading
   // --- Akhir Perubahan State ---
-
+  var alamatSaatIni;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final DateFormat _mysqlFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
   @override
   void initState() {
@@ -79,6 +82,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
 
         setState(() {
           _alamatController.text = fullAddress;
+          alamatSaatIni = fullAddress;
         });
       } else {
         setState(() {
@@ -246,284 +250,312 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
           scrolledUnderElevation: 0,
         ),
       ),
-      body: Stack(
-        children: [
-          // Latar Belakang: Google Map
-          GoogleMap(
-            mapType: MapType.normal,
-            // --- 6. GUNAKAN _initialPosition DARI STATE ---
-            initialCameraPosition: CameraPosition( // tidak lagi const
-              target: _initialPosition, // Gunakan state
-              zoom: 14.0,
-            ),
-            // --- Akhir Perubahan ---
-            onMapCreated: (GoogleMapController controller) {
-              if (!_mapController.isCompleted) {
-                _mapController.complete(controller);
-              }
-            },
+      body: BlocConsumer<DinasBloc, DinasState>(
+        listener: (context, state) async {
+          if (state is DinasPageLoadingState) {
 
-            // Logika Kunci Peta (dari sebelumnya)
-            scrollGesturesEnabled: _kunciLokasi == 'no',
-            zoomGesturesEnabled: _kunciLokasi == 'no',
-            rotateGesturesEnabled: _kunciLokasi == 'no',
-            tiltGesturesEnabled: _kunciLokasi == 'no',
-            myLocationButtonEnabled: _kunciLokasi == 'no',
-            myLocationEnabled: true,
+          }
 
-            onCameraIdle: () {
-              if (_kunciLokasi == 'no') {
-                _updateLatLongFields(_currentMapPosition);
-              }
-            },
-            onCameraMove: (CameraPosition position) {
-              if (_kunciLokasi == 'no') {
-                _currentMapPosition = position.target;
-              }
-            },
-            zoomControlsEnabled: false,
-          ),
+          if (state is AddDinasSuccessState) {
+            // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+            final User? currentUser = await _dbHelper.getSingleUser();
+            if (currentUser == null || currentUser.id == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
+              );
+              return;
+            }
 
-          // Penanda (Pin) di tengah layar
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: 40.0),
-              child: Icon(
-                Icons.location_pin,
-                color: Colors.red,
-                size: 40.0,
-              ),
-            ),
-          ),
-
-          // Layer Atas: Bottom Sheet Form
-          DraggableScrollableSheet(
-            // ... (Isi Bottom Sheet tetap sama) ...
-            initialChildSize: 0.5,
-            minChildSize: 0.2,
-            maxChildSize: 0.9,
-            builder: (BuildContext context, ScrollController scrollController) {
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20.0),
-                    topRight: Radius.circular(20.0),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10.0,
-                      spreadRadius: 1.0,
-                    ),
-                  ],
+            // 4. PANGGIL FUNGSI INSERT DARI DATABASEHELPER
+            //    Ini akan menyimpan data ke database SQLCipher
+            final int dinasId = await _dbHelper.insertDinas(state.dinasModel);
+            print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
+            // 5. PANGGIL CALLBACK (kode Anda sudah benar)
+            //    Ini akan meng-update UI di halaman DaftarCutiPage
+            Get.back();
+          } else if (state is DinasPageFailedState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Stack(
+            children: [
+              // Latar Belakang: Google Map
+              GoogleMap(
+                mapType: MapType.normal,
+                // --- 6. GUNAKAN _initialPosition DARI STATE ---
+                initialCameraPosition: CameraPosition( // tidak lagi const
+                  target: _initialPosition, // Gunakan state
+                  zoom: 14.0,
                 ),
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  physics: const ClampingScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Handle (garis abu-abu di atas)
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
+                // --- Akhir Perubahan ---
+                onMapCreated: (GoogleMapController controller) {
+                  if (!_mapController.isCompleted) {
+                    _mapController.complete(controller);
+                  }
+                },
+
+                // Logika Kunci Peta (dari sebelumnya)
+                scrollGesturesEnabled: _kunciLokasi == 'no',
+                zoomGesturesEnabled: _kunciLokasi == 'no',
+                rotateGesturesEnabled: _kunciLokasi == 'no',
+                tiltGesturesEnabled: _kunciLokasi == 'no',
+                myLocationButtonEnabled: _kunciLokasi == 'no',
+                myLocationEnabled: true,
+
+                onCameraIdle: () {
+                  if (_kunciLokasi == 'no') {
+                    _updateLatLongFields(_currentMapPosition);
+                  }
+                },
+                onCameraMove: (CameraPosition position) {
+                  if (_kunciLokasi == 'no') {
+                    _currentMapPosition = position.target;
+                  }
+                },
+                zoomControlsEnabled: false,
+              ),
+
+              // Penanda (Pin) di tengah layar
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 40.0),
+                  child: Icon(
+                    Icons.location_pin,
+                    color: Colors.red,
+                    size: 40.0,
+                  ),
+                ),
+              ),
+
+              // Layer Atas: Bottom Sheet Form
+              DraggableScrollableSheet(
+                // ... (Isi Bottom Sheet tetap sama) ...
+                initialChildSize: 0.5,
+                minChildSize: 0.2,
+                maxChildSize: 0.9,
+                builder: (BuildContext context, ScrollController scrollController) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20.0),
+                        topRight: Radius.circular(20.0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10.0,
+                          spreadRadius: 1.0,
                         ),
-                        const SizedBox(height: 16),
-
-                        _buildReadOnlyTextField(_tglPengajuanController, 'Tanggal Pengajuan'),
-
-                        const SizedBox(height: 16),
-
-                        // --- Input Tanggal ---
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDatePickerField(
-                                context,
-                                'Tanggal Mulai',
-                                _tglMulaiController,
-                                    () => _pilihTanggalMulai(context),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildDatePickerField(
-                                context,
-                                'Tanggal Akhir',
-                                _tglAkhirController,
-                                    () => _pilihTanggalAkhir(context),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // --- Radio Button Kunci Lokasi ---
-                        const Text(
-                          'Kunci Lokasi',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Yes'),
-                                value: 'yes',
-                                groupValue: _kunciLokasi,
-                                visualDensity: VisualDensity.compact,
-                                contentPadding: EdgeInsets.zero,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _kunciLokasi = value!;
-                                  });
-                                },
-                              ),
-                            ),
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('No'),
-                                value: 'no',
-                                groupValue: _kunciLokasi,
-                                visualDensity: VisualDensity.compact,
-                                contentPadding: EdgeInsets.zero,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _kunciLokasi = value!;
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // --- Field Latitude & Longitude ---
-                        const Text(
-                          'Koordinat Lokasi (Otomatis)',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildReadOnlyTextField(
-                                  _latController, 'Latitude'),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildReadOnlyTextField(
-                                  _longController, 'Longitude'),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // --- Field Alamat (BARU) ---
-                        const Text(
-                          'Alamat Lokasi Dinas',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildReadOnlyTextField(_alamatController, 'Alamat (Otomatis)'),
-
-                        const SizedBox(height: 16),
-
-                        // --- Field Alasan ---
-                        const Text(
-                          'Alasan',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _alasanController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            hintText: 'Masukkan alasan...',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // --- Tombol Submit ---
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green, // Warna hijau
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: () async {
-                              try {
-                                // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
-                                final User? currentUser = await _dbHelper.getSingleUser();
-                                if (currentUser == null || currentUser.id == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
-                                  );
-                                  return;
-                                }
-
-                                // 3. Buat model Cuti (kode Anda sudah benar)
-                                final dinasBaru = DinasModel(
-                                    userId: currentUser.id!,
-                                    tanggalMulai: _tglMulaiController.text,
-                                    tanggalSelesai: _tglAkhirController.text,
-                                    alamat: _alamatController.text, latitude: _latController.text,
-                                    longTitude: _longController.text, radius: '',
-                                    alasan: _alasanController.text, tanggalPengajuan: _tanggalPengajuan.toString()
-
-                                );
-
-                                // 4. PANGGIL FUNGSI INSERT DARI DATABASEHELPER
-                                //    Ini akan menyimpan data ke database SQLCipher
-                                final int dinasId = await _dbHelper.insertDinas(dinasBaru);
-                                print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
-                                // 5. PANGGIL CALLBACK (kode Anda sudah benar)
-                                //    Ini akan meng-update UI di halaman DaftarCutiPage
-                                Get.back();
-                              } catch (e) {
-                                // Tangani jika ada error saat simpan ke DB
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e')),
-                                );
-                              }
-                            },
-                            child: const Text(
-                              'Submit Pengajuan',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
                       ],
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      physics: const ClampingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Handle (garis abu-abu di atas)
+                            Center(
+                              child: Container(
+                                width: 40,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildReadOnlyTextField(_tglPengajuanController, 'Tanggal Pengajuan'),
+
+                            const SizedBox(height: 16),
+
+                            // --- Input Tanggal ---
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDatePickerField(
+                                    context,
+                                    'Tanggal Mulai',
+                                    _tglMulaiController,
+                                        () => _pilihTanggalMulai(context),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildDatePickerField(
+                                    context,
+                                    'Tanggal Akhir',
+                                    _tglAkhirController,
+                                        () => _pilihTanggalAkhir(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // --- Radio Button Kunci Lokasi ---
+                            const Text(
+                              'Kunci Lokasi',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    title: const Text('Yes'),
+                                    value: 'yes',
+                                    groupValue: _kunciLokasi,
+                                    visualDensity: VisualDensity.compact,
+                                    contentPadding: EdgeInsets.zero,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _kunciLokasi = value!;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    title: const Text('No'),
+                                    value: 'no',
+                                    groupValue: _kunciLokasi,
+                                    visualDensity: VisualDensity.compact,
+                                    contentPadding: EdgeInsets.zero,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _kunciLokasi = value!;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // --- Field Latitude & Longitude ---
+                            const Text(
+                              'Koordinat Lokasi (Otomatis)',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildReadOnlyTextField(
+                                      _latController, 'Latitude'),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildReadOnlyTextField(
+                                      _longController, 'Longitude'),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // --- Field Alamat (BARU) ---
+                            const Text(
+                              'Alamat Lokasi Dinas',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildReadOnlyTextField(_alamatController, 'Alamat (Otomatis)'),
+
+                            const SizedBox(height: 16),
+
+                            // --- Field Alasan ---
+                            const Text(
+                              'Alasan',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _alasanController,
+                              maxLines: 3,
+                              decoration: const InputDecoration(
+                                hintText: 'Masukkan alasan...',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // --- Tombol Submit ---
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green, // Warna hijau
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  try {
+                                    final User? currentUser = await _dbHelper.getSingleUser();
+                                    final dinasBaru = DinasModel(
+                                        userId: currentUser!.id!,
+                                        tanggalMulai: convertToMysqlFormat(_tglMulaiController.text),
+                                        tanggalSelesai: convertToMysqlFormat(_tglAkhirController.text),
+                                        alamat: alamatSaatIni,
+                                        latitude: _latController.text,
+                                        longTitude: _longController.text, radius: '',
+                                        alasan: _alasanController.text, tanggalPengajuan: _tanggalPengajuan.toString()
+
+                                    );
+
+                                    context.read<DinasBloc>().add(
+                                      AddDinasEvent(dinasBaru,
+                                          userId: currentUser.id!,
+                                          kategori: PengajuanKategori.dinas.name,
+                                          tanggal_mulai: convertToMysqlFormat(_tglMulaiController.text),
+                                          tanggal_selesai: convertToMysqlFormat(_tglAkhirController.text),
+                                          alamat: alamatSaatIni,
+                                          latitude: _latController.text,
+                                          longTitude: _longController.text,
+                                          alasan: _alasanController.text),
+                                    );
+                                  } catch (e) {
+                                    // Tangani jika ada error saat simpan ke DB
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e')),
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  'Submit Pengajuan',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -559,5 +591,17 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
         ),
       ),
     );
+  }
+
+  String convertToMysqlFormat(String dateText) {
+    try {
+      // dari TextField (dd-MM-yyyy)
+      final parsedDate = DateFormat('dd-MM-yyyy').parse(dateText);
+
+      // ke MySQL (yyyy-MM-dd HH:mm:ss)
+      return DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDate);
+    } catch (e) {
+      throw Exception('Format tanggal tidak valid: $dateText');
+    }
   }
 }

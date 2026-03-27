@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:intl/intl.dart';
 
 class WfhCard extends StatelessWidget {
   final WfhModel wfhModel;
@@ -24,14 +25,14 @@ class WfhCard extends StatelessWidget {
               children: [
                 const Icon(Icons.date_range, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text(
-                  '${wfhModel.waktuMulai} - ${wfhModel.waktuSelesai}',
+                Expanded(child: Text(
+                  '${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(wfhModel.waktuMulai))} - ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(wfhModel.waktuSelesai))}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
-                ),
+                ),)
               ],
             ),
 
@@ -42,7 +43,7 @@ class WfhCard extends StatelessWidget {
             ),
             Text(
               'Durasi ${wfhModel.lamaWfh} hari',
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14, color: Colors.black),
             ),
           ],
         ),

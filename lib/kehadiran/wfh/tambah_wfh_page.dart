@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
 import 'package:intl/intl.dart';
 
 class TambahWfhPage extends StatefulWidget {
@@ -121,88 +123,152 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              // Tanggal Mulai
-              InkWell(
-                onTap: () => _selectDateTime(context, true),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Mulai',
-                    border: OutlineInputBorder(),
+      body: BlocConsumer<WfhBloc, WfhState>(
+        listener: (context, state) async {
+          if (state is CutiPageLoadingState) {
+
+          }
+
+          if (state is AddWfhSuccessState) {
+
+            // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+            final User? currentUser = await _dbHelper.getSingleUser();
+            if (currentUser == null || currentUser.id == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
+              );
+              return;
+            }
+            //    Ini akan menyimpan data ke database SQLCipher
+            final int dinasId = await _dbHelper.insertWfh(state.wfhModel);
+            print('Wfh baru berhasil disimpan ke DB dengan ID: $dinasId');
+            widget.onWfhAdded?.call(state.wfhModel);
+            Get.back();
+          } else if (state is WfhPageFailedState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  // Tanggal Mulai
+                  InkWell(
+                    onTap: () => _selectDateTime(context, true),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Mulai',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _tanggalMulai == null
+                            ? 'Pilih tanggal mulai'
+                            : _dateTimeFormat.format(_tanggalMulai!),
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    _tanggalMulai == null
-                        ? 'Pilih tanggal mulai'
-                        : _dateTimeFormat.format(_tanggalMulai!),
+                  const SizedBox(height: 16),
+
+                  // Tanggal Selesai
+                  InkWell(
+                    onTap: () => _selectDateTime(context, false),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Selesai',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _tanggalSelesai == null
+                            ? 'Pilih tanggal selesai'
+                            : _dateTimeFormat.format(_tanggalSelesai!),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
 
-              // Tanggal Selesai
-              InkWell(
-                onTap: () => _selectDateTime(context, false),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Selesai',
-                    border: OutlineInputBorder(),
+                  // Durasi WFH (readonly)
+                  const SizedBox(height: 16),
+
+                  InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Durasi WFH',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(
+                      lamaWfh > 0 ? '$lamaWfh hari' : '-',
+                    ),
                   ),
-                  child: Text(
-                    _tanggalSelesai == null
-                        ? 'Pilih tanggal selesai'
-                        : _dateTimeFormat.format(_tanggalSelesai!),
+
+
+                  const SizedBox(height: 16),
+
+                  // Alasan
+                  TextFormField(
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Alasan WFH',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (val) => _alasanWfh = val,
                   ),
-                ),
+
+                  const SizedBox(height: 24),
+
+                  // Tombol Simpan
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        if (_tanggalMulai == null || _tanggalSelesai == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Pilih tanggal mulai dan selesai')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          final User? currentUser = await _dbHelper.getSingleUser();
+                          final wfhBaru = WfhModel(
+                              userId: currentUser!.id!,
+                              lamaWfh: lamaWfh.toString(), alasanWfh: _alasanWfh ?? '',
+                              waktuMulai: _tanggalMulai.toString(), waktuSelesai: _tanggalSelesai.toString(),
+                              tanggalPengajuan: _tglPengajuanController.text
+                          );
+
+                          context.read<WfhBloc>().add(
+                            AddWfhEvent(wfhBaru, userId: currentUser.id!, lamaWfh: lamaWfh.toString(),
+                                alasanWfh: _alasanWfh ?? '', waktuMulai: _tanggalMulai.toString(),
+                                waktuSelesai: _tanggalSelesai.toString(),
+                                tanggalPengajuan: _tglPengajuanController.text,
+                                alasan: _alasanWfh!,
+                                durasi: lamaWfh.toString()
+                            ),
+                          );
+                        } catch (e) {
+                          // Tangani jika ada error saat simpan ke DB
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Ajukam WFH',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
-
-              // Durasi WFH (readonly)
-              const SizedBox(height: 16),
-
-              InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Durasi WFH',
-                  border: OutlineInputBorder(),
-                ),
-                child: Text(
-                  lamaWfh > 0 ? '$lamaWfh hari' : '-',
-                ),
-              ),
-
-
-              const SizedBox(height: 16),
-
-              // Alasan
-              TextFormField(
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Alasan WFH',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (val) => _alasanWfh = val,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Tombol Simpan
-              ElevatedButton(
-                onPressed: _simpanWfh,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Ajukam WFH',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

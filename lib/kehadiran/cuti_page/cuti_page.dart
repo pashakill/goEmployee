@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
 
 class CutiPage extends StatefulWidget {
   const CutiPage({super.key});
@@ -26,7 +25,7 @@ class _CutiPageState extends State<CutiPage> {
   @override
   void initState() {
     super.initState();
-    _bloc = CutiBloc(cutiApi: GetIt.I<CutiApi>());
+    _bloc = CutiBloc(pengajuanApi: GetIt.I<PengajuanApi>());
     _loadUserData();
   }
 
@@ -79,10 +78,9 @@ class _CutiPageState extends State<CutiPage> {
 
   void _fetchHistory() {
     if (_currentUser == null) return;
-    _bloc.add(
-      CutiFetchedEvent(
+    _bloc.add(CutiFetchedEvent(
         userId: _currentUser!.id!
-      ),
+    ),
     );
   }
 

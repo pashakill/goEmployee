@@ -1,6 +1,6 @@
 part of 'cuti_bloc.dart';
 
-enum LoginStatus { initial, valid, invalid, loading, success, failure }
+enum AddStatus { initial, valid, invalid, loading, success, failure }
 
 abstract class CutiState extends Equatable {
   const CutiState();

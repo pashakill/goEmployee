@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/lembur_page/bloc/bloc.dart';
 import 'package:intl/intl.dart';
 
 class TambahLemburPage extends StatefulWidget {
@@ -21,21 +23,13 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Format tanggal dan waktu lokal Indonesia
-  final DateFormat _dateTimeFormat = DateFormat('dd MMM yyyy HH:mm', 'id');
+  final DateFormat _dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
-    // Pilih tanggal dulu
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      locale: const Locale('id', 'ID'),
-    );
+    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
 
     if (pickedDate == null) return;
 
-    // Lalu pilih waktu (jam & menit)
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
@@ -43,7 +37,6 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
 
     if (pickedTime == null) return;
 
-    // Gabungkan tanggal & waktu
     final DateTime pickedDateTime = DateTime(
       pickedDate.year,
       pickedDate.month,
@@ -63,7 +56,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         lamaLembur = _tanggalSelesai!
             .difference(_tanggalMulai!)
             .inHours
-            .abs(); // hitung durasi dalam jam
+            .abs();
       }
     });
   }
@@ -113,88 +106,127 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              // Tanggal Mulai
-              InkWell(
-                onTap: () => _selectDateTime(context, true),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Mulai',
-                    border: OutlineInputBorder(),
+      body: BlocConsumer<LemburBloc, LemburState>(
+        listener: (context, state) async {
+          if (state is LemburPageLoadingState) {
+
+          }
+
+          if (state is AddLemburSuccessState) {
+            final User? currentUser = await _dbHelper.getSingleUser();
+            final lemburBaru = LemburModel(
+              lamaLembur: lamaLembur.toString(),
+              catatanLembur: _catatanLembur ?? '',
+              waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
+              waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser!.id!,
+            );
+            _dbHelper.insertLembur(lemburBaru);
+            widget.onLemburAdded?.call(lemburBaru);
+            Get.back();
+          } else if (state is LemburPageFailedState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal Menambahkan Lembur: ${state.error}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  // Tanggal Mulai
+                  InkWell(
+                    onTap: () => _selectDateTime(context, true),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Mulai',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _tanggalMulai == null
+                            ? 'Pilih tanggal mulai'
+                            : _dateTimeFormat.format(_tanggalMulai!),
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    _tanggalMulai == null
-                        ? 'Pilih tanggal mulai'
-                        : _dateTimeFormat.format(_tanggalMulai!),
+                  const SizedBox(height: 16),
+
+                  // Tanggal Selesai
+                  InkWell(
+                    onTap: () => _selectDateTime(context, false),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal Selesai',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _tanggalSelesai == null
+                            ? 'Pilih tanggal selesai'
+                            : _dateTimeFormat.format(_tanggalSelesai!),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
 
-              // Tanggal Selesai
-              InkWell(
-                onTap: () => _selectDateTime(context, false),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Selesai',
-                    border: OutlineInputBorder(),
+                  // Durasi Lembur (readonly)
+                  const SizedBox(height: 16),
+
+                  InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Durasi Lembur',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(
+                      lamaLembur > 0 ? '$lamaLembur jam' : '-',
+                    ),
                   ),
-                  child: Text(
-                    _tanggalSelesai == null
-                        ? 'Pilih tanggal selesai'
-                        : _dateTimeFormat.format(_tanggalSelesai!),
+
+
+                  const SizedBox(height: 16),
+
+                  // Alasan
+                  TextFormField(
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Alasan Lembur',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (val) => _catatanLembur = val,
                   ),
-                ),
+
+                  const SizedBox(height: 24),
+
+                  // Tombol Simpan
+                  ElevatedButton(
+                    onPressed: () async {
+                      final User? currentUser = await _dbHelper.getSingleUser();
+                      final lemburBaru = LemburModel(
+                        lamaLembur: lamaLembur.toString(),
+                        catatanLembur: _catatanLembur ?? '',
+                        waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
+                        waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser!.id!,
+                      );
+                      context.read<LemburBloc>().add(
+                        AddLemburEvent(lemburBaru, userId: currentUser.id!,
+                            kategori: PengajuanKategori.lembur.toString(), tanggal_mulai: _dateTimeFormat.format(_tanggalMulai!),
+                            alasan: _catatanLembur ?? '', tanggal_selesai: _dateTimeFormat.format(_tanggalSelesai!), durasi: lamaLembur.toString()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Simpan Data Lembur',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
-
-              // Durasi Lembur (readonly)
-              const SizedBox(height: 16),
-
-              InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Durasi Lembur',
-                  border: OutlineInputBorder(),
-                ),
-                child: Text(
-                  lamaLembur > 0 ? '$lamaLembur jam' : '-',
-                ),
-              ),
-
-
-              const SizedBox(height: 16),
-
-              // Alasan
-              TextFormField(
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Alasan Lembur',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (val) => _catatanLembur = val,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Tombol Simpan
-              ElevatedButton(
-                onPressed: _simpanLembur,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Simpan Data Lembur',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

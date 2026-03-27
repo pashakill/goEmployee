@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/lembur_page/bloc/bloc.dart';
 import 'package:goemployee/kehadiran/widget/lembur_card.dart';
 
 class LemburPage extends StatefulWidget {
@@ -15,6 +18,8 @@ class _LemburPageState extends State<LemburPage> {
   List<LemburModel> lemburList = [];
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   bool _isLoading = true; // State untuk loading
+  late LemburBloc _bloc;
+  User? _currentUser;
 
   bool sortByDurasi = false;
   bool sortByTanggal = false;
@@ -41,11 +46,43 @@ class _LemburPageState extends State<LemburPage> {
     });
   }
 
+  Future<void> _loadUserData() async {
+    try {
+      // Panggil fungsi getSingleUser (sesuai permintaan terakhir Anda)
+      final User? user = await _dbHelper.getSingleUser();
+      if (user != null) {
+        // Sukses! Simpan data ke state
+        setState(() {
+          _currentUser = user;
+          _isLoading = false;
+        });
+
+        _fetchHistory();
+      } else {
+        // Gagal (Tabel 'users' ternyata kosong)
+        _forceLogout(); // Paksa kembali ke login
+      }
+    } catch (e) {
+      // Error saat loading data
+      print("CutiPage Erorr: $e");
+      _forceLogout();
+    }
+  }
+
 
   @override
   void initState() {
     super.initState();
-    _loadRiwayatLembur();
+    _bloc = LemburBloc(pengajuanApi: GetIt.I<PengajuanApi>());
+    //_loadRiwayatLembur();
+    _loadUserData();
+  }
+
+  Future<void> _forceLogout() async {
+    await _dbHelper.deleteCurrentUserAndLogout();
+    if (mounted) {
+      AppNavigator.offAll(Routes.login);
+    }
   }
 
   /// Mengambil data lembur dari database
@@ -86,6 +123,14 @@ class _LemburPageState extends State<LemburPage> {
     }
   }
 
+  void _fetchHistory() {
+    if (_currentUser == null) return;
+    _bloc.add(LemburFetchedEvent(
+        userId: _currentUser!.id!
+    ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,88 +162,119 @@ class _LemburPageState extends State<LemburPage> {
           },
         ),
       ),
-      body: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 🔼 Filter dan Sort bar
-          Row(
+      body: BlocConsumer<LemburBloc, LemburState>(
+        bloc: _bloc,
+        listener: (context, state) {
+          if(state is LemburPageLoadingState){
+
+          }
+
+          if(state is GetDataListLemburiSuccessState){
+            List<LemburModel> listFromServer = state.dataCutiModel.data!.pengajuan
+                .map((p) => LemburModel.fromApi(p, _currentUser!.id.toString()))
+                .toList();
+
+            setState(() {
+              lemburList.addAll(listFromServer);
+              _isLoading = false;
+            });
+          }
+
+          if(state is LemburPageFailedState){
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
+              );
+
+              _loadRiwayatLembur();
+            }
+          }
+
+        },
+        builder: (context, state) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              RoundedContainer(
-                color: Colors.green.withOpacity(0.3),
-                radius: 24,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                builder: (context) {
-                  return InkWell(
-                    onTap: _sortByDurasi,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Durasi Lembur',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+              Row(
+                children: [
+                  RoundedContainer(
+                    color: Colors.green.withOpacity(0.3),
+                    radius: 24,
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    builder: (context) {
+                      return InkWell(
+                        onTap: _sortByDurasi,
+                        borderRadius: BorderRadius.circular(24),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Durasi Lembur',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Icon(
+                              sortByDurasi
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              size: 18,
+                            ),
+                          ],
                         ),
-                        Icon(
-                          sortByDurasi
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 18,
+                      );
+                    },
+                  ),
+                  RoundedContainer(
+                    color: Colors.green.withOpacity(0.3),
+                    radius: 24,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    builder: (context) {
+                      return InkWell(
+                        onTap: _sortByTanggal,
+                        borderRadius: BorderRadius.circular(24),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month),
+                            Icon(
+                              sortByTanggal
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              size: 18,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ],
               ),
-              RoundedContainer(
-                color: Colors.green.withOpacity(0.3),
-                radius: 24,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                builder: (context) {
-                  return InkWell(
-                    onTap: _sortByTanggal,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_month),
-                        Icon(
-                          sortByTanggal
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  );
-                },
+
+              const Divider(),
+
+              // 📋 Daftar Lembur
+              Expanded(
+                // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : lemburList.isEmpty
+                    ? const Center(
+                  child: Text(
+                    'Belum ada riwayat Lembur.',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                )
+                    : ListView.builder(
+                  itemCount: lemburList.length,
+                  itemBuilder: (context, index) {
+                    // Panggilan CutiCard Anda sudah benar
+                    return LemburCard(lemburModel: lemburList[index]);
+                  },
+                ),
               ),
             ],
-          ),
-
-          const Divider(),
-
-          // 📋 Daftar Lembur
-          Expanded(
-            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : lemburList.isEmpty
-                ? const Center(
-              child: Text(
-                'Belum ada riwayat Lembur.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            )
-                : ListView.builder(
-              itemCount: lemburList.length,
-              itemBuilder: (context, index) {
-                // Panggilan CutiCard Anda sudah benar
-                return LemburCard(lemburModel: lemburList[index]);
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -132,7 +132,8 @@ class DatabaseHelper {
         jadwal_selesai_kerja TEXT,
         latitude TEXT,
         longitude TEXT,
-        radius TEXT
+        radius TEXT,
+        division TEXT
       )
     ''');
 
@@ -217,6 +218,28 @@ class DatabaseHelper {
       )
     ''');
 
+      await db.execute('''
+        CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nama TEXT NOT NULL,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        company_name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        date_now TEXT NOT NULL,
+        time_checkin TEXT,
+        time_checkout TEXT,
+        late_checkin TEXT,
+        photo TEXT,
+        jadwal_mulai_kerja TEXT,
+        jadwal_selesai_kerja TEXT,
+        latitude TEXT,
+        longitude TEXT,
+        radius TEXT,
+        division TEXT
+      )
+    ''');
+
     print("DatabaseHelper: Tabel berhasil dibuat.");
   }
 
@@ -246,6 +269,51 @@ class DatabaseHelper {
     print('DatabaseHelper: Cuti baru (ID: $id) untuk user $userId berhasil disimpan.');
     return id;
   }
+
+  Future<int> insertPengajuan(PengajuanData data) async {
+    final db = await database;
+
+    return await db.insert(
+      'pengajuan',
+      {
+        'id': data.id,
+        'kategori': data.kategori,
+        'tanggal_mulai': data.tanggal_mulai,
+        'tanggal_selesai': data.tanggal_selesai,
+        'jam_mulai': data.jam_mulai,
+        'jam_selesai': data.jam_selesai,
+        'lama': data.lama,
+        'latitude': data.latitude,
+        'longitude': data.longitude,
+        'alasan': data.alasan,
+        'berkas': data.berkas,
+        'izin_kategori': data.izin_kategori,
+        'jam_izin': data.jam_izin,
+        'status_manager': data.status_manager,
+        'status_hrd': data.status_hrd,
+        'created_at': data.created_at,
+        'cuti_kategori': data.cuti_kategori,
+        'alamat': data.alamat,
+        'tanggal_pengajuan': data.tanggal_pengajuan,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace, // kalau id sama → update
+    );
+  }
+
+
+  Future<List<PengajuanData>> getPengajuan(int userId) async {
+    final db = await database;
+
+    final result = await db.query(
+      'pengajuan',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'created_at DESC',
+    );
+
+    return result.map((map) => PengajuanData.fromJson(map)).toList();
+  }
+
 
   /// Mengambil semua riwayat cuti milik satu user
   Future<List<CutiModel>> getRiwayatCuti(int userId) async {
@@ -574,7 +642,7 @@ class DatabaseHelper {
           status: IzinStatus.pending,
           tanggal: req.tanggal,
           alasan: req.alasan,
-          jam: fullTime,
+          jam: fullTime.toString(),
           tanggalPengajuan: currentTanggalPengajuan,
         );
         break;

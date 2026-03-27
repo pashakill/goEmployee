@@ -2,6 +2,8 @@
 
 import 'package:intl/intl.dart';
 
+import '../../common_module/repo/pengajuan_response.dart';
+
 class WfhModel {
   final int? id; // Untuk ID dari database
   final int userId; // Relasi ke tabel users
@@ -43,6 +45,18 @@ class WfhModel {
       waktuSelesai: map['waktu_selesai'],
       lamaWfh: map['lama_wfh'],
       tanggalPengajuan: map['tanggal_pengajuan'],
+    );
+  }
+
+  factory WfhModel.fromApi(PengajuanData data, String userId) {
+    return WfhModel(
+      id: data.id,
+      userId: int.tryParse(userId) ?? 0,
+      lamaWfh: data.lama,
+      alasanWfh: data.alasan,
+      waktuMulai: data.tanggal_mulai,
+      waktuSelesai: data.tanggal_selesai,
+      tanggalPengajuan: data.tanggal_selesai,
     );
   }
 }

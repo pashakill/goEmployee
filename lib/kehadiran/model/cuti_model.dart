@@ -41,7 +41,7 @@ class CutiModel {
     return CutiModel(
       id: data.id,
       userId: int.tryParse(userId) ?? 0,
-      jenisCuti: data.kategori,
+      jenisCuti: data.cuti_kategori,
       tanggalMulai: data.tanggal_mulai.isNotEmpty
           ? data.tanggal_mulai
           : "0000-00-00",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:intl/intl.dart';
 
 class LemburCard extends StatelessWidget {
   final LemburModel lemburModel;
@@ -24,24 +25,24 @@ class LemburCard extends StatelessWidget {
               children: [
                 const Icon(Icons.date_range, size: 16, color: Colors.grey),
                 const SizedBox(width: 6),
-                Text(
-                  '${lemburModel.waktuMulai} - ${lemburModel.waktuSelesai}',
+                Expanded(child: Text(
+                  '${DateFormat('dd MMMM yyyy HH:mm:ss', 'id_ID').format(DateTime.parse(lemburModel.waktuMulai))} - ${DateFormat('dd MMMM yyyy HH:mm:ss', 'id_ID').format(DateTime.parse(lemburModel.waktuSelesai))}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
-                ),
+                ))
               ],
             ),
 
             const SizedBox(height: 8),
             Text(
-              lemburModel.catatanLembur,
+              'Durasi ${lemburModel.lamaLembur} jam',
               style: const TextStyle(fontSize: 14),
             ),
             Text(
-              'Durasi ${lemburModel.lamaLembur} jam',
+              lemburModel.catatanLembur,
               style: const TextStyle(fontSize: 14),
             ),
           ],

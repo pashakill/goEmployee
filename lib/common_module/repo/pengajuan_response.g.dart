@@ -23,6 +23,11 @@ PengajuanData _$CutiResponseFromJson(Map<String, dynamic> json) => PengajuanData
   json['status_manager'] as String? ?? '',
   json['status_hrd'] as String? ?? '',
   json['created_at'] as String? ?? '',
+  json['cuti_kategori'] as String? ?? '',
+  json['alamat'] as String? ?? '',
+      json['tanggal_pengajuan'] as String? ?? '',
+  json['user'] as String? ?? '',
+
 );
 
 Map<String, dynamic> _$CutiResponseToJson(PengajuanData instance) =>
@@ -43,6 +48,10 @@ Map<String, dynamic> _$CutiResponseToJson(PengajuanData instance) =>
       'status_manager': instance.status_manager,
       'status_hrd': instance.status_hrd,
       'created_at': instance.created_at,
+      'cuti_kategori': instance.cuti_kategori,
+      'alamat': instance.alamat,
+          'tanggal_pengajuan': instance.tanggal_pengajuan,
+      'user': instance.user
     };
 
 

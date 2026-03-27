@@ -34,12 +34,36 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   ];
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final List<DateTime> tanggalMerah = [
+      DateTime(2026, 1, 1),
+      DateTime(2026, 3, 22),
+      DateTime(2026, 4, 18),
+    ];
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      selectableDayPredicate: (DateTime day) {
+
+        if (day.weekday == DateTime.saturday ||
+            day.weekday == DateTime.sunday) {
+          return false;
+        }
+
+        for (var tgl in tanggalMerah) {
+          if (day.year == tgl.year &&
+              day.month == tgl.month &&
+              day.day == tgl.day) {
+            return false;
+          }
+        }
+
+        return true;
+      },
     );
+
     if (picked != null) {
       setState(() {
         if (isStart) {
@@ -48,11 +72,29 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
           _tanggalSelesai = picked;
         }
 
+        // 🔥 Hitung lama cuti (exclude weekend & tanggal merah)
         if (_tanggalMulai != null && _tanggalSelesai != null) {
-          _lamaCuti = _tanggalSelesai!
-              .difference(_tanggalMulai!)
-              .inDays
-              .abs() + 1;
+          int totalHari = 0;
+
+          DateTime current = _tanggalMulai!;
+          while (!current.isAfter(_tanggalSelesai!)) {
+
+            bool isWeekend = current.weekday == DateTime.saturday ||
+                current.weekday == DateTime.sunday;
+
+            bool isTanggalMerah = tanggalMerah.any((tgl) =>
+            tgl.year == current.year &&
+                tgl.month == current.month &&
+                tgl.day == current.day);
+
+            if (!isWeekend && !isTanggalMerah) {
+              totalHari++;
+            }
+
+            current = current.add(const Duration(days: 1));
+          }
+
+          _lamaCuti = totalHari;
         }
       });
     }
@@ -105,7 +147,6 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (UI Anda sisanya sudah benar, tidak perlu diubah) ...
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah Cuti', style: TextStyle(color: Colors.white)),
@@ -247,7 +288,8 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
 
                       context.read<CutiBloc>().add(
                         AddCutiEvent(userId: currentUser!.id!,
-                            kategori: _jenisCuti!, tanggal_mulai: _tanggalMulai!.toIso8601String().split('T').first,
+                            kategori: PengajuanKategori.cuti.toString(), jenis_cuti: _jenisCuti!,
+                            tanggal_mulai: _tanggalMulai!.toIso8601String().split('T').first,
                             tanggal_selesai: _tanggalSelesai!.toIso8601String().split('T').first,
                             alasan: _alasan ?? '', berkas: _dokumen ?? '', cutiModel: cutiBaru),
                       );

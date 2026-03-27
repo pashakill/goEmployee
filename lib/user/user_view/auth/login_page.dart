@@ -32,6 +32,7 @@ class _LoginPageState extends State<LoginPage> {
             //init Data Login
             final newUser = User.fromLogin(state.loginResponse);
             // 2. Panggil DatabaseHelper untuk insert
+            print('newUser ${newUser.toString()}');
             try {
               final dbHelper = DatabaseHelper.instance;
               int userId = await dbHelper.insertUser(newUser);
@@ -263,7 +264,6 @@ class _LoginPageState extends State<LoginPage> {
           final String username = _employeeIdController.text;
           final String password = _passwordController.text;
 
-          // Sekarang Anda bisa gunakan variabel ini
           print('--- Tombol Login Ditekan ---');
           print('Employee ID: $username');
           print('Password: $password'); // <-- Jangan print password di production!

@@ -533,7 +533,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 16,),
+                              SizedBox(height: 32,),
                             ],
                           ),
                         ),

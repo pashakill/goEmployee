@@ -20,6 +20,7 @@ class UserModels {
   final String? latitude;
   final String? longitude;
   final String? radius;
+  final String? division;
 
   UserModels(
       this.id,
@@ -37,7 +38,8 @@ class UserModels {
       this.jadwalSelesaiKerja,
       this.latitude,
       this.longitude,
-      this.radius
+      this.radius,
+      this.division
       );
 
   factory UserModels.fromJson(Map<String, dynamic> json) =>

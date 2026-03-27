@@ -3,7 +3,13 @@ import 'package:get/get.dart';
 import 'package:goemployee/app/onboarding/onboarding.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
+import 'package:goemployee/kehadiran/dinas_page/bloc/bloc.dart';
+import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 import 'package:goemployee/kehadiran/kehadiran_page/bloc/bloc.dart';
+import 'package:goemployee/kehadiran/persetujuan_page/bloc/bloc.dart';
+import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
+
+import '../../kehadiran/lembur_page/bloc/lembur_bloc.dart';
 
 class Routes {
   // Nama semua route (biar konsisten)
@@ -36,15 +42,15 @@ class Routes {
     GetPage(name: kehadiranPage, page: () => BlocProvider(create: (context) => getIt<KehadiranBloc>(), child: KehadiranPage())),
     GetPage(name: cutiPage, page: () => CutiPage()),
     GetPage(name: lemburPage, page: () => LemburPage()),
-    GetPage(name: tambahLemburPage, page: () => TambahLemburPage()),
+    GetPage(name: tambahLemburPage, page: () => BlocProvider(create: (context) => getIt<LemburBloc>(), child: TambahLemburPage())),
     GetPage(name: dinasPage, page: () => DinasPage()),
-    GetPage(name: tambahDinasPage, page: () => TambahDinasPage()),
+    GetPage(name: tambahDinasPage, page: () => BlocProvider(create: (context) => getIt<DinasBloc>(), child: TambahDinasPage())),
     GetPage(name: wfhPage, page: () => WfhPage()),
     GetPage(name: izinPage, page: () => IzinPage()),
-    GetPage(name: persetujuanPage, page: () => PersetujuanPage()),
+    GetPage(name: persetujuanPage, page: () => BlocProvider(create: (context) => getIt<PersetujuanBloc>(), child: PersetujuanPage())),
     GetPage(name: tambahCutiPage, page: () => BlocProvider(create: (context) => getIt<CutiBloc>(), child: TambahCutiPage())),
-    GetPage(name: tambahWfh, page: () => TambahWfhPage()),
-    GetPage(name: tambahIzinPage, page: () => TambahIzinPage())
+    GetPage(name: tambahWfh, page: () => BlocProvider(create: (context) => getIt<WfhBloc>(), child: TambahWfhPage())),
+    GetPage(name: tambahIzinPage, page: () => BlocProvider(create: (context) => getIt<IzinBloc>(), child: TambahIzinPage()))
   ];
 }
 

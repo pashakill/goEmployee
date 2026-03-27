@@ -8,7 +8,6 @@ part 'pengajuan_response.g.dart';
 
 @JsonSerializable(createFactory: true, createToJson: true)
 class PengajuanData {
-
   final int id;
   final String kategori;
   final String tanggal_mulai;
@@ -25,12 +24,17 @@ class PengajuanData {
   final String status_manager;
   final String status_hrd;
   final String created_at;
+  final String cuti_kategori;
+  final String alamat;
+  final String tanggal_pengajuan;
+  final String user;
+
 
 
   PengajuanData(this.id, this.kategori, this.tanggal_mulai, this.tanggal_selesai, this.jam_mulai,
       this.jam_selesai, this.lama, this.latitude, this.longitude, this.alasan,
       this.berkas, this.izin_kategori, this.jam_izin, this.status_manager, this.status_hrd,
-      this.created_at);
+      this.created_at, this.cuti_kategori, this.alamat, this.tanggal_pengajuan, this.user);
 
   factory PengajuanData.fromJson(Map<String, dynamic> json) =>
       _$CutiResponseFromJson(json);
@@ -43,7 +47,12 @@ class PengajuanData {
         'tanggal_selesai: $tanggal_selesai, jam_mulai: $jam_mulai, jam_selesai: $jam_selesai, '
         'lama: $lama, latitude: $latitude, longitude: $longitude, alasan: $alasan, '
         'berkas: $berkas, izin_kategori: $izin_kategori, jam_izin: $jam_izin, '
-        'status_manager: $status_manager, status_hrd: $status_hrd, created_at: $created_at'
+        'status_manager: $status_manager, status_hrd: $status_hrd, '
+        'created_at: $created_at,'
+        'alamat: $alamat,'
+        'cuti_kategori: $cuti_kategori,'
+        'tanggal_pengajuan: $tanggal_pengajuan'
+        'user: $user,'
         ')';
   }
 }

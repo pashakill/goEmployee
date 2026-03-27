@@ -202,8 +202,10 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       'Tidak ada pemberitahuan'),
                                 ],
-                              ))
+                              )),
                         ]))),
+            SizedBox(height: 20,)
+
           ],
         ),
       ),

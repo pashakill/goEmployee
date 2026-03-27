@@ -26,10 +26,8 @@ class CameraHelper {
     try {
       final allowed = await PermissionHelper.requestStoragePermission();
       if (!allowed) return null;
-
       final XFile? photo = await _picker.pickImage(source: ImageSource.gallery);
       if (photo == null) return null;
-
       return await _compressAndConvert(photo.path, quality);
     } catch (e) {
       print("Error ambil foto galeri: $e");
@@ -42,15 +40,12 @@ class CameraHelper {
     final bytes = await File(path).readAsBytes();
     img.Image? image = img.decodeImage(bytes);
     if (image == null) throw Exception("Gagal decode image");
-
     // Resize jika terlalu besar (opsional)
     if (image.width > 1080) {
       image = img.copyResize(image, width: 1080);
     }
-
     // Encode ke JPEG dengan kualitas tertentu
     final jpg = img.encodeJpg(image, quality: quality);
-
     // Convert ke Base64
     return base64Encode(jpg);
   }

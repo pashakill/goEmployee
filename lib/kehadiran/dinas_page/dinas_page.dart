@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:goemployee/kehadiran/dinas_page/bloc/bloc.dart';
 
 class DinasPage extends StatefulWidget {
   const DinasPage({super.key});
@@ -13,7 +16,8 @@ class _DinasPageState extends State<DinasPage> {
   List<DinasModel> dinasList = [];
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   bool _isLoading = true; // State untuk loading
-
+  late DinasBloc _bloc;
+  User? _currentUser;
   bool sortByTanggal = false;
 
   void _sortByTanggal() {
@@ -32,7 +36,40 @@ class _DinasPageState extends State<DinasPage> {
   @override
   void initState() {
     super.initState();
-    _loadRiwayatLembur();
+    _bloc = DinasBloc(pengajuanApi: GetIt.I<PengajuanApi>());
+    //_loadRiwayatLembur();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      // Panggil fungsi getSingleUser (sesuai permintaan terakhir Anda)
+      final User? user = await _dbHelper.getSingleUser();
+      if (user != null) {
+        // Sukses! Simpan data ke state
+        setState(() {
+          _currentUser = user;
+          _isLoading = false;
+        });
+
+        _fetchHistory();
+      } else {
+        // Gagal (Tabel 'users' ternyata kosong)
+        _forceLogout(); // Paksa kembali ke login
+      }
+    } catch (e) {
+      // Error saat loading data
+      print("CutiPage Erorr: $e");
+      _forceLogout();
+    }
+  }
+
+  void _fetchHistory() {
+    if (_currentUser == null) return;
+    _bloc.add(DinasFetchedEvent(
+        userId: _currentUser!.id!
+    ),
+    );
   }
 
   /// Mengambil data lembur dari database
@@ -104,58 +141,99 @@ class _DinasPageState extends State<DinasPage> {
           },
         ),
       ),
-      body: Column(
-        children: [
-          // 🔼 Filter dan Sort bar
-          Padding(padding: EdgeInsets.only(left: 16.0, right: 16.0),
-          child: Row(
+      body: BlocConsumer<DinasBloc,
+          DinasState>(
+        bloc: _bloc,
+        listener: (context, state) {
+          if(state is DinasPageLoadingState){
+
+          }
+
+          if(state is GetDataListDinasSuccessState){
+            print('kesini masuk');
+            List<DinasModel> listFromServer = state.dataCutiModel.data!.pengajuan
+                .map((p) => DinasModel.fromApi(p, _currentUser!.id.toString()))
+                .toList();
+
+            setState(() {
+              dinasList.addAll(listFromServer);
+              _isLoading = false;
+            });
+          }
+
+          if(state is DinasPageFailedState){
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
+              );
+
+              _loadRiwayatLembur();
+            }
+          }
+
+        },
+        builder: (context, state) {
+          return Column(
             children: [
-              RoundedContainer(
-                color: Colors.green.withOpacity(0.3),
-                radius: 24,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                builder: (context) {
-                  return InkWell(
-                    onTap: _sortByTanggal,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_month),
-                        Icon(
-                          sortByTanggal
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              // 🔼 Filter dan Sort bar
+              Padding(padding: EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    children: [
+                      RoundedContainer(
+                        color: Colors.green.withOpacity(0.3),
+                        radius: 24,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        builder: (context) {
+                          return InkWell(
+                            onTap: _sortByTanggal,
+                            borderRadius: BorderRadius.circular(24),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_month),
+                                Icon(
+                                  sortByTanggal
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  )),
+
+              Expanded(
+                // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : dinasList.isEmpty
+                    ? const Center(
+                  child: Text(
+                    'Belum ada riwayat Dinas.',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                )
+                    : ListView.builder(
+                  itemCount: dinasList.length,
+                  itemBuilder: (context, index) {
+                    // Panggilan CutiCard Anda sudah benar
+                    return DinasCard(dinasModel: dinasList[index]);
+                  },
+                ),
               ),
             ],
-          )),
-
-          Expanded(
-            // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : dinasList.isEmpty
-                ? const Center(
-              child: Text(
-                'Belum ada riwayat Dinas.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            )
-                : ListView.builder(
-              itemCount: dinasList.length,
-              itemBuilder: (context, index) {
-                // Panggilan CutiCard Anda sudah benar
-                return DinasCard(dinasModel: dinasList[index]);
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  Future<void> _forceLogout() async {
+    await _dbHelper.deleteCurrentUserAndLogout();
+    if (mounted) {
+      AppNavigator.offAll(Routes.login);
+    }
   }
 }

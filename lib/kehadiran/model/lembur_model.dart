@@ -1,6 +1,7 @@
 // Lokasi: [File model Anda, misalnya lembur_model.dart]
 
 import 'package:intl/intl.dart';
+import 'package:goemployee/goemployee.dart';
 
 class LemburModel {
   final int? id;
@@ -9,7 +10,7 @@ class LemburModel {
   final String waktuMulai; // Format: HH:mm:ss
   final String waktuSelesai; // Format: HH:mm:ss
   final String lamaLembur; // Format: HH:mm
-  // Hapus: final String tanggalLembur; 
+  //Hapus: final String tanggalLembur;
 
   LemburModel({
     this.id,
@@ -43,6 +44,13 @@ class LemburModel {
       waktuSelesai: map['waktu_selesai'],
       lamaLembur: map['lama_lembur'],
       // Hapus: tanggalLembur: map['tanggal_lembur'],
+    );
+  }
+
+
+  factory LemburModel.fromApi(PengajuanData data, String userId) {
+    return LemburModel(userId: int.parse(userId), lamaLembur: data.lama,
+        catatanLembur: data.alasan, waktuMulai: data.tanggal_mulai, waktuSelesai: data.tanggal_selesai
     );
   }
 }

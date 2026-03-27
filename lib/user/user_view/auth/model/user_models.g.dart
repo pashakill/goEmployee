@@ -20,10 +20,10 @@ UserModels _$LoginResponseFromJson(Map<String, dynamic> json) => UserModels(
   json['photo'] as String?,
   json['jadwal_mulai_kerja'] as String?,
   json['jadwal_selesai_kerja'] as String?,
-
   json['latitude'] as String?,
   json['longitude'] as String?,
   json['radius'] as String?,
+  json['division'] as String?
 );
 
 Map<String, dynamic> _$LoginResponseToJson(UserModels instance) => <String, dynamic>{
@@ -43,4 +43,5 @@ Map<String, dynamic> _$LoginResponseToJson(UserModels instance) => <String, dyna
   'latitude': instance.latitude,
   'longitude': instance.longitude,
   'radius': instance.radius,
+  'division': instance.division
 };

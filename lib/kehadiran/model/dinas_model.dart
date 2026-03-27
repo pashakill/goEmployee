@@ -1,5 +1,7 @@
 // Lokasi: [File model Anda, misalnya dinas_model.dart]
 
+import '../../common_module/repo/pengajuan_response.dart';
+
 class DinasModel {
   final int? id; // Untuk ID dari database
   final int userId; // Relasi ke tabel users
@@ -53,6 +55,25 @@ class DinasModel {
       radius: map['radius'],
       alasan: map['alasan'],
       tanggalPengajuan: map['tanggal_pengajuan'],
+    );
+  }
+
+  factory DinasModel.fromApi(PengajuanData data, String userId) {
+    return DinasModel(
+      id: data.id,
+      userId: int.tryParse(userId) ?? 0,
+      tanggalMulai: data.tanggal_mulai.isNotEmpty
+          ? data.tanggal_mulai
+          : "0000-00-00",
+      tanggalSelesai: data.tanggal_selesai.isNotEmpty
+          ? data.tanggal_selesai
+          : "0000-00-00",
+      alasan: data.alasan,
+      tanggalPengajuan: data.created_at,
+      alamat: data.alamat,
+      latitude: data.latitude,
+      longTitude: data.longitude,
+      radius: '',
     );
   }
 }

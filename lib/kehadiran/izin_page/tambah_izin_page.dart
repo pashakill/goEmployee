@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:goemployee/goemployee.dart';
 
@@ -137,14 +139,17 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           _telatJam!.hour, _telatJam!.minute,
         );
 
+        final jamString =
+            '${_telatJam!.hour.toString().padLeft(2, '0')}:${_telatJam!.minute.toString().padLeft(2, '0')}:00';
+
         izinModelFinal = IzinConverterModel(
           id: 'local_${DateTime.now().millisecondsSinceEpoch}', // ID unik sementara
           userId: userId, // ID Pengguna
           tipe: IzinTipe.telatMasuk,
           status: IzinStatus.pending,
-          tanggal: _telatTanggal!,
+          tanggal: fullTime,
           alasan: _telatAlasanController.text,
-          jam: fullTime,
+          jam: jamString,
           tanggalPengajuan: currentTanggalPengajuan, // Tanggal hari ini
         );
         break;
@@ -155,19 +160,23 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           return;
         }
 
+
         final fullTime = DateTime(
           _pulangTanggal!.year, _pulangTanggal!.month, _pulangTanggal!.day,
           _pulangJam!.hour, _pulangJam!.minute,
         );
+
+        final jamString =
+            '${_telatJam!.hour.toString().padLeft(2, '0')}:${_telatJam!.minute.toString().padLeft(2, '0')}:00';
 
         izinModelFinal = IzinConverterModel(
           id: 'local_${DateTime.now().millisecondsSinceEpoch}',
           userId: userId,
           tipe: IzinTipe.pulangAwal,
           status: IzinStatus.pending,
-          tanggal: _pulangTanggal!,
+          tanggal: fullTime,
           alasan: _pulangAlasanController.text,
-          jam: fullTime,
+          jam: jamString,
           tanggalPengajuan: currentTanggalPengajuan,
         );
         break;
@@ -197,16 +206,12 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
 
     // 4. Kirim data ke DatabaseHelper
     if (izinModelFinal != null) {
-      try {
-        final int newDbId = await _dbHelper.insertIzin(izinModelFinal); // Panggil fungsi insert DB
-        // Panggil callback (jika ada) dan kembali
-        widget.onIzinAdded?.call(izinModelFinal.copyWith(id: newDbId.toString()));
-        _showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
-        Get.back();
-
-      } catch (e) {
-        _showSnackBar('Gagal menyimpan pengajuan Izin: ${e.toString()}', isError: true);
-      }
+      final User? currentUser = await _dbHelper.getSingleUser();
+      context.read<IzinBloc>().add(
+        AddIzinEvent(izinModelFinal, userId: currentUser!.id!, izinTipe: izinModelFinal.tipe.value,
+            alasan: izinModelFinal.alasan, tanggal: izinModelFinal.tanggal.toString(),
+            jam: izinModelFinal.jam),
+      );
     }
   }
 
@@ -219,23 +224,49 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
         // HAPUS: 'bottom: TabBar(...)'
       ),
       // UBAH: 'TabBarView' menjadi 'SingleChildScrollView'
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- 1. Dropdown Pilihan Izin ---
-            _buildDropdownIzin(),
-            const SizedBox(height: 24),
+      body: BlocConsumer<IzinBloc, IzinState>(
+        listener: (context, state) async {
+          if (state is IzinPageLoadingState) {
 
-            // --- 2. Form yang Tampil Dinamis ---
-            _buildConditionalForm(),
-            const SizedBox(height: 24),
+          }
 
-            // --- 3. Tombol Submit (Hanya satu) ---
-            _buildSubmitButton(_handleSubmit),
-          ],
-        ),
+          if (state is AddIzinSuccessState) {
+
+            try {
+              final int newDbId = await _dbHelper.insertIzin(state.izinConverterModel); // Panggil fungsi insert DB
+              // Panggil callback (jika ada) dan kembali
+              widget.onIzinAdded?.call(state.izinConverterModel.copyWith(id: newDbId.toString()));
+              //_showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
+              Get.back();
+            } catch (e) {
+              _showSnackBar('Gagal menyimpan pengajuan Izin: ${e.toString()}', isError: true);
+            }
+          } else if (state is IzinPageFailedState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- 1. Dropdown Pilihan Izin ---
+                _buildDropdownIzin(),
+                const SizedBox(height: 24),
+
+                // --- 2. Form yang Tampil Dinamis ---
+                _buildConditionalForm(),
+                const SizedBox(height: 24),
+
+                // --- 3. Tombol Submit (Hanya satu) ---
+                _buildSubmitButton(_handleSubmit),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

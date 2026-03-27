@@ -19,6 +19,7 @@ class User {
   String? latitude;
   String? longitude;
   String? radius;
+  String? division;
 
   User({
     this.id,
@@ -36,7 +37,8 @@ class User {
     this.jadwalSelesaiKerja,
     this.latitude,
     this.longitude,
-    this.radius
+    this.radius,
+    this.division
   });
 
   Map<String, dynamic> toMap() {
@@ -57,6 +59,7 @@ class User {
       'latitude': latitude,
       'longitude' : longitude,
       'radius' : radius,
+      'division': division,
     };
   }
 
@@ -79,11 +82,15 @@ class User {
       jadwalSelesaiKerja: map['jadwal_selesai_kerja'],
       latitude: map['latitude'],
       longitude: map['longitude'],
+      division: map['division'],
       radius: map['radius']
     );
   }
 
   factory User.fromLogin(UserModels loginResponse) {
+    print('loginResponse ${loginResponse.toString()}');
+    print('division ${loginResponse.division}');
+
     return User(
       id: loginResponse.id,
       nama: loginResponse.nama,
@@ -100,6 +107,7 @@ class User {
       jadwalSelesaiKerja: loginResponse.jadwalSelesaiKerja,
       latitude: loginResponse.latitude,
       longitude: loginResponse.longitude,
+      division: loginResponse.division,
       radius: loginResponse.radius,
     );
   }
@@ -123,6 +131,7 @@ class User {
           jadwalSelesaiKerja: $jadwalSelesaiKerja,
           latitude: $latitude,
           longitude: $longitude,
+          division: $division,
           radius: $radius
         )
         ''';
