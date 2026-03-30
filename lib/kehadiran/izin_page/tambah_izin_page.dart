@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:goemployee/goemployee.dart';
 
 class TambahIzinPage extends StatefulWidget {
-  Function(IzinConverterModel)? get onIzinAdded => Get.arguments?['onIzinAdded'];
+  Function()? get onIzinAdded => Get.arguments?['onIzinAdded'];
 
   const TambahIzinPage({super.key});
 
@@ -38,6 +37,9 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
   final TextEditingController _absenAlasanController = TextEditingController();
   DateTime? _absenTanggal;
 
+  bool isEdit = false;
+  IzinConverterModel? _editIzin;
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +64,65 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
     _pulangJamController.text = formattedTime;
     _absenTanggal = now;
     _absenTanggalController.text = formattedDate;
+
+
+    final args = Get.arguments;
+
+    if (args != null && args['editIzin'] != null) {
+      isEdit = true;
+      _editIzin = args['editIzin'];
+      _fillEditData();
+    }
+
+  }
+
+  void _fillEditData() {
+    final formattedDate = DateFormat('dd-MM-yyyy').format(_editIzin!.tanggal);
+    switch (_editIzin!.tipe) {
+      case IzinTipe.telatMasuk:
+        _selectedIzinType = 'Telat Masuk';
+        _telatTanggal = _editIzin!.tanggal;
+        _telatTanggalController.text = formattedDate;
+
+        if (_editIzin!.jam != null) {
+          final timeParts = _editIzin!.jam!.split(":");
+          _telatJam = TimeOfDay(
+            hour: int.parse(timeParts[0]),
+            minute: int.parse(timeParts[1]),
+          );
+          _telatJamController.text = "${timeParts[0]}:${timeParts[1]}";
+        }
+
+        _telatAlasanController.text = _editIzin!.alasan;
+        break;
+
+      case IzinTipe.pulangAwal:
+        _selectedIzinType = 'Pulang Awal';
+        _pulangTanggal = _editIzin!.tanggal;
+        _pulangTanggalController.text = formattedDate;
+
+        if (_editIzin!.jam != null) {
+          final timeParts = _editIzin!.jam!.split(":");
+          _pulangJam = TimeOfDay(
+            hour: int.parse(timeParts[0]),
+            minute: int.parse(timeParts[1]),
+          );
+          _pulangJamController.text = "${timeParts[0]}:${timeParts[1]}";
+        }
+        _pulangAlasanController.text = _editIzin!.alasan;
+        break;
+
+      case IzinTipe.tidakMasuk:
+        _selectedIzinType = 'Tidak Masuk';
+        _absenTanggal = _editIzin!.tanggal;
+        _absenTanggalController.text = formattedDate;
+        _absenAlasanController.text = _editIzin!.alasan;
+        break;
+      case IzinTipe.unknown:
+        throw UnimplementedError();
+    }
+
+    setState(() {});
   }
 
   @override
@@ -207,11 +268,20 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
     // 4. Kirim data ke DatabaseHelper
     if (izinModelFinal != null) {
       final User? currentUser = await _dbHelper.getSingleUser();
-      context.read<IzinBloc>().add(
-        AddIzinEvent(izinModelFinal, userId: currentUser!.id!, izinTipe: izinModelFinal.tipe.value,
-            alasan: izinModelFinal.alasan, tanggal: izinModelFinal.tanggal.toString(),
-            jam: izinModelFinal.jam),
-      );
+
+      if(isEdit){
+        context.read<IzinBloc>().add(
+          EditIzinEvent(izinModelFinal, userId: currentUser!.id!, izinTipe: izinModelFinal.tipe.value,
+              alasan: izinModelFinal.alasan, tanggal: izinModelFinal.tanggal.toString(),
+              jam: izinModelFinal.jam, id: _editIzin!.id),
+        );
+      }else{
+        context.read<IzinBloc>().add(
+          AddIzinEvent(izinModelFinal, userId: currentUser!.id!, izinTipe: izinModelFinal.tipe.value,
+              alasan: izinModelFinal.alasan, tanggal: izinModelFinal.tanggal.toString(),
+              jam: izinModelFinal.jam),
+        );
+      }
     }
   }
 
@@ -226,6 +296,11 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
       // UBAH: 'TabBarView' menjadi 'SingleChildScrollView'
       body: BlocConsumer<IzinBloc, IzinState>(
         listener: (context, state) async {
+          if(state is EditIzinSuccessState){
+            Get.back();
+            widget.onIzinAdded?.call();
+          }
+
           if (state is IzinPageLoadingState) {
 
           }
@@ -233,9 +308,9 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           if (state is AddIzinSuccessState) {
 
             try {
-              final int newDbId = await _dbHelper.insertIzin(state.izinConverterModel); // Panggil fungsi insert DB
+              // final int newDbId = await _dbHelper.insertIzin(state.izinConverterModel); // Panggil fungsi insert DB
               // Panggil callback (jika ada) dan kembali
-              widget.onIzinAdded?.call(state.izinConverterModel.copyWith(id: newDbId.toString()));
+              widget.onIzinAdded?.call();
               //_showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
               Get.back();
             } catch (e) {
@@ -424,7 +499,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
       controller: controller,
       maxLines: 4,
       decoration: InputDecoration(
-        labelText: label,
+        labelText: isEdit ? label : _editIzin?.alasan ?? '',
         hintText: 'Tuliskan alasan Anda di sini...',
         border: const OutlineInputBorder(),
         alignLabelWithHint: true,
@@ -444,8 +519,8 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           ),
         ),
         onPressed: onPressed, // Memanggil fungsi _handleSubmit
-        child: const Text(
-          'Submit Pengajuan',
+        child: Text(
+          isEdit ? 'Edit Izin' : 'Submit Pengajuan',
           style: TextStyle(
               fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
         ),

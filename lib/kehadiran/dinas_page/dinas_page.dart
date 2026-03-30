@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/dinas_page/bloc/bloc.dart';
 
 class DinasPage extends StatefulWidget {
   const DinasPage({super.key});
@@ -19,6 +18,7 @@ class _DinasPageState extends State<DinasPage> {
   late DinasBloc _bloc;
   User? _currentUser;
   bool sortByTanggal = false;
+  List<PengajuanData> pengajuanData = [];
 
   void _sortByTanggal() {
     setState(() {
@@ -122,9 +122,12 @@ class _DinasPageState extends State<DinasPage> {
               AppNavigator.to(Routes.tambahDinasPage,
                   arguments: {
                     'onCutiAdded': (DinasModel dinasModel) {
+                      /*
                       setState(() {
                         dinasList.add(dinasModel);
                       });
+                       */
+                      _loadUserData();
                     },
                   });
             },
@@ -144,21 +147,45 @@ class _DinasPageState extends State<DinasPage> {
       body: BlocConsumer<DinasBloc,
           DinasState>(
         bloc: _bloc,
-        listener: (context, state) {
+        listener: (context, state) async {
+          if(state is DeleteDinasSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Berhasil Menghapus Data Dinas")),
+            );
+
+            _loadUserData();
+          }
+
+          if(state is DeleteDinasFailedState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Gagal Menghapus Data Dinas")),
+            );
+          }
+
           if(state is DinasPageLoadingState){
 
           }
 
           if(state is GetDataListDinasSuccessState){
-            print('kesini masuk');
+            if(!dinasList.isEmpty){
+              dinasList.clear();
+            }
+
+            if(!pengajuanData.isEmpty){
+              pengajuanData.clear();
+            }
+
             List<DinasModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => DinasModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();
 
             setState(() {
               dinasList.addAll(listFromServer);
+              pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
               _isLoading = false;
             });
+
+            await DatabaseHelper.instance.replaceDinas(dinasList);
           }
 
           if(state is DinasPageFailedState){
@@ -219,7 +246,23 @@ class _DinasPageState extends State<DinasPage> {
                   itemCount: dinasList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
-                    return DinasCard(dinasModel: dinasList[index]);
+                    return SlidablePengajuanItem(
+                      pengajuanData: pengajuanData[index],
+                      onEdit: (id) {
+                        AppNavigator.to(Routes.tambahDinasPage, arguments: {
+                          'onCutiAdded': (DinasModel dinasModel) {
+                            _loadUserData();
+                          },
+                          'editDinas': dinasList[index]
+                        });
+                      },
+                      onDelete: (id) {
+                        _bloc.add(DeleteDinasEvent(
+                            userId: _currentUser!.id!, id: id
+                        ));
+                      },
+                      child: DinasCard(dinasModel: dinasList[index]),
+                    );
                   },
                 ),
               ),

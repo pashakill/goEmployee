@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 
 class IzinPage extends StatefulWidget {
   const IzinPage({super.key});
@@ -12,11 +11,14 @@ class IzinPage extends StatefulWidget {
 }
 
 class _IzinPageState extends State<IzinPage> {
+
   List<IzinConverterModel> izinList = [];
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   bool _isLoading = true; // State untuk loading
   User? _currentUser;
   late IzinBloc _bloc;
+  List<PengajuanData> pengajuanData = [];
+
 
   @override
   void initState() {
@@ -44,7 +46,7 @@ class _IzinPageState extends State<IzinPage> {
       }
     } catch (e) {
       // Error saat loading data
-      print("CutiPage Erorr: $e");
+      print("IzinPage Erorr: $e");
       _forceLogout();
     }
   }
@@ -137,10 +139,13 @@ class _IzinPageState extends State<IzinPage> {
               AppNavigator.to(Routes.tambahIzinPage,
                   arguments: {
                     'onIzinAdded': (IzinConverterModel izinConverterModel) {
+                      /*
                       setState(() {
                         izinList.add(izinConverterModel);
                       });
-                      print('berhasil di tambahkan');
+                       */
+
+                      _loadUserData();
                     },
                   });
             },
@@ -152,21 +157,43 @@ class _IzinPageState extends State<IzinPage> {
       body: BlocConsumer<IzinBloc,
           IzinState>(
         bloc: _bloc,
-        listener: (context, state) {
+        listener: (context, state) async {
+          if(state is DeleteIzinFailedState){
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Gagal Menghapus Data Izin")));
+          }
+
+          if(state is DeleteIzinSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Berhasil Menghapus Data Izin")));
+
+            _loadUserData();
+          }
+
           if(state is IzinPageLoadingState){
 
           }
 
           if(state is GetDataListIzinSuccessState){
-            print('kesini masuk');
+            if(!izinList.isEmpty){
+              izinList.clear();
+            }
+
+            if(!pengajuanData.isEmpty){
+              pengajuanData.clear();
+            }
+
             List<IzinConverterModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => IzinConverterModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();
 
             setState(() {
               izinList.addAll(listFromServer);
+              pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
               _isLoading = false;
             });
+
+            await DatabaseHelper.instance.replaceIzin(izinList);
           }
 
           if(state is IzinPageFailedState){
@@ -253,7 +280,23 @@ class _IzinPageState extends State<IzinPage> {
                     : ListView.builder(
                   itemCount: izinList.length,
                   itemBuilder: (context, index) {
-                    return IzinCard(izinConverter: izinList[index]);
+                    return SlidablePengajuanItem(
+                      pengajuanData: pengajuanData[index],
+                      onEdit: (id) {
+                        AppNavigator.to(Routes.tambahIzinPage, arguments: {
+                          'onIzinAdded': (IzinConverterModel izinConverterModel) {
+                            _loadUserData();
+                          },
+                          'editIzin': izinList[index]
+                        });
+                      },
+                      onDelete: (id) {
+                        _bloc.add(DeleteIzinEvent(
+                            userId: _currentUser!.id!, id: id.toString()
+                        ));
+                      },
+                      child: IzinCard(izinConverter: izinList[index]),
+                    );
                   },
                 ),
               ),

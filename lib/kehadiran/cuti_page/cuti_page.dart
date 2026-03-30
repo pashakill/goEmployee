@@ -17,7 +17,7 @@ class _CutiPageState extends State<CutiPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   bool _isLoading = true; // State untuk loading
   User? _currentUser;
-
+  List<PengajuanData> pengajuanData = [];
   bool sortByJenis = false;
   bool sortByTanggal = false;
   late CutiBloc _bloc;
@@ -156,12 +156,16 @@ class _CutiPageState extends State<CutiPage> {
             onPressed: () {
               // Logika navigasi Anda sudah benar
               AppNavigator.to(Routes.tambahCutiPage, arguments: {
-                'onCutiAdded': (CutiModel newCuti) {
+                'onCutiAdded': () {
                   // Ini akan menambah CutiModel baru ke list secara instan
                   // (tanpa perlu load ulang dari DB, UI terasa cepat)
+                  /*
                   setState(() {
                     cutiList.add(newCuti);
                   });
+
+                   */
+                  _loadUserData();
                 },
               });
             },
@@ -181,21 +185,78 @@ class _CutiPageState extends State<CutiPage> {
       body: BlocConsumer<CutiBloc,
           CutiState>(
         bloc: _bloc,
-        listener: (context, state) {
+        listener: (context, state) async {
+          if (state is CutiPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text("No Internet"),
+                  content: Text(error.message),
+                ),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+
+              print('disini ya ');
+            }
+          }
+
           if(state is CutiPageLoadingState){
 
           }
 
+          if(state is DeleteCutiSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Berhasil Menghapus Data Cuti")),
+            );
+
+            _loadUserData();
+          }
+
+          if(state is DeleteCutiFailedState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Gagal Menghapus Data Cuti")),
+            );
+          }
+
           if(state is GetDataListCutiSuccessState){
-            print('kesini masuk');
+            if(!cutiList.isEmpty){
+              cutiList.clear();
+            }
+
+            if(!pengajuanData.isEmpty){
+              pengajuanData.clear();
+            }
+
             List<CutiModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => CutiModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();
 
+            if(listFromServer.isEmpty){
+              cutiList.clear();
+              pengajuanData.clear();
+            }
+
             setState(() {
               cutiList.addAll(listFromServer);
+              pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
               _isLoading = false;
             });
+
+            await DatabaseHelper.instance.replaceCuti(cutiList, _currentUser!.id!);
           }
 
           if(state is CutiPageFailedState){
@@ -284,7 +345,23 @@ class _CutiPageState extends State<CutiPage> {
                   itemCount: cutiList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
-                    return CutiCard(cuti: cutiList[index]);
+                    return SlidablePengajuanItem(
+                      pengajuanData: pengajuanData[index],
+                      onEdit: (id) {
+                        AppNavigator.to(Routes.tambahCutiPage, arguments: {
+                          'onCutiAdded': () {
+                            _loadUserData();
+                          },
+                          'editCuti': cutiList[index]
+                        });
+                      },
+                      onDelete: (id) {
+                        _bloc.add(DeleteCutiEvent(
+                            userId: _currentUser!.id!, id: id.toString()
+                        ));
+                      },
+                      child: CutiCard(cuti: cutiList[index]),
+                    );
                   },
                 ),
               ),

@@ -1,12 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:goemployee/app/home/bloc/home_bloc.dart';
 import 'package:goemployee/app/onboarding/onboarding.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
 import 'package:goemployee/kehadiran/dinas_page/bloc/bloc.dart';
 import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 import 'package:goemployee/kehadiran/kehadiran_page/bloc/bloc.dart';
-import 'package:goemployee/kehadiran/persetujuan_page/bloc/bloc.dart';
+import 'package:goemployee/kehadiran/persetujuan_page/bloc/bloc_persetujuan.dart';
 import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
 
 import '../../kehadiran/lembur_page/bloc/lembur_bloc.dart';
@@ -36,7 +37,7 @@ class Routes {
   // Daftar semua route
   static final pages = [
     GetPage(name: splashScreen, page: () => SplashScreen()),
-    GetPage(name: home, page: () => HomePage()),
+    GetPage(name: home, page: () => BlocProvider(create: (context) => getIt<HomeBloc>(), child: HomePage())),
     GetPage(name: login, page: () => BlocProvider(create: (context) => getIt<LoginBloc>(), child: LoginPage())),
     GetPage(name: loginKaryawan, page: () => LoginKaryawanPage()),
     GetPage(name: kehadiranPage, page: () => BlocProvider(create: (context) => getIt<KehadiranBloc>(), child: KehadiranPage())),

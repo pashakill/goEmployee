@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:goemployee/app/home/api/home_api.dart';
+import 'package:goemployee/app/home/bloc/home_bloc.dart';
 import 'package:goemployee/goemployee.dart';
 
 
@@ -16,11 +20,14 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final SessionManager _sessionManager = SessionManager();
+  List<DataNotificationModels> notifList = [];
+  late HomeBloc _bloc;
 
   // --- 3. TAMBAHKAN INITSTATE UNTUK LOAD DATA ---
   @override
   void initState() {
     super.initState();
+    _bloc = HomeBloc(homeApi: GetIt.I<HomeApi>());
     _loadUserData();
   }
 
@@ -37,7 +44,8 @@ class _HomePageState extends State<HomePage> {
           _currentUser = user;
           _isLoading = false;
         });
-        print('data _currentUser ${_currentUser.toString()}');
+
+        _fetchNotification();
       } else {
         // Gagal (Tabel 'users' ternyata kosong)
         _forceLogout(); // Paksa kembali ke login
@@ -64,9 +72,41 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: Scaffold(
         // Tampilkan loading ATAU konten utama
-        body: _isLoading
-            ? _buildLoading() // Tampilkan spinner saat loading
-            : _buildHomeContent(), // Tampilkan UI utama jika selesai
+        body: BlocConsumer<HomeBloc,
+            HomeState>(
+          bloc: _bloc,
+          listener: (context, state) {
+            if(state is HomePageLoadingState){
+
+            }
+
+            if(state is GetDataListNotificationSuccessState){
+              print('kesini masuk');
+
+              setState(() {
+                notifList.addAll(state.notificationModel.data!.dataNotificationModels);
+                _isLoading = false;
+              });
+
+            }
+
+            if(state is HomePageFailedState){
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
+                );
+
+                //_loadRiwayatLembur();
+              }
+            }
+
+          },
+          builder: (context, state) {
+            return _isLoading
+                ? _buildLoading() // Tampilkan spinner saat loading
+                : _buildHomeContent(); // Tampilkan UI utama jika selesai
+          },
+        ),
       ),
     );
   }
@@ -183,32 +223,56 @@ class _HomePageState extends State<HomePage> {
                               ),
                               'Pemberitahuan'),
                           SizedBox(
-                            height: 20,
+                            height: 8,
                           ),
-                          Center(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/image/null_notifcation.jpg',
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  Text(
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      'Tidak ada pemberitahuan'),
-                                ],
-                              )),
-                        ]))),
+
+                          Container(
+                            child: _isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : notifList.isEmpty
+                                ? Center(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      'assets/image/null_notifcation.jpg',
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Text(
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        'Tidak ada pemberitahuan'),
+                                  ],
+                                ),
+                            )
+                                : ListView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: notifList.length,
+                              itemBuilder: (context, index) {
+                                // Panggilan CutiCard Anda sudah benar
+                                return NotificationCard(notificationModels: notifList[index]);
+                              },
+                            ),
+                          ),
+                        ]
+                    ))),
             SizedBox(height: 20,)
 
           ],
         ),
       ),
     );
+  }
+
+  void _fetchNotification() {
+    if (_currentUser == null) return;
+    _bloc.add(NotificationFetchedEvent(
+        userId: _currentUser!.id!
+    ));
   }
 }

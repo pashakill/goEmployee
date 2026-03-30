@@ -1,12 +1,17 @@
 part of 'persetujuan_bloc.dart';
 
-enum AddStatus { initial, valid, invalid, loading, success, failure }
+enum PersetujuanStatus { initial, valid, invalid, loading, success, failure }
 
 abstract class PersetujuanState extends Equatable {
   const PersetujuanState();
 
   @override
   List<Object> get props => [];
+}
+
+class PersetujuanPageGlobalErorr extends DinasState {
+  final NetworkError error;
+  PersetujuanPageGlobalErorr(this.error);
 }
 
 class PersetujuanPageInitialState extends PersetujuanState {}

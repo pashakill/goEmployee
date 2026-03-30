@@ -5,10 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/dinas_page/bloc/bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:geolocator/geolocator.dart'; // <-- 1. IMPORT BARU
+import 'package:geolocator/geolocator.dart';
 
 class TambahDinasPage extends StatefulWidget {
   const TambahDinasPage({super.key});
@@ -45,15 +44,48 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
   // --- Akhir Perubahan State ---
   var alamatSaatIni;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-  final DateFormat _mysqlFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+  DinasModel? data;
+  bool isEdit = false;
 
   @override
   void initState() {
     super.initState();
-    // 3. Panggil fungsi untuk mengambil lokasi saat init
+    _loadEditData();
+  }
+
+  void _loadEditData() {
     _tanggalPengajuan = DateTime.now(); // BARU
     _tglPengajuanController.text = DateFormat('dd-MM-yyyy').format(_tanggalPengajuan); // BARU
-    _fetchCurrentLocation();
+
+    final args = Get.arguments;
+    if (args != null && args['editDinas'] != null) {
+      data = args['editDinas'];
+      isEdit = true;
+      _tanggalMulai = DateTime.tryParse(data!.tanggalMulai);
+      _tanggalAkhir = DateTime.tryParse(data!.tanggalSelesai);
+
+      _tglMulaiController.text =
+          DateFormat('dd-MM-yyyy').format(_tanggalMulai!);
+      _tglAkhirController.text =
+          DateFormat('dd-MM-yyyy').format(_tanggalAkhir!);
+
+      _latController.text = data!.latitude;
+      _longController.text = data!.longTitude;
+      _alamatController.text = data!.alamat;
+      _alasanController.text = data!.alasan;
+
+      _initialPosition = LatLng(
+        double.parse(data!.latitude),
+        double.parse(data!.longTitude),
+      );
+
+      _currentMapPosition = _initialPosition;
+
+      _isLoading = false;
+    }else{
+      // 3. Panggil fungsi untuk mengambil lokasi saat init
+      _fetchCurrentLocation();
+    }
   }
 
   void _updateLatLongFields(LatLng position) async { // Tambahkan async
@@ -252,6 +284,14 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
       ),
       body: BlocConsumer<DinasBloc, DinasState>(
         listener: (context, state) async {
+          if(state is EditDinasSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Sukses Melakukan update Dinas')),
+            );
+
+            Get.back();
+          }
+
           if (state is DinasPageLoadingState) {
 
           }
@@ -517,17 +557,33 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
 
                                     );
 
-                                    context.read<DinasBloc>().add(
-                                      AddDinasEvent(dinasBaru,
-                                          userId: currentUser.id!,
-                                          kategori: PengajuanKategori.dinas.name,
-                                          tanggal_mulai: convertToMysqlFormat(_tglMulaiController.text),
-                                          tanggal_selesai: convertToMysqlFormat(_tglAkhirController.text),
-                                          alamat: alamatSaatIni,
-                                          latitude: _latController.text,
-                                          longTitude: _longController.text,
-                                          alasan: _alasanController.text),
-                                    );
+                                    if (isEdit) {
+                                      /// 🔥 EDIT MODE
+                                      context.read<DinasBloc>().add(
+                                        UpdateDinasEvent(dinasBaru,
+                                            userId: currentUser.id!,
+                                            kategori: PengajuanKategori.dinas.name,
+                                            tanggal_mulai: convertToMysqlFormat(_tglMulaiController.text),
+                                            tanggal_selesai: convertToMysqlFormat(_tglAkhirController.text),
+                                            alamat: alamatSaatIni,
+                                            latitude: _latController.text,
+                                            longTitude: _longController.text,
+                                            alasan: _alasanController.text, id: data!.id!),
+                                      );
+                                    } else {
+                                      /// 🔥 ADD MODE
+                                      context.read<DinasBloc>().add(
+                                        AddDinasEvent(dinasBaru,
+                                            userId: currentUser.id!,
+                                            kategori: PengajuanKategori.dinas.name,
+                                            tanggal_mulai: convertToMysqlFormat(_tglMulaiController.text),
+                                            tanggal_selesai: convertToMysqlFormat(_tglAkhirController.text),
+                                            alamat: alamatSaatIni,
+                                            latitude: _latController.text,
+                                            longTitude: _longController.text,
+                                            alasan: _alasanController.text),
+                                      );
+                                    }
                                   } catch (e) {
                                     // Tangani jika ada error saat simpan ke DB
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -535,8 +591,8 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                                     );
                                   }
                                 },
-                                child: const Text(
-                                  'Submit Pengajuan',
+                                child: Text(
+                                  isEdit ? 'Update pengajuan' : 'Submit Pengajuan',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,

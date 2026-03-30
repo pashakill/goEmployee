@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/lembur_page/bloc/bloc.dart';
 import 'package:intl/intl.dart';
 
 class TambahLemburPage extends StatefulWidget {
-  Function(LemburModel)? get onLemburAdded => Get.arguments?['onLemburAdded'];
+  Function()? get onLemburAdded => Get.arguments?['onLemburAdded'];
 
   const TambahLemburPage({super.key});
 
@@ -24,11 +23,32 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
 
   // Format tanggal dan waktu lokal Indonesia
   final DateFormat _dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+  bool isEdit = false;
+  LemburModel? lemburModel;
+
+  void _initEditMode() {
+    final args = Get.arguments;
+
+    if (args != null && args['editLembur'] != null) {
+      lemburModel = args['editLembur'];
+      isEdit = true;
+      lamaLembur = int.parse(lemburModel!.lamaLembur);
+      _tanggalMulai = DateTime.parse(lemburModel!.waktuMulai);
+      _tanggalSelesai = DateTime.parse(lemburModel!.waktuSelesai);
+      _catatanLembur = lemburModel!.catatanLembur;
+    }
+  }
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
-    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _tanggalMulai ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
 
-    if (pickedDate == null) return;
+
+    if (picked == null) return;
 
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
@@ -38,9 +58,9 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
     if (pickedTime == null) return;
 
     final DateTime pickedDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
+      picked.year,
+      picked.month,
+      picked.day,
       pickedTime.hour,
       pickedTime.minute,
     );
@@ -86,7 +106,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
           waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser.id!,
         );
         _dbHelper.insertLembur(lemburBaru);
-        widget.onLemburAdded?.call(lemburBaru);
+        widget.onLemburAdded?.call();
         Navigator.pop(context);
       }catch(e){
         e.printError();
@@ -95,6 +115,13 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         );
       }
     }
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    _initEditMode();
   }
 
   @override
@@ -108,11 +135,20 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
       ),
       body: BlocConsumer<LemburBloc, LemburState>(
         listener: (context, state) async {
+          if(state is EditLemburSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Sukses Melakukan update Lembur')));
+
+            widget.onLemburAdded?.call();
+            Get.back();
+          }
+
           if (state is LemburPageLoadingState) {
 
           }
 
           if (state is AddLemburSuccessState) {
+            /*
             final User? currentUser = await _dbHelper.getSingleUser();
             final lemburBaru = LemburModel(
               lamaLembur: lamaLembur.toString(),
@@ -121,7 +157,8 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
               waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser!.id!,
             );
             _dbHelper.insertLembur(lemburBaru);
-            widget.onLemburAdded?.call(lemburBaru);
+             */
+            widget.onLemburAdded?.call();
             Get.back();
           } else if (state is LemburPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -187,6 +224,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
 
                   // Alasan
                   TextFormField(
+                    initialValue: _catatanLembur ?? '',
                     maxLines: 3,
                     decoration: const InputDecoration(
                       labelText: 'Alasan Lembur',
@@ -207,11 +245,19 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                         waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
                         waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser!.id!,
                       );
-                      context.read<LemburBloc>().add(
-                        AddLemburEvent(lemburBaru, userId: currentUser.id!,
-                            kategori: PengajuanKategori.lembur.toString(), tanggal_mulai: _dateTimeFormat.format(_tanggalMulai!),
-                            alasan: _catatanLembur ?? '', tanggal_selesai: _dateTimeFormat.format(_tanggalSelesai!), durasi: lamaLembur.toString()),
-                      );
+                      if(isEdit){
+                        context.read<LemburBloc>().add(
+                          EditLemburEvent(pengajuanId: lemburModel!.id.toString(), lemburBaru, userId: currentUser.id!,
+                              kategori: PengajuanKategori.lembur.toString(), tanggal_mulai: _dateTimeFormat.format(_tanggalMulai!),
+                              alasan: _catatanLembur ?? '', tanggal_selesai: _dateTimeFormat.format(_tanggalSelesai!), durasi: lamaLembur.toString()),
+                        );
+                      }else{
+                        context.read<LemburBloc>().add(
+                          AddLemburEvent(lemburBaru, userId: currentUser.id!,
+                              kategori: PengajuanKategori.lembur.toString(), tanggal_mulai: _dateTimeFormat.format(_tanggalMulai!),
+                              alasan: _catatanLembur ?? '', tanggal_selesai: _dateTimeFormat.format(_tanggalSelesai!), durasi: lamaLembur.toString()),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,

@@ -1,5 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:goemployee/app/home/api/home_api.dart';
+import 'package:goemployee/app/home/bloc/home_bloc.dart';
 import 'package:goemployee/common_module/api/pengajuan_api.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
@@ -23,6 +25,7 @@ void setupLocator() {
   getIt.registerLazySingleton<KehadiranApi>(() => KehadiranApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<PengajuanApi>(() => PengajuanApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<PersetujuanApi>(() => PersetujuanApi(network: getIt<NetworkHelper>()),);
+  getIt.registerLazySingleton<HomeApi>(() => HomeApi(network: getIt<NetworkHelper>()),);
 
   // 3. BLoC
   getIt.registerFactory<LoginBloc>(() => LoginBloc(authApi: getIt<AuthApi>()));
@@ -33,5 +36,5 @@ void setupLocator() {
   getIt.registerFactory<WfhBloc>(() => WfhBloc(pengajuanApi: getIt<PengajuanApi>()));
   getIt.registerFactory<IzinBloc>(() => IzinBloc(pengajuanApi: getIt<PengajuanApi>()));
   getIt.registerFactory<PersetujuanBloc>(() => PersetujuanBloc(persetujuanApi: getIt<PersetujuanApi>()));
-
+  getIt.registerFactory<HomeBloc>(() => HomeBloc(homeApi: getIt<HomeApi>()));
 }

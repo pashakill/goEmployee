@@ -162,7 +162,32 @@ class DatabaseHelper {
       )
     ''');
 
-    await db.execute('''
+      await db.execute('''
+        CREATE TABLE pengajuan (
+          id INTEGER PRIMARY KEY,
+          kategori TEXT,
+          tanggal_mulai TEXT,
+          tanggal_selesai TEXT,
+          jam_mulai TEXT,
+          jam_selesai TEXT,
+          lama TEXT,
+          latitude TEXT,
+          longitude TEXT,
+          alasan TEXT,
+          berkas TEXT,
+          izin_kategori TEXT,
+          jam_izin TEXT,
+          status_manager TEXT,
+          status_hrd TEXT,
+          created_at TEXT,
+          cuti_kategori TEXT,
+          alamat TEXT,
+          tanggal_pengajuan TEXT,
+          user TEXT
+        )
+      ''');
+
+      await db.execute('''
       CREATE TABLE lembur (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -243,6 +268,42 @@ class DatabaseHelper {
     print("DatabaseHelper: Tabel berhasil dibuat.");
   }
 
+  Future<void> replaceCuti(List<CutiModel> cutiList, int userId) async {
+    final db = await instance.database;
+
+    final batch = db.batch();
+
+    // 1. Hapus semua data lama
+    batch.delete('cuti');
+
+    // 2. Ambil maksimal 5 data
+    final limitedList = cutiList.take(5).toList();
+
+    // 3. Insert ulang data
+    for (var cuti in limitedList) {
+      final data = {
+        'user_id': userId,
+        'jenis_cuti': cuti.jenisCuti,
+        'tanggal_mulai': cuti.tanggalMulai,
+        'tanggal_selesai': cuti.tanggalSelesai,
+        'alasan': cuti.alasan,
+        'dokumen_url': cuti.dokumenUrl,
+        'tanggal_pengajuan': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      };
+
+      batch.insert(
+        'cuti',
+        data,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // 4. Eksekusi batch
+    await batch.commit(noResult: true);
+
+    print('DatabaseHelper: Data cuti berhasil di-replace (max 5 data).');
+  }
+
   Future<int> insertCuti(CutiModel cuti, int userId) async {
     final db = await instance.database;
 
@@ -270,34 +331,92 @@ class DatabaseHelper {
     return id;
   }
 
-  Future<int> insertPengajuan(PengajuanData data) async {
-    final db = await database;
+  Future<int> insertPengajuan(PengajuanData p) async {
+    final db = await instance.database;
 
-    return await db.insert(
+    final data = {
+      'id': p.id,
+      'kategori': p.kategori,
+      'tanggal_mulai': p.tanggal_mulai,
+      'tanggal_selesai': p.tanggal_selesai,
+      'jam_mulai': p.jam_mulai,
+      'jam_selesai': p.jam_selesai,
+      'lama': p.lama,
+      'latitude': p.latitude,
+      'longitude': p.longitude,
+      'alasan': p.alasan,
+      'berkas': p.berkas,
+      'izin_kategori': p.izin_kategori,
+      'jam_izin': p.jam_izin,
+      'status_manager': p.status_manager,
+      'status_hrd': p.status_hrd,
+      'created_at': p.created_at,
+      'cuti_kategori': p.cuti_kategori,
+      'alamat': p.alamat,
+      'tanggal_pengajuan': p.tanggal_pengajuan,
+      'user': p.user,
+    };
+
+    final int id = await db.insert(
       'pengajuan',
-      {
-        'id': data.id,
-        'kategori': data.kategori,
-        'tanggal_mulai': data.tanggal_mulai,
-        'tanggal_selesai': data.tanggal_selesai,
-        'jam_mulai': data.jam_mulai,
-        'jam_selesai': data.jam_selesai,
-        'lama': data.lama,
-        'latitude': data.latitude,
-        'longitude': data.longitude,
-        'alasan': data.alasan,
-        'berkas': data.berkas,
-        'izin_kategori': data.izin_kategori,
-        'jam_izin': data.jam_izin,
-        'status_manager': data.status_manager,
-        'status_hrd': data.status_hrd,
-        'created_at': data.created_at,
-        'cuti_kategori': data.cuti_kategori,
-        'alamat': data.alamat,
-        'tanggal_pengajuan': data.tanggal_pengajuan,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace, // kalau id sama → update
+      data,
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    print('DatabaseHelper: Pengajuan (ID: $id) berhasil disimpan.');
+    return id;
+  }
+
+  Future<void> replacePengajuan(List<PengajuanData> list) async {
+    final db = await instance.database;
+
+    final batch = db.batch();
+
+    // 1. Hapus semua data lama
+    batch.delete('pengajuan');
+
+    // 2. Urutkan berdasarkan tanggal terbaru
+    list.sort((a, b) => b.tanggal_pengajuan.compareTo(a.tanggal_pengajuan));
+
+    // 3. Ambil maksimal 5 data
+    final limitedList = list.take(5).toList();
+
+    // 4. Insert ulang manual
+    for (var p in limitedList) {
+      final data = {
+        'id': p.id,
+        'kategori': p.kategori,
+        'tanggal_mulai': p.tanggal_mulai,
+        'tanggal_selesai': p.tanggal_selesai,
+        'jam_mulai': p.jam_mulai,
+        'jam_selesai': p.jam_selesai,
+        'lama': p.lama,
+        'latitude': p.latitude,
+        'longitude': p.longitude,
+        'alasan': p.alasan,
+        'berkas': p.berkas,
+        'izin_kategori': p.izin_kategori,
+        'jam_izin': p.jam_izin,
+        'status_manager': p.status_manager,
+        'status_hrd': p.status_hrd,
+        'created_at': p.created_at,
+        'cuti_kategori': p.cuti_kategori,
+        'alamat': p.alamat,
+        'tanggal_pengajuan': p.tanggal_pengajuan,
+        'user': p.user,
+      };
+
+      batch.insert(
+        'pengajuan',
+        data,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // 5. Eksekusi batch
+    await batch.commit(noResult: true);
+
+    print('DatabaseHelper: Data pengajuan berhasil di-replace (max 5 data).');
   }
 
 
@@ -434,6 +553,38 @@ class DatabaseHelper {
     return id;
   }
 
+  Future<void> replaceLembur(List<LemburModel> lemburList) async {
+    final db = await instance.database;
+
+    final batch = db.batch();
+
+    // 1. Hapus semua data lama
+    batch.delete('lembur');
+
+    // 3. Ambil maksimal 5 data
+    final limitedList = lemburList.take(5).toList();
+
+    // 4. Insert ulang data
+    for (var lembur in limitedList) {
+      final data = lembur.toMap();
+
+      // Tambahkan tanggal_pengajuan
+      data['tanggal_pengajuan'] =
+          DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+      batch.insert(
+        'lembur',
+        data,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // 5. Eksekusi batch
+    await batch.commit(noResult: true);
+
+    print('DatabaseHelper: Data lembur berhasil di-replace (max 5 data).');
+  }
+
   // DI DALAM class DatabaseHelper
 
   /// Mengambil semua riwayat lembur milik satu user
@@ -539,6 +690,35 @@ class DatabaseHelper {
     return id;
   }
 
+  Future<void> replaceDinas(List<DinasModel> dinasList) async {
+    final db = await instance.database;
+
+    final batch = db.batch();
+
+    // 1. Hapus semua data lama
+    batch.delete('dinas');
+
+    // 2. (Opsional) Urutkan data terbaru dulu (kalau ada tanggal)
+    dinasList.sort((a, b) => b.tanggalMulai.compareTo(a.tanggalMulai));
+
+    // 3. Ambil maksimal 5 data
+    final limitedList = dinasList.take(5).toList();
+
+    // 4. Insert ulang data
+    for (var dinas in limitedList) {
+      batch.insert(
+        'dinas',
+        dinas.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // 5. Eksekusi batch
+    await batch.commit(noResult: true);
+
+    print('DatabaseHelper: Data dinas berhasil di-replace (max 5 data).');
+  }
+
   Future<List<DinasModel>> getRiwayatDinas(int userId) async {
     final db = await instance.database;
 
@@ -616,46 +796,38 @@ class DatabaseHelper {
     return id;
   }
 
-  Future<void> submitNewIzin(dynamic modelRequest) async {
-    final dbHelper = DatabaseHelper.instance;
-    final currentUser = await dbHelper.getCurrentLoggedInUser();
+  Future<void> replaceIzin(List<IzinConverterModel> izinList) async {
+    final db = await instance.database;
 
-    if (currentUser == null || currentUser.id == null) {
-      throw Exception("Pengguna tidak terautentikasi.");
+    final batch = db.batch();
+
+    // 1. Hapus semua data lama
+    batch.delete('pengajuan_izin');
+
+    // 2. Validasi & filter data yang punya userId
+    final validList = izinList
+        .where((izin) => izin.userId != null)
+        .toList();
+
+    // 4. Ambil maksimal 5 data
+    final limitedList = validList.take(5).toList();
+
+    // 5. Insert ulang
+    for (var izin in limitedList) {
+      batch.insert(
+        'pengajuan_izin',
+        izin.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
 
-    final String currentTanggalPengajuan = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    IzinConverterModel izinData;
+    // 6. Eksekusi batch
+    await batch.commit(noResult: true);
 
-    // Logika konversi dari Request Model ke IzinConverterModel
-    switch (modelRequest.runtimeType) {
-      case IzinTelatRequest:
-        final req = modelRequest as IzinTelatRequest;
-        final fullTime = DateTime(
-          req.tanggal.year, req.tanggal.month, req.tanggal.day,
-          req.jam.hour, req.jam.minute,
-        );
-        izinData = IzinConverterModel(
-          id: 'local_${DateTime.now().millisecondsSinceEpoch}',
-          userId: currentUser.id,
-          tipe: IzinTipe.telatMasuk,
-          status: IzinStatus.pending,
-          tanggal: req.tanggal,
-          alasan: req.alasan,
-          jam: fullTime.toString(),
-          tanggalPengajuan: currentTanggalPengajuan,
-        );
-        break;
-
-    // Tambahkan case lainnya di sini (PulangAwalRequest, TidakMasukRequest...)
-
-      default:
-        throw Exception("Jenis request izin (${modelRequest.runtimeType}) tidak dikenali.");
-    }
-
-    // Panggil fungsi insert utama
-    await insertIzin(izinData);
+    print('DatabaseHelper: Data izin berhasil di-replace (max 5 data).');
   }
+
+
 
   Future<List<IzinConverterModel>> getRiwayatIzin(int userId) async {
     final db = await instance.database;

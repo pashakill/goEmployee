@@ -29,6 +29,35 @@ class AddLemburSuccessState extends LemburState {
   List<Object> get props => [cutiModel];
 }
 
+class EditLemburSuccessState extends LemburState {
+  final LemburModel cutiModel;
+
+  const EditLemburSuccessState({required this.cutiModel});
+  @override
+  List<Object> get props => [cutiModel];
+}
+
+class DeleteLemburSuccessState extends LemburState {
+
+  const DeleteLemburSuccessState();
+  @override
+  List<Object> get props => [];
+}
+
+class LemburPageGlobalErorr extends LemburState {
+  final NetworkError error;
+  LemburPageGlobalErorr(this.error);
+}
+
+
+class DeleteLemburFailedState extends LemburState {
+
+  const DeleteLemburFailedState();
+  @override
+  List<Object> get props => [];
+}
+
+
 class LemburPageFailedState extends LemburState {
   final String error;
   const LemburPageFailedState({required this.error});

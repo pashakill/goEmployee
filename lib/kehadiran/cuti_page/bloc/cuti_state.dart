@@ -21,6 +21,36 @@ class GetDataListCutiSuccessState extends CutiState {
   List<Object> get props => [dataCutiModel];
 }
 
+
+class UpdateCutiSuccessState extends CutiState {
+  final CutiModel cutiModel;
+
+  const UpdateCutiSuccessState({required this.cutiModel});
+  @override
+  List<Object> get props => [cutiModel];
+}
+
+class CutiPageGlobalErorr extends CutiState {
+  final NetworkError error;
+  CutiPageGlobalErorr(this.error);
+}
+
+class DeleteCutiSuccessState extends CutiState {
+  final String id;
+  const DeleteCutiSuccessState({required this.id});
+
+  @override
+  List<Object> get props => [id];
+}
+
+class DeleteCutiFailedState extends CutiState {
+  final String id;
+  const DeleteCutiFailedState({required this.id});
+
+  @override
+  List<Object> get props => [id];
+}
+
 class AddCutiSuccessState extends CutiState {
   final CutiModel cutiModel;
 

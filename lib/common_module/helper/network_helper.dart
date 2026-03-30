@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
+import 'dio_error_mapper.dart';
+
 // Ganti dengan IP PC/Laptop tempat server Dart berjalan
-const String _baseUrl = 'http://192.168.77.38:8080';
+const String _baseUrl = 'http://192.168.18.114:8080';
 const String _apiKey = 'RAHASIA123456';
 
 class NetworkHelper {
@@ -31,63 +33,26 @@ class NetworkHelper {
   // -------------------
   // POST GENERIK
   // -------------------
-  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> post(String endpoint,
+      Map<String, dynamic> data) async {
     try {
       final response = await _dio.post(endpoint, data: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw NetworkException(_handleDioError(e));
-    } catch (e) {
-      throw NetworkException('Terjadi error tidak terduga: ${e.toString()}');
+      throw mapDioError(e);
     }
   }
 
   // -------------------
   // GET GENERIK
   // -------------------
-  Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? data}) async {
+  Future<Map<String, dynamic>> get(String endpoint,
+      {Map<String, dynamic>? data}) async {
     try {
       final response = await _dio.get(endpoint, queryParameters: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw NetworkException(_handleDioError(e));
-    } catch (e) {
-      throw NetworkException('Terjadi error tidak terduga: ${e.toString()}');
+      throw mapDioError(e);
     }
   }
-
-  // -------------------
-  // ERROR HANDLER
-  // -------------------
-  String _handleDioError(DioException e) {
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return 'Koneksi timeout. Cek koneksi internet Anda.';
-    }
-
-    if (e.type == DioExceptionType.badResponse) {
-      if (e.response?.data != null && e.response!.data is Map) {
-        return e.response!.data['message'] ?? 'Error: ${e.response!.statusCode}';
-      }
-      return 'Error: ${e.response?.statusCode}';
-    }
-
-    if (e.type == DioExceptionType.cancel) {
-      return 'Permintaan ke server dibatalkan.';
-    }
-
-    return 'Koneksi gagal. Cek koneksi internet Anda.';
-  }
-}
-
-// -------------------
-// EXCEPTION
-// -------------------
-class NetworkException implements Exception {
-  final String message;
-  NetworkException(this.message);
-
-  @override
-  String toString() => message;
 }

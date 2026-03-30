@@ -21,6 +21,34 @@ class GetDataListDinasSuccessState extends DinasState {
   List<Object> get props => [dataCutiModel];
 }
 
+class EditDinasSuccessState extends DinasState {
+  final DinasModel dinasModel;
+
+  const EditDinasSuccessState({required this.dinasModel});
+  @override
+  List<Object> get props => [dinasModel];
+}
+
+
+class DeleteDinasSuccessState extends DinasState {
+
+  const DeleteDinasSuccessState();
+  @override
+  List<Object> get props => [];
+}
+
+class DinasPageGlobalErorr extends DinasState {
+  final NetworkError error;
+  DinasPageGlobalErorr(this.error);
+}
+
+class DeleteDinasFailedState extends DinasState {
+
+  const DeleteDinasFailedState();
+  @override
+  List<Object> get props => [];
+}
+
 class AddDinasSuccessState extends DinasState {
   final DinasModel dinasModel;
 

@@ -29,6 +29,33 @@ class AddIzinSuccessState extends IzinState {
   List<Object> get props => [izinConverterModel];
 }
 
+class EditIzinSuccessState extends IzinState {
+  final IzinConverterModel izinConverterModel;
+
+  const EditIzinSuccessState({required this.izinConverterModel});
+  @override
+  List<Object> get props => [izinConverterModel];
+}
+
+class DeleteIzinSuccessState extends IzinState {
+
+  const DeleteIzinSuccessState();
+  @override
+  List<Object> get props => [];
+}
+
+class DeleteIzinFailedState extends IzinState {
+
+  const DeleteIzinFailedState();
+  @override
+  List<Object> get props => [];
+}
+
+class IzinPageGlobalErorr extends IzinState {
+  final NetworkError error;
+  IzinPageGlobalErorr(this.error);
+}
+
 class IzinPageFailedState extends IzinState {
   final String error;
   const IzinPageFailedState({required this.error});

@@ -5,3 +5,4 @@ export 'network_helper.dart';
 export 'service_locator.dart';
 export 'camera_helper.dart';
 export 'date_picker_helper.dart';
+export 'dio_error_mapper.dart';

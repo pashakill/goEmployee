@@ -3,20 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
 
-import 'package:goemployee/kehadiran/persetujuan_page/api/api.dart';
-import 'package:goemployee/kehadiran/persetujuan_page/bloc/bloc.dart';
-
-import '../../common_module/helper/database_helper.dart';
-import '../../common_module/helper/routes.dart';
-import '../../user/user_view/auth/model/user_model.dart';
-import '../model/cuti_model.dart';
-import '../model/dinas_model.dart';
-import '../model/izin_converter_model.dart';
-import '../model/lembur_model.dart';
-import '../widget/cuti_card.dart';
-import '../widget/dinas_card.dart';
-import '../widget/izin_card.dart';
-import '../widget/lembur_card.dart';
 
 class PersetujuanPage extends StatefulWidget {
   const PersetujuanPage({super.key});
@@ -164,7 +150,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
     /// =========================
     /// 🔥 HRD (BERDASARKAN DIVISI)
     /// =========================
-    if (division == 'HRD') {
+    if (division == 'HR') {
       if (data.status_hrd == 'approve' || data.status_hrd == 'reject') {
         return const SizedBox();
       }
@@ -321,7 +307,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
       ),
       body: BlocConsumer<PersetujuanBloc, PersetujuanState>(
         bloc: _bloc,
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is PersetujuanPageLoadingState) {
             setState(() => _isLoading = true);
           }
@@ -332,6 +318,8 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
                   state.dataCutiModel.data!.pengajuan.toList();
               _isLoading = false;
             });
+
+            await DatabaseHelper.instance.replacePengajuan(state.dataCutiModel.data!.pengajuan.toList());
           }
 
           if (state is ApprovePersetujuanSuccessState) {

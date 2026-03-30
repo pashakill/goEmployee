@@ -88,8 +88,6 @@ class User {
   }
 
   factory User.fromLogin(UserModels loginResponse) {
-    print('loginResponse ${loginResponse.toString()}');
-    print('division ${loginResponse.division}');
 
     return User(
       id: loginResponse.id,

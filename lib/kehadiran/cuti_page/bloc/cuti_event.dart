@@ -12,6 +12,30 @@ class CutiFetchedEvent extends CutiEvent {
   const CutiFetchedEvent({required this.userId});
 }
 
+class UpdateCutiEvent extends CutiEvent {
+  final String id;
+  final int userId;
+  final String kategori;
+  final String tanggal_mulai;
+  final String tanggal_selesai;
+  final String alasan;
+  final String berkas;
+  final String jenis_cuti;
+  final CutiModel cutiModel;
+
+  const UpdateCutiEvent({required this.id, required this.userId, required this.kategori,
+    required this.tanggal_mulai, required this.tanggal_selesai, required this.alasan,
+    required this.berkas, required this.cutiModel, required this.jenis_cuti});
+}
+
+class DeleteCutiEvent extends CutiEvent {
+  final String id;
+  final int userId;
+  const DeleteCutiEvent({required this.id, required this.userId});
+}
+
+
+
 class AddCutiEvent extends CutiEvent {
   final int userId;
   final String kategori;

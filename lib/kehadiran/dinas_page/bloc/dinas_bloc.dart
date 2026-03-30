@@ -7,12 +7,14 @@ import 'package:goemployee/kehadiran/kehadiran_page/api/api.dart';
 part 'dinas_event.dart';
 part 'dinas_state.dart';
 
-class DinasBloc extends Bloc<LemburEvent, DinasState> {
+class DinasBloc extends Bloc<DinasEvent, DinasState> {
   final PengajuanApi pengajuanApi;
 
   DinasBloc({required this.pengajuanApi}) : super(DinasPageInitialState()) {
     on<DinasFetchedEvent>(_onFetchDinas);
     on<AddDinasEvent>(_onAddDinas);
+    on<UpdateDinasEvent>(_onEditDinas);
+    on<DeleteDinasEvent>(_onDeleteDinas);
   }
 
   void _onFetchDinas(DinasFetchedEvent event, Emitter<DinasState> emit) async {
@@ -41,6 +43,38 @@ class DinasBloc extends Bloc<LemburEvent, DinasState> {
       emit(AddDinasSuccessState(dinasModel: event.dinasModel));
     }else{
       emit(DinasPageFailedState(error: 'Menambahkan Dinas Gagal'));
+    }
+  }
+
+  void _onEditDinas(UpdateDinasEvent event, Emitter<DinasState> emit) async {
+    emit(DinasPageLoadingState());
+    var data = await pengajuanApi.editPengajuan(
+        userId: event.userId.toString(),
+        kategori: PengajuanKategori.dinas,
+        tanggalMulai: event.tanggal_mulai,
+        tanggalSelesai: event.tanggal_selesai,
+        alasan: event.alasan,
+        alamat: event.alamat,
+        latitude: event.latitude,
+        longitude: event.longTitude, pengajuanId: event.id.toString()
+    );
+    if(data.success){
+      emit(EditDinasSuccessState(dinasModel: event.dinasModel));
+    }else{
+      emit(DinasPageFailedState(error: 'Menambahkan Dinas Gagal'));
+    }
+  }
+
+  void _onDeleteDinas(DeleteDinasEvent event, Emitter<DinasState> emit) async {
+    emit(DinasPageLoadingState());
+    var data = await pengajuanApi.hapusPengajuan(
+        userId: event.userId.toString(),
+        pengajuanId: event.id.toString()
+    );
+    if(data){
+      emit(DeleteDinasSuccessState());
+    }else{
+      emit(DeleteDinasFailedState());
     }
   }
 }

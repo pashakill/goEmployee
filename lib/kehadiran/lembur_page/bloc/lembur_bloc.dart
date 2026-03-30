@@ -13,6 +13,8 @@ class LemburBloc extends Bloc<LemburEvent, LemburState> {
   LemburBloc({required this.pengajuanApi}) : super(LemburPageInitialState()) {
     on<LemburFetchedEvent>(_onFetchLembur);
     on<AddLemburEvent>(_onAddLembur);
+    on<EditLemburEvent>(_onEditLembur);
+    on<DeleteLemburEvent>(_onDeleteLembur);
   }
 
   void _onFetchLembur(LemburFetchedEvent event, Emitter<LemburState> emit) async {
@@ -38,6 +40,34 @@ class LemburBloc extends Bloc<LemburEvent, LemburState> {
       emit(AddLemburSuccessState(cutiModel: event.lemburModel));
     }else{
       emit(LemburPageFailedState(error: 'Menambahkan Cuti Gagal'));
+    }
+  }
+
+  void _onEditLembur(EditLemburEvent event, Emitter<LemburState> emit) async {
+    emit(LemburPageLoadingState());
+    var data = await pengajuanApi.editPengajuan(
+        userId: event.userId.toString(),
+        kategori: PengajuanKategori.lembur,
+        tanggalMulai: event.tanggal_mulai,
+        lama: int.parse(event.durasi),
+        alasan: event.alasan,
+        tanggalSelesai: event.tanggal_selesai, pengajuanId: event.pengajuanId);
+    if(data.success){
+      emit(EditLemburSuccessState(cutiModel: event.lemburModel));
+    }else{
+      emit(LemburPageFailedState(error: 'Menambahkan Cuti Gagal'));
+    }
+  }
+
+  void _onDeleteLembur(DeleteLemburEvent event, Emitter<LemburState> emit) async {
+    emit(LemburPageLoadingState());
+    var data = await pengajuanApi.hapusPengajuan(
+        userId: event.userId.toString(),
+        pengajuanId: event.pengajuanId);
+    if(data){
+      emit(DeleteLemburSuccessState());
+    }else{
+      emit(DeleteLemburFailedState());
     }
   }
 }

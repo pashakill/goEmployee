@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
-import 'package:goemployee/kehadiran/widget/lembur_card.dart';
 
 class WfhPage extends StatefulWidget {
   const WfhPage({super.key});
@@ -22,7 +20,7 @@ class _WfhPageState extends State<WfhPage> {
   bool sortByTanggal = false;
   User? _currentUser;
   late WfhBloc _bloc;
-
+  List<PengajuanData> pengajuanData = [];
 
   @override
   void initState() {
@@ -132,10 +130,13 @@ class _WfhPageState extends State<WfhPage> {
             onPressed: () {
               AppNavigator.to(Routes.tambahWfh,
                   arguments: {
-                    'onWfhAdded': (WfhModel wfhModel) {
-                      setState(() {
-                        wfhList.add(wfhModel);
+                    'onWfhAdded': () {
+                      /*
+                       setState(() {
+                        wfhList.add();
                       });
+                       */
+                      _loadUserData();
                     },
                   });
             },
@@ -156,18 +157,31 @@ class _WfhPageState extends State<WfhPage> {
           WfhState>(
         bloc: _bloc,
         listener: (context, state) {
+          if(state is DeleteWfhFailedState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Gagal Menghapus Data Wfh")));
+          }
+
+          if(state is DeleteWfhSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Berhasil Menghapus Data Wfh")));
+
+            _loadUserData();
+          }
+
           if(state is WfhPageLoadingState){
 
           }
 
           if(state is GetDataListWfhSuccessState){
-            print('kesini masuk');
+            print('kesini masuk wfh');
             List<WfhModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => WfhModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();
 
             setState(() {
               wfhList.addAll(listFromServer);
+              pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
               _isLoading = false;
             });
           }
@@ -185,9 +199,7 @@ class _WfhPageState extends State<WfhPage> {
         },
         builder: (context, state) {
           return Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              // 🔼 Filter dan Sort bar
               Row(
                 children: [
                   RoundedContainer(
@@ -245,7 +257,9 @@ class _WfhPageState extends State<WfhPage> {
 
               const Divider(),
 
+
               Expanded(
+                // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : wfhList.isEmpty
@@ -258,8 +272,23 @@ class _WfhPageState extends State<WfhPage> {
                     : ListView.builder(
                   itemCount: wfhList.length,
                   itemBuilder: (context, index) {
-                    // Panggilan CutiCard Anda sudah benar
-                    return WfhCard(wfhModel: wfhList[index]);
+                    return SlidablePengajuanItem(
+                      pengajuanData: pengajuanData[index],
+                      onEdit: (id) {
+                        AppNavigator.to(Routes.tambahWfh, arguments: {
+                          'onWfhAdded': () {
+                            _loadUserData();
+                          },
+                          'editWfh': wfhList[index]
+                        });
+                      },
+                      onDelete: (id) {
+                        _bloc.add(DeleteWfhEvent(
+                            userId: _currentUser!.id!, id: id.toString()
+                        ));
+                      },
+                      child: WfhCard(wfhModel: wfhList[index]),
+                    );
                   },
                 ),
               ),

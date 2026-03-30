@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/lembur_page/bloc/bloc.dart';
-import 'package:goemployee/kehadiran/widget/lembur_card.dart';
+
 
 class LemburPage extends StatefulWidget {
   const LemburPage({super.key});
@@ -23,6 +22,7 @@ class _LemburPageState extends State<LemburPage> {
 
   bool sortByDurasi = false;
   bool sortByTanggal = false;
+  List<PengajuanData> pengajuanData=[];
 
   void _sortByDurasi() {
     setState(() {
@@ -142,10 +142,13 @@ class _LemburPageState extends State<LemburPage> {
             onPressed: () {
               AppNavigator.to(Routes.tambahLemburPage,
                   arguments: {
-                    'onLemburAdded': (LemburModel lemburModel) {
+                    'onLemburAdded': () {
+                      /*
                       setState(() {
                         lemburList.add(lemburModel);
                       });
+                       */
+                      _loadUserData();
                     },
                   });
             },
@@ -164,20 +167,44 @@ class _LemburPageState extends State<LemburPage> {
       ),
       body: BlocConsumer<LemburBloc, LemburState>(
         bloc: _bloc,
-        listener: (context, state) {
+        listener: (context, state) async {
+          if(state is DeleteLemburFailedState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Gagal Menghapus Data Lembur")));
+
+          }
+
+          if(state is DeleteLemburSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Berhasil Menghapus Data Lembur")));
+
+            _loadUserData();
+          }
+
           if(state is LemburPageLoadingState){
 
           }
 
           if(state is GetDataListLemburiSuccessState){
+            if(!lemburList.isEmpty){
+              lemburList.clear();
+            }
+
+            if(!pengajuanData.isEmpty){
+              pengajuanData.clear();
+            }
+
             List<LemburModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => LemburModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();
 
             setState(() {
               lemburList.addAll(listFromServer);
+              pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
               _isLoading = false;
             });
+
+            await DatabaseHelper.instance.replaceLembur(lemburList);
           }
 
           if(state is LemburPageFailedState){
@@ -268,7 +295,23 @@ class _LemburPageState extends State<LemburPage> {
                   itemCount: lemburList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
-                    return LemburCard(lemburModel: lemburList[index]);
+                    return SlidablePengajuanItem(
+                      pengajuanData: pengajuanData[index],
+                      onEdit: (id) {
+                        AppNavigator.to(Routes.tambahLemburPage, arguments: {
+                          'onLemburAdded': () {
+                            _loadUserData();
+                          },
+                          'editLembur': lemburList[index]
+                        });
+                      },
+                      onDelete: (id) {
+                        _bloc.add(DeleteLemburEvent(
+                            userId: _currentUser!.id!, pengajuanId: id.toString()
+                        ));
+                      },
+                      child: LemburCard(lemburModel: lemburList[index]),
+                    );
                   },
                 ),
               ),

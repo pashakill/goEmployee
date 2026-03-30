@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
 import 'package:intl/intl.dart';
 
 class TambahWfhPage extends StatefulWidget {
-  Function(WfhModel)? get onWfhAdded => Get.arguments?['onWfhAdded'];
+  Function()? get onWfhAdded => Get.arguments?['onWfhAdded'];
 
   const TambahWfhPage({super.key});
 
@@ -20,19 +19,34 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
   String? _alasanWfh;
   DateTime? _tanggalMulai;
   DateTime? _tanggalSelesai;
-  int lamaWfh = 0;
+  int lamaWfh = 1;
   late DateTime _tanggalPengajuan;
   final TextEditingController _tglPengajuanController = TextEditingController();
 
   // Format tanggal dan waktu lokal Indonesia
   final DateFormat _dateTimeFormat = DateFormat('dd MMM yyyy HH:mm', 'id');
-
+  WfhModel? wfhModel;
+  bool isEdit = false;
 
   @override
   void initState() {
     super.initState();
     _tanggalPengajuan = DateTime.now();
-    _tglPengajuanController.text = DateFormat('dd-MM-yyyy').format(_tanggalPengajuan);
+    _tglPengajuanController.text = _tanggalPengajuan.toIso8601String().split('T').first;
+    _initEditMode();
+  }
+
+  void _initEditMode() {
+    final args = Get.arguments;
+
+    if (args != null && args['editWfh'] != null) {
+      wfhModel = args['editWfh'];
+      isEdit = true;
+      lamaWfh = int.parse(wfhModel!.lamaWfh);
+      _tanggalMulai = DateTime.parse(wfhModel!.waktuMulai);
+      _tanggalSelesai = DateTime.parse(wfhModel!.waktuSelesai);
+      _alasanWfh = wfhModel!.alasanWfh;
+    }
   }
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
@@ -103,7 +117,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
         print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
         // 5. PANGGIL CALLBACK (kode Anda sudah benar)
         //    Ini akan meng-update UI di halaman DaftarCutiPage
-        widget.onWfhAdded?.call(wfhBaru);
+        widget.onWfhAdded?.call();
         Navigator.pop(context);
       } catch (e) {
         // Tangani jika ada error saat simpan ke DB
@@ -125,6 +139,10 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
       ),
       body: BlocConsumer<WfhBloc, WfhState>(
         listener: (context, state) async {
+          if(state is EditWfhSuccessState){
+            widget.onWfhAdded?.call();
+          }
+
           if (state is CutiPageLoadingState) {
 
           }
@@ -142,11 +160,11 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
             //    Ini akan menyimpan data ke database SQLCipher
             final int dinasId = await _dbHelper.insertWfh(state.wfhModel);
             print('Wfh baru berhasil disimpan ke DB dengan ID: $dinasId');
-            widget.onWfhAdded?.call(state.wfhModel);
+            widget.onWfhAdded?.call();
             Get.back();
           } else if (state is WfhPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
+              SnackBar(content: Text('Gagal Menambahkan WFH: ${state.error}')),
             );
           }
         },
@@ -233,20 +251,37 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
                           final User? currentUser = await _dbHelper.getSingleUser();
                           final wfhBaru = WfhModel(
                               userId: currentUser!.id!,
-                              lamaWfh: lamaWfh.toString(), alasanWfh: _alasanWfh ?? '',
-                              waktuMulai: _tanggalMulai.toString(), waktuSelesai: _tanggalSelesai.toString(),
+                              lamaWfh: lamaWfh.toString(),
+                              alasanWfh: _alasanWfh ?? '',
+                              waktuMulai: _tanggalMulai!.toIso8601String().split('T').first,
+                              waktuSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
                               tanggalPengajuan: _tglPengajuanController.text
                           );
 
-                          context.read<WfhBloc>().add(
-                            AddWfhEvent(wfhBaru, userId: currentUser.id!, lamaWfh: lamaWfh.toString(),
-                                alasanWfh: _alasanWfh ?? '', waktuMulai: _tanggalMulai.toString(),
-                                waktuSelesai: _tanggalSelesai.toString(),
-                                tanggalPengajuan: _tglPengajuanController.text,
-                                alasan: _alasanWfh!,
-                                durasi: lamaWfh.toString()
-                            ),
-                          );
+                          if(isEdit){
+                            context.read<WfhBloc>().add(
+                              EditWfhEvent(wfhBaru, userId: currentUser.id!, lamaWfh: lamaWfh.toString(),
+                                  alasanWfh: _alasanWfh ?? '',
+                                  waktuMulai: _tanggalMulai!.toIso8601String().split('T').first,
+                                  waktuSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
+                                  tanggalPengajuan: _tglPengajuanController.text,
+                                  alasan: _alasanWfh!,
+                                  durasi: lamaWfh.toString(),
+                                  id: wfhModel!.id.toString()
+                              ),
+                            );
+                          }else{
+                            context.read<WfhBloc>().add(
+                              AddWfhEvent(wfhBaru, userId: currentUser.id!, lamaWfh: lamaWfh.toString(),
+                                  alasanWfh: _alasanWfh ?? '',
+                                  waktuMulai: _tanggalMulai!.toIso8601String().split('T').first,
+                                  waktuSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
+                                  tanggalPengajuan: _tglPengajuanController.text,
+                                  alasan: _alasanWfh!,
+                                  durasi: lamaWfh.toString()
+                              ),
+                            );
+                          }
                         } catch (e) {
                           // Tangani jika ada error saat simpan ke DB
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -259,8 +294,8 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text(
-                      'Ajukam WFH',
+                    child: Text(
+                      isEdit ? 'Edit WFH' : 'Ajukan WFH',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),

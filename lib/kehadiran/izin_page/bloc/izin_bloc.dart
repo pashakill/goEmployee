@@ -13,6 +13,8 @@ class IzinBloc extends Bloc<IzinEvent, IzinState> {
   IzinBloc({required this.pengajuanApi}) : super(IzinPageInitialState()) {
     on<IzinFetchedEvent>(_onFetchIzin);
     on<AddIzinEvent>(_onAddIzin);
+    on<EditIzinEvent>(_onEditIzin);
+    on<DeleteIzinEvent>(_onDeleteIzin);
   }
 
   void _onFetchIzin(IzinFetchedEvent event, Emitter<IzinState> emit) async {
@@ -40,6 +42,38 @@ class IzinBloc extends Bloc<IzinEvent, IzinState> {
       emit(AddIzinSuccessState(izinConverterModel: event.izinConverterModel));
     }else{
       emit(IzinPageFailedState(error: 'Menambahkan Dinas Gagal'));
+    }
+  }
+
+  void _onEditIzin(EditIzinEvent event, Emitter<IzinState> emit) async {
+    emit(IzinPageLoadingState());
+    var data = await pengajuanApi.editPengajuan(
+        userId: event.userId.toString(),
+        izinKategori: event.izinTipe,
+        kategori: PengajuanKategori.izin,
+        tanggalMulai: event.tanggal,
+        alasan: event.alasan,
+        jamIzin: event.jam,
+        tanggalSelesai: event.tanggal,
+        pengajuanId: event.id
+    );
+    if(data.success){
+      emit(EditIzinSuccessState(izinConverterModel: event.izinConverterModel));
+    }else{
+      emit(IzinPageFailedState(error: 'Menambahkan Dinas Gagal'));
+    }
+  }
+
+  void _onDeleteIzin(DeleteIzinEvent event, Emitter<IzinState> emit) async {
+    emit(IzinPageLoadingState());
+    var data = await pengajuanApi.hapusPengajuan(
+        userId: event.userId.toString(),
+        pengajuanId: event.id
+    );
+    if(data){
+      emit(DeleteIzinSuccessState());
+    }else{
+      emit(DeleteIzinFailedState());
     }
   }
 }

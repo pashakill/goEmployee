@@ -25,3 +25,27 @@ class AddLemburEvent extends LemburEvent {
     required this.tanggal_mulai, required this.alasan, required this.tanggal_selesai,
     required this.durasi});
 }
+
+
+class EditLemburEvent extends LemburEvent {
+  final String pengajuanId;
+  final int userId;
+  final String kategori;
+  final String tanggal_mulai;
+  final String tanggal_selesai;
+  final String durasi;
+  final String alasan;
+  final LemburModel lemburModel;
+
+  const EditLemburEvent(this.lemburModel, {required this.pengajuanId, required this.userId, required this.kategori,
+    required this.tanggal_mulai, required this.alasan, required this.tanggal_selesai,
+    required this.durasi});
+}
+
+
+class DeleteLemburEvent extends LemburEvent {
+  final String pengajuanId;
+  final int userId;
+
+  const DeleteLemburEvent({required this.pengajuanId, required this.userId});
+}

@@ -41,6 +41,8 @@ class PengajuanData {
 
   Map<String, dynamic> toJson() => _$CutiResponseToJson(this);
 
+
+
   @override
   String toString() {
     return 'LoginModel(id: $id, kategori: "$kategori", tanggal_mulai: $tanggal_mulai, '

@@ -12,27 +12,86 @@ class CutiBloc extends Bloc<CutiEvent, CutiState> {
   CutiBloc({required this.pengajuanApi}) : super(CutiPageInitialState()) {
     on<CutiFetchedEvent>(_onFetchCuti);
     on<AddCutiEvent>(_onAddCuti);
+    on<UpdateCutiEvent>(_onEditCuti);
+    on<DeleteCutiEvent>(_onDeleteCuti);
   }
 
   void _onFetchCuti(CutiFetchedEvent event, Emitter<CutiState> emit) async {
     emit(CutiPageLoadingState());
-    var data = await pengajuanApi.getList(userId: event.userId.toString(), kategori: PengajuanKategori.cuti);();
-    if(data.success){
-      emit(GetDataListCutiSuccessState(dataCutiModel: data));
-    }else{
-      emit(CutiPageFailedState(error: 'Gagal Mendapatkan List Data'));
+    try{
+      var data = await pengajuanApi.getList(userId: event.userId.toString(), kategori: PengajuanKategori.cuti);();
+      if(data.success){
+        emit(GetDataListCutiSuccessState(dataCutiModel: data));
+      }else{
+        emit(CutiPageFailedState(error: 'Gagal Mendapatkan List Data'));
+      }
+    }catch(e){
+      print('object $e');
+      if (e is NetworkError) {
+        emit(CutiPageGlobalErorr(e));
+      } else {
+        emit(CutiPageGlobalErorr(UnknownError()));
+      }
     }
   }
 
   void _onAddCuti(AddCutiEvent event, Emitter<CutiState> emit) async {
     emit(CutiPageLoadingState());
-    var data = await pengajuanApi.addPengajuan(userId: event.userId.toString(), kategori: PengajuanKategori.cuti,
-        cuti_kategori: event.jenis_cuti,
-        tanggalMulai: event.tanggal_mulai, tanggalSelesai: event.tanggal_selesai, alasan: event.alasan, berkas: event.berkas);
-    if(data.success){
-      emit(AddCutiSuccessState(cutiModel: event.cutiModel));
-    }else{
-      emit(CutiPageFailedState(error: 'Menambahkan Cuti Gagal'));
+    try{
+      var data = await pengajuanApi.addPengajuan(userId: event.userId.toString(), kategori: PengajuanKategori.cuti,
+          cuti_kategori: event.jenis_cuti,
+          tanggalMulai: event.tanggal_mulai, tanggalSelesai: event.tanggal_selesai, alasan: event.alasan, berkas: event.berkas);
+      if(data.success){
+        emit(AddCutiSuccessState(cutiModel: event.cutiModel));
+      }else{
+        emit(CutiPageFailedState(error: 'Menambahkan Cuti Gagal'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(CutiPageGlobalErorr(e));
+      } else {
+        emit(CutiPageGlobalErorr(UnknownError()));
+      }
+    }
+  }
+
+  void _onEditCuti(UpdateCutiEvent event, Emitter<CutiState> emit) async {
+    emit(CutiPageLoadingState());
+    try{
+      var data = await pengajuanApi.editPengajuan(pengajuanId : event.id, userId: event.userId.toString(), kategori: PengajuanKategori.cuti,
+          cuti_kategori: event.jenis_cuti,
+          tanggalMulai: event.tanggal_mulai,
+          tanggalSelesai: event.tanggal_selesai,
+          alasan: event.alasan, berkas: event.berkas);
+      if(data.success){
+        emit(UpdateCutiSuccessState(cutiModel: event.cutiModel));
+      }else{
+        emit(CutiPageFailedState(error: 'Menambahkan Cuti Gagal'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(CutiPageGlobalErorr(e));
+      } else {
+        emit(CutiPageGlobalErorr(UnknownError()));
+      }
+    }
+  }
+
+  void _onDeleteCuti(DeleteCutiEvent event, Emitter<CutiState> emit) async {
+    emit(CutiPageLoadingState());
+    try{
+      var data = await pengajuanApi.hapusPengajuan(pengajuanId : event.id, userId: event.userId.toString());
+      if(data){
+        emit(DeleteCutiSuccessState(id: event.id));
+      }else{
+        emit(DeleteCutiFailedState(id: event.id));
+      }
+    }catch (e){
+      if (e is NetworkError) {
+        emit(CutiPageGlobalErorr(e));
+      } else {
+        emit(CutiPageGlobalErorr(UnknownError()));
+      }
     }
   }
 }

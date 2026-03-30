@@ -1,20 +1,20 @@
 part of 'persetujuan_bloc.dart';
 
-abstract class CutiEvent extends Equatable {
-  const CutiEvent();
+abstract class PersetujuanEvent extends Equatable {
+  const PersetujuanEvent();
 
   @override
   List<Object> get props => [];
 }
 
-class PersetujuanFetchedEvent extends CutiEvent {
+class PersetujuanFetchedEvent extends PersetujuanEvent {
   final int userId;
   final String divisiId;
   final String role;
   const PersetujuanFetchedEvent({required this.userId, required this.divisiId, required this.role});
 }
 
-class ApprovePersetujuanEvent extends CutiEvent {
+class ApprovePersetujuanEvent extends PersetujuanEvent {
   final int userId;
   final String role;
   final String actions;

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:goemployee/kehadiran/cuti_page/bloc/cuti_bloc.dart';
+import 'package:intl/intl.dart';
 
 
 class TambahCutiPage extends StatefulWidget {
-  Function(CutiModel)? get onCutiAdded => Get.arguments?['onCutiAdded'];
+  Function()? get onCutiAdded => Get.arguments?['onCutiAdded'];
 
   const TambahCutiPage({super.key});
 
@@ -16,6 +16,7 @@ class TambahCutiPage extends StatefulWidget {
 
 class _TambahCutiPageState extends State<TambahCutiPage> {
   final _formKey = GlobalKey<FormState>();
+
   String? _jenisCuti;
   DateTime? _tanggalMulai;
   DateTime? _tanggalSelesai;
@@ -23,45 +24,73 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   String? _dokumen;
   int _lamaCuti = 0;
 
+  bool isEdit = false;
+  CutiModel? editData;
+
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   final List<String> _jenisCutiList = [
-    'Semua Cuti',
     'Cuti Tahunan',
     'Cuti Melahirkan',
     'Cuti Nikah',
     'Cuti Khusus',
   ];
 
-  Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final List<DateTime> tanggalMerah = [
-      DateTime(2026, 1, 1),
-      DateTime(2026, 3, 22),
-      DateTime(2026, 4, 18),
-    ];
+  @override
+  void initState() {
+    super.initState();
+    _initEditMode();
+  }
 
-    final DateTime? picked = await showDatePicker(
+  /// =========================
+  /// INIT EDIT MODE
+  /// =========================
+  void _initEditMode() {
+    final args = Get.arguments;
+
+    if (args != null && args['editCuti'] != null) {
+      editData = args['editCuti'];
+      isEdit = true;
+
+      _jenisCuti = editData!.jenisCuti;
+      _tanggalMulai = DateTime.parse(editData!.tanggalMulai);
+      _tanggalSelesai = DateTime.parse(editData!.tanggalSelesai);
+      _alasan = editData!.alasan;
+      _dokumen = editData!.dokumenUrl;
+
+      _hitungLamaCuti();
+    }
+  }
+
+  /// =========================
+  /// HITUNG LAMA CUTI
+  /// =========================
+  void _hitungLamaCuti() {
+    if (_tanggalMulai != null && _tanggalSelesai != null) {
+      int totalHari = 0;
+      DateTime current = _tanggalMulai!;
+
+      while (!current.isAfter(_tanggalSelesai!)) {
+        if (current.weekday != DateTime.saturday &&
+            current.weekday != DateTime.sunday) {
+          totalHari++;
+        }
+        current = current.add(const Duration(days: 1));
+      }
+
+      _lamaCuti = totalHari;
+    }
+  }
+
+  /// =========================
+  /// DATE PICKER
+  /// =========================
+  Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _tanggalMulai ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      selectableDayPredicate: (DateTime day) {
-
-        if (day.weekday == DateTime.saturday ||
-            day.weekday == DateTime.sunday) {
-          return false;
-        }
-
-        for (var tgl in tanggalMerah) {
-          if (day.year == tgl.year &&
-              day.month == tgl.month &&
-              day.day == tgl.day) {
-            return false;
-          }
-        }
-
-        return true;
-      },
     );
 
     if (picked != null) {
@@ -71,32 +100,59 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         } else {
           _tanggalSelesai = picked;
         }
-
-        // 🔥 Hitung lama cuti (exclude weekend & tanggal merah)
-        if (_tanggalMulai != null && _tanggalSelesai != null) {
-          int totalHari = 0;
-
-          DateTime current = _tanggalMulai!;
-          while (!current.isAfter(_tanggalSelesai!)) {
-
-            bool isWeekend = current.weekday == DateTime.saturday ||
-                current.weekday == DateTime.sunday;
-
-            bool isTanggalMerah = tanggalMerah.any((tgl) =>
-            tgl.year == current.year &&
-                tgl.month == current.month &&
-                tgl.day == current.day);
-
-            if (!isWeekend && !isTanggalMerah) {
-              totalHari++;
-            }
-
-            current = current.add(const Duration(days: 1));
-          }
-
-          _lamaCuti = totalHari;
-        }
+        _hitungLamaCuti();
       });
+    }
+  }
+
+  /// =========================
+  /// SUBMIT (ADD / EDIT)
+  /// =========================
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final user = await _dbHelper.getSingleUser();
+
+    if (user == null) return;
+
+    final cuti = CutiModel(
+      id: editData?.id, // penting untuk edit
+      jenisCuti: _jenisCuti!,
+      tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
+      tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
+      alasan: _alasan ?? '',
+      dokumenUrl: _dokumen ?? '',
+    );
+
+    if (isEdit) {
+      /// 🔥 EDIT MODE
+      context.read<CutiBloc>().add(
+        UpdateCutiEvent(
+          id: cuti.id!.toString(),
+          userId: user.id!,
+          kategori: PengajuanKategori.cuti.toString(),
+          jenis_cuti: cuti.jenisCuti,
+          tanggal_mulai: cuti.tanggalMulai,
+          tanggal_selesai: cuti.tanggalSelesai,
+          alasan: cuti.alasan,
+          berkas: cuti.dokumenUrl,
+          cutiModel: cuti,
+        ),
+      );
+    } else {
+      /// 🔥 ADD MODE
+      context.read<CutiBloc>().add(
+        AddCutiEvent(
+          userId: user.id!,
+          kategori: PengajuanKategori.cuti.toString(),
+          jenis_cuti: cuti.jenisCuti,
+          tanggal_mulai: cuti.tanggalMulai,
+          tanggal_selesai: cuti.tanggalSelesai,
+          alasan: cuti.alasan,
+          berkas: cuti.dokumenUrl,
+          cutiModel: cuti,
+        ),
+      );
     }
   }
 
@@ -134,7 +190,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
         // 5. PANGGIL CALLBACK (kode Anda sudah benar)
         //    Ini akan meng-update UI di halaman DaftarCutiPage
-        widget.onCutiAdded?.call(cutiBaru); // (Saya ganti '!' jadi '?.call' agar lebih aman)
+        widget.onCutiAdded?.call();
         Get.back();
       } catch (e) {
         // Tangani jika ada error saat simpan ke DB
@@ -145,22 +201,33 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
     }
   }
 
+  /// =========================
+  /// UI
+  /// =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Cuti', style: TextStyle(color: Colors.white)),
+        title: Text(isEdit ? "Edit Cuti" : "Tambah Cuti"),
         backgroundColor: Colors.green,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: BlocConsumer<CutiBloc, CutiState>(
         listener: (context, state) async {
-          if (state is CutiPageLoadingState) {
-
+          if(state is UpdateCutiSuccessState){
+            widget.onCutiAdded?.call();
+            Get.back();
           }
 
           if (state is AddCutiSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(isEdit
+                    ? "Cuti berhasil diupdate"
+                    : "Cuti berhasil ditambahkan"),
+              ),
+            );
 
+            /*
             final cutiBaru = CutiModel(
               jenisCuti: _jenisCuti!,
               tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
@@ -172,45 +239,45 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
             final User? currentUser = await _dbHelper.getSingleUser();
             final int cutiId = await _dbHelper.insertCuti(cutiBaru, currentUser!.id!);
             print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
-            widget.onCutiAdded?.call(cutiBaru);
+             */
+            widget.onCutiAdded?.call();
             Get.back();
-          } else if (state is CutiPageFailedState) {
+          }
+
+          if (state is CutiPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
+              SnackBar(content: Text(state.error)),
             );
           }
         },
         builder: (context, state) {
           return Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
               child: ListView(
                 children: [
-                  // Jenis Cuti
+                  /// JENIS CUTI
                   DropdownButtonFormField<String>(
                     value: _jenisCuti,
+                    items: _jenisCutiList
+                        .map((e) => DropdownMenuItem(
+                      value: e,
+                      child: Text(e),
+                    ))
+                        .toList(),
+                    onChanged: (val) => setState(() => _jenisCuti = val),
                     decoration: const InputDecoration(
                       labelText: 'Jenis Cuti',
                       border: OutlineInputBorder(),
                     ),
-                    items: _jenisCutiList.map((jenis) {
-                      return DropdownMenuItem(
-                        value: jenis,
-                        child: Text(jenis),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _jenisCuti = value;
-                      });
-                    },
-                    validator: (value) =>
-                    value == null ? 'Pilih jenis cuti_page' : null,
+                    validator: (val) =>
+                    val == null ? "Wajib pilih jenis cuti" : null,
                   ),
+
                   const SizedBox(height: 16),
 
-                  // Tanggal Mulai
+                  /// TANGGAL MULAI
                   InkWell(
                     onTap: () => _selectDate(context, true),
                     child: InputDecorator(
@@ -219,13 +286,15 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                         border: OutlineInputBorder(),
                       ),
                       child: Text(_tanggalMulai == null
-                          ? 'Pilih tanggal mulai'
-                          : _tanggalMulai!.toString().split(' ')[0]),
+                          ? 'Pilih tanggal'
+                          : DateFormat('yyyy-MM-dd')
+                          .format(_tanggalMulai!)),
                     ),
                   ),
+
                   const SizedBox(height: 16),
 
-                  // Tanggal Selesai
+                  /// TANGGAL SELESAI
                   InkWell(
                     onTap: () => _selectDate(context, false),
                     child: InputDecorator(
@@ -234,33 +303,38 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                         border: OutlineInputBorder(),
                       ),
                       child: Text(_tanggalSelesai == null
-                          ? 'Pilih tanggal selesai'
-                          : _tanggalSelesai!.toString().split(' ')[0]),
+                          ? 'Pilih tanggal'
+                          : DateFormat('yyyy-MM-dd')
+                          .format(_tanggalSelesai!)),
                     ),
                   ),
+
                   const SizedBox(height: 16),
 
-                  // Lama Cuti
+                  /// LAMA CUTI
                   TextFormField(
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: 'Lama Cuti (hari)',
+                      labelText: 'Lama Cuti',
                       border: OutlineInputBorder(),
                     ),
                     controller:
                     TextEditingController(text: _lamaCuti.toString()),
                   ),
+
                   const SizedBox(height: 16),
 
-                  // Alasan
+                  /// ALASAN
                   TextFormField(
+                    initialValue: _alasan,
                     maxLines: 3,
                     decoration: const InputDecoration(
-                      labelText: 'Alasan Cuti',
+                      labelText: 'Alasan',
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (val) => _alasan = val,
                   ),
+
                   const SizedBox(height: 16),
 
                   // Dokumen Upload (simulasi)
@@ -272,35 +346,19 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                     label: Text(_dokumen == null ? 'Upload Dokumen' : 'File: Memilih Gambar Dari Camera'),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // Tombol Simpan
+                  /// BUTTON
                   ElevatedButton(
-                    onPressed: () async {
-                      final User? currentUser = await _dbHelper.getSingleUser();
-                      final cutiBaru = CutiModel(
-                        jenisCuti: _jenisCuti!,
-                        tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
-                        tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
-                        alasan: _alasan ?? '',
-                        dokumenUrl: _dokumen ?? '',
-                      );
-
-                      context.read<CutiBloc>().add(
-                        AddCutiEvent(userId: currentUser!.id!,
-                            kategori: PengajuanKategori.cuti.toString(), jenis_cuti: _jenisCuti!,
-                            tanggal_mulai: _tanggalMulai!.toIso8601String().split('T').first,
-                            tanggal_selesai: _tanggalSelesai!.toIso8601String().split('T').first,
-                            alasan: _alasan ?? '', berkas: _dokumen ?? '', cutiModel: cutiBaru),
-                      );
-                    },
+                    onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor:
+                      isEdit ? Colors.orange : Colors.green,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text(
-                      'Simpan Cuti',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    child: Text(
+                      isEdit ? "Update Cuti" : "Simpan Cuti",
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ],

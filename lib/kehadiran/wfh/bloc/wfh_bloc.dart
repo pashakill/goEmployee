@@ -13,6 +13,8 @@ class WfhBloc extends Bloc<WfhEvent, WfhState> {
   WfhBloc({required this.pengajuanApi}) : super(WfhPageInitialState()) {
     on<WfhFetchedEvent>(_onFetchWfh);
     on<AddWfhEvent>(_onAddWfh);
+    on<EditWfhEvent>(_onEditWfh);
+    on<DeleteWfhEvent>(_onDeleteWfh);
   }
 
   void _onFetchWfh(WfhFetchedEvent event, Emitter<WfhState> emit) async {
@@ -38,7 +40,37 @@ class WfhBloc extends Bloc<WfhEvent, WfhState> {
     if(data.success){
       emit(AddWfhSuccessState(wfhModel: event.wfhModel));
     }else{
-      emit(WfhPageFailedState(error: 'Menambahkan Dinas Gagal'));
+      emit(WfhPageFailedState(error: 'Menambahkan Wfh Gagal'));
+    }
+  }
+
+  void _onEditWfh(EditWfhEvent event, Emitter<WfhState> emit) async {
+    emit(WfhPageLoadingState());
+    var data = await pengajuanApi.editPengajuan(
+      userId: event.userId.toString(),
+      lama: int.parse(event.durasi),
+      kategori: PengajuanKategori.wfh,
+      tanggalMulai: event.waktuMulai,
+      tanggalSelesai: event.waktuSelesai,
+      alasan: event.alasan, pengajuanId: event.id,
+    );
+    if(data.success){
+      emit(AddWfhSuccessState(wfhModel: event.wfhModel));
+    }else{
+      emit(WfhPageFailedState(error: 'Edit Wfh Gagal'));
+    }
+  }
+
+  void _onDeleteWfh(DeleteWfhEvent event, Emitter<WfhState> emit) async {
+    emit(WfhPageLoadingState());
+    var data = await pengajuanApi.hapusPengajuan(
+      userId: event.userId.toString(),
+      pengajuanId: event.id,
+    );
+    if(data){
+      emit(DeleteWfhSuccessState());
+    }else{
+      emit(DeleteWfhFailedState());
     }
   }
 }

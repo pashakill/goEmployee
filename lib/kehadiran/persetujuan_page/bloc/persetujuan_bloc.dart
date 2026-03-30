@@ -7,7 +7,7 @@ import 'package:goemployee/kehadiran/persetujuan_page/api/api.dart';
 part 'persetujuan_event.dart';
 part 'persetujuan_state.dart';
 
-class PersetujuanBloc extends Bloc<CutiEvent, PersetujuanState> {
+class PersetujuanBloc extends Bloc<PersetujuanEvent, PersetujuanState> {
   final PersetujuanApi persetujuanApi;
 
   PersetujuanBloc({required this.persetujuanApi}) : super(PersetujuanPageInitialState()) {
@@ -27,11 +27,11 @@ class PersetujuanBloc extends Bloc<CutiEvent, PersetujuanState> {
 
   void _onApprovePersetujuan(ApprovePersetujuanEvent event, Emitter<PersetujuanState> emit) async {
     emit(PersetujuanPageLoadingState());
-    var data = await persetujuanApi.approveDataPengajuan(pengajuan_id: event.userId.toString(), role: event.role, action: event.actions, divisi_id: event.divisiId);
+    var data = await persetujuanApi.approveDataPengajuan(pengajuan_id: event.userId, role: event.role, action: event.actions, divisi_id: event.divisiId);
     if(data.success){
       emit(ApprovePersetujuanSuccessState());
     }else{
-      emit(PersetujuanPageFailedState(error: 'Menambahkan Cuti Gagal'));
+      emit(PersetujuanPageFailedState(error: 'Approve Gagal'));
     }
   }
 }
