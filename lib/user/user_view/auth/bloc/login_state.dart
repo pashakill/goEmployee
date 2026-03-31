@@ -10,6 +10,11 @@ abstract class LoginState extends Equatable {
   List<Object> get props => [];
 }
 
+class LoginPageGlobalErorr extends LoginState {
+  final NetworkError error;
+  LoginPageGlobalErorr(this.error);
+}
+
 class LoginInitial extends LoginState {}
 
 class LoginLoading extends LoginState {}

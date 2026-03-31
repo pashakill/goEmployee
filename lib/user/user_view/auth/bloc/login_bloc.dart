@@ -15,14 +15,22 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   void _onLoginButtonPressed(LoginButtonPressed event, Emitter<LoginState> emit) async {
     emit(LoginLoading());
-    var data = await authApi.login(username: event.username,
-        password: event.password);
+    try{
+      var data = await authApi.login(username: event.username,
+          password: event.password);
 
-    print('data login ${data.toString()}');
-    if(data.success){
-      emit(LoginSuccess(loginResponse: data.loginResponse!));
-    }else{
-      emit(LoginFailure(error: 'Login Gagal'));
+      print('data login ${data.toString()}');
+      if(data.success){
+        emit(LoginSuccess(loginResponse: data.loginResponse!));
+      }else{
+        emit(LoginFailure(error: 'Login Gagal'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(LoginPageGlobalErorr(e));
+      } else {
+        emit(LoginPageGlobalErorr(UnknownError()));
+      }
     }
   }
 }

@@ -62,13 +62,15 @@ class LemburBloc extends Bloc<LemburEvent, LemburState> {
   void _onEditLembur(EditLemburEvent event, Emitter<LemburState> emit) async {
     emit(LemburPageLoadingState());
     try{
+      print('pengajuanID ${event.pengajuanId}');
       var data = await pengajuanApi.editPengajuan(
           userId: event.userId.toString(),
           kategori: PengajuanKategori.lembur,
           tanggalMulai: event.tanggal_mulai,
           lama: int.parse(event.durasi),
           alasan: event.alasan,
-          tanggalSelesai: event.tanggal_selesai, pengajuanId: event.pengajuanId);
+          tanggalSelesai: event.tanggal_selesai,
+          pengajuanId: event.pengajuanId);
       if(data.success){
         emit(EditLemburSuccessState(cutiModel: event.lemburModel));
       }else{

@@ -86,19 +86,14 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   /// DATE PICKER
   /// =========================
   Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _tanggalMulai ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
+    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
 
-    if (picked != null) {
+    if (pickedDate != null) {
       setState(() {
         if (isStart) {
-          _tanggalMulai = picked;
+          _tanggalMulai = pickedDate;
         } else {
-          _tanggalSelesai = picked;
+          _tanggalSelesai = pickedDate;
         }
         _hitungLamaCuti();
       });

@@ -193,31 +193,23 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
 
   // ... (Fungsi _pilihTanggalMulai dan _pilihTanggalAkhir tetap sama) ...
   Future<void> _pilihTanggalMulai(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _tanggalMulai ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _tanggalMulai) {
+    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
+
+    if (pickedDate != null && pickedDate != _tanggalMulai) {
       setState(() {
-        _tanggalMulai = picked;
-        _tglMulaiController.text = DateFormat('dd-MM-yyyy').format(picked);
+        _tanggalMulai = pickedDate;
+        _tglMulaiController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
       });
     }
   }
 
   Future<void> _pilihTanggalAkhir(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _tanggalAkhir ?? _tanggalMulai ?? DateTime.now(),
-      firstDate: _tanggalMulai ?? DateTime(2000), // Tidak bisa sebelum tgl mulai
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _tanggalAkhir) {
+    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
+
+    if (pickedDate != null && pickedDate != _tanggalAkhir) {
       setState(() {
-        _tanggalAkhir = picked;
-        _tglAkhirController.text = DateFormat('dd-MM-yyyy').format(picked);
+        _tanggalAkhir = pickedDate;
+        _tglAkhirController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
       });
     }
   }

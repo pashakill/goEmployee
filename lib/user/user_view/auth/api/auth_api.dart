@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:goemployee/user/user_view/auth/model/login_model.dart';
 
@@ -7,10 +8,14 @@ class AuthApi {
   AuthApi({required this.network});
 
   Future<LoginModel> login({required String username, required String password}) async {
-    final response = await network.post("/login", {
-      "username": username,
-      "password": password,
-    });
-    return LoginModel.fromJson(response);
+    try{
+      final response = await network.post("/login", {
+        "username": username,
+        "password": password,
+      });
+      return LoginModel.fromJson(response);
+    }on DioException catch(e){
+      throw mapDioError(e);
+    }
   }
 }

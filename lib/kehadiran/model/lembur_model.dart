@@ -50,7 +50,7 @@ class LemburModel {
 
   factory LemburModel.fromApi(PengajuanData data, String userId) {
     return LemburModel(userId: int.parse(userId), lamaLembur: data.lama,
-        catatanLembur: data.alasan, waktuMulai: data.tanggal_mulai, waktuSelesai: data.tanggal_selesai
+        catatanLembur: data.alasan, waktuMulai: data.tanggal_mulai, waktuSelesai: data.tanggal_selesai, id: data.id
     );
   }
 }

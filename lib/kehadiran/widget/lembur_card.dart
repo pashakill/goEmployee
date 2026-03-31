@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:intl/intl.dart';
 
 class LemburCard extends StatelessWidget {
   final LemburModel lemburModel;
@@ -12,42 +11,40 @@ class LemburCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16.0),
+        // 1. ICON (Dinamis berdasarkan Tipe)
+        leading: Icon(
+          Icons.play_for_work_outlined,
+          color: Colors.green,
+          size: 40,
+        ),
+
+        // 2. JUDUL (Dinamis berdasarkan Tipe)
+        title: Text(
+          lemburModel.catatanLembur,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+
+        // 3. SUBTITLE (Menampilkan Tanggal dan Alasan)
+        subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Jenis Cuti
-            const SizedBox(height: 8),
-
-            // Tanggal mulai & selesai
-            Row(
-              children: [
-                const Icon(Icons.date_range, size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
-                Expanded(child: Text(
-                  '${DateFormat('dd MMMM yyyy HH:mm:ss', 'id_ID').format(DateTime.parse(lemburModel.waktuMulai))} - ${DateFormat('dd MMMM yyyy HH:mm:ss', 'id_ID').format(DateTime.parse(lemburModel.waktuSelesai))}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ))
-              ],
-            ),
-
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Durasi ${lemburModel.lamaLembur} jam',
-              style: const TextStyle(fontSize: 14),
-            ),
-            Text(
-              lemburModel.catatanLembur,
-              style: const TextStyle(fontSize: 14),
+              'Durasi ${lemburModel.lamaLembur}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
-      ),
+        trailing: Text(
+          '${DateHelper.formatDisplay(DateHelper.fromBackend(lemburModel.waktuMulai))} - ${DateHelper.formatDisplay(DateHelper.fromBackend(lemburModel.waktuSelesai))}',
+          style: const TextStyle(color: Colors.black54),
+        ),
+        // 4. TRAILING (Dinamis berdasarkan Status)
+        isThreeLine: true,
+      )
     );
   }
 }

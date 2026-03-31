@@ -145,15 +145,11 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
       TextEditingController controller,
       Function(DateTime) onDateSelected,
       ) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      onDateSelected(picked);
-      controller.text = DateFormat('dd-MM-yyyy').format(picked);
+    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
+
+    if (pickedDate != null) {
+      onDateSelected(pickedDate);
+      controller.text = DateFormat('dd-MM-yyyy').format(pickedDate);
     }
   }
 

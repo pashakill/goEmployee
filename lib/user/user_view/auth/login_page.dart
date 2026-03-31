@@ -28,6 +28,29 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) async {
+
+          if (state is LoginPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+          }
+
           if (state is LoginSuccess) {
             //init Data Login
             final newUser = User.fromLogin(state.loginResponse);

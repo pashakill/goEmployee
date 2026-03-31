@@ -22,7 +22,6 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Format tanggal dan waktu lokal Indonesia
-  final DateFormat _dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
   bool isEdit = false;
   LemburModel? lemburModel;
 
@@ -33,51 +32,61 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
       lemburModel = args['editLembur'];
       isEdit = true;
       lamaLembur = int.parse(lemburModel!.lamaLembur);
-      _tanggalMulai = DateTime.parse(lemburModel!.waktuMulai);
-      _tanggalSelesai = DateTime.parse(lemburModel!.waktuSelesai);
+      _tanggalMulai = DateHelper.fromBackend(lemburModel!.waktuMulai);
+      _tanggalSelesai = DateHelper.fromBackend(lemburModel!.waktuSelesai);
       _catatanLembur = lemburModel!.catatanLembur;
+      _hitungDurasi();
+    }
+  }
+
+  void _hitungDurasi() {
+    if (_tanggalMulai != null && _tanggalSelesai != null) {
+      final selisih =
+      _tanggalSelesai!.difference(_tanggalMulai!).inMinutes.abs();
+
+      lamaLembur = (selisih / 60).ceil();
+
+      print("Mulai: $_tanggalMulai");
+      print("Selesai: $_tanggalSelesai");
+      print("Durasi jam: $lamaLembur");
     }
   }
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
-    final picked = await showDatePicker(
+    final current = isStart ? _tanggalMulai : _tanggalSelesai;
+
+    final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _tanggalMulai ?? DateTime.now(),
+      initialDate: current ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
 
+    if (pickedDate == null) return;
 
-    if (picked == null) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
+    final pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: TimeOfDay.fromDateTime(current ?? DateTime.now()),
     );
 
     if (pickedTime == null) return;
 
-    final DateTime pickedDateTime = DateTime(
-      picked.year,
-      picked.month,
-      picked.day,
+    final newDateTime = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
       pickedTime.hour,
       pickedTime.minute,
     );
 
     setState(() {
       if (isStart) {
-        _tanggalMulai = pickedDateTime;
+        _tanggalMulai = newDateTime;
       } else {
-        _tanggalSelesai = pickedDateTime;
+        _tanggalSelesai = newDateTime;
       }
 
-      if (_tanggalMulai != null && _tanggalSelesai != null) {
-        lamaLembur = _tanggalSelesai!
-            .difference(_tanggalMulai!)
-            .inHours
-            .abs();
-      }
+      _hitungDurasi();
     });
   }
 
@@ -102,8 +111,8 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         final lemburBaru = LemburModel(
           lamaLembur: lamaLembur.toString(),
           catatanLembur: _catatanLembur ?? '',
-          waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
-          waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser.id!,
+          waktuMulai: DateHelper.toBackend(_tanggalMulai!),
+          waktuSelesai: DateHelper.toBackend(_tanggalSelesai!), userId: currentUser.id!,
         );
         _dbHelper.insertLembur(lemburBaru);
         widget.onLemburAdded?.call();
@@ -206,7 +215,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                       child: Text(
                         _tanggalMulai == null
                             ? 'Pilih tanggal mulai'
-                            : _dateTimeFormat.format(_tanggalMulai!),
+                            : DateHelper.formatDisplay(_tanggalMulai!),
                       ),
                     ),
                   ),
@@ -223,7 +232,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                       child: Text(
                         _tanggalSelesai == null
                             ? 'Pilih tanggal selesai'
-                            : _dateTimeFormat.format(_tanggalSelesai!),
+                            : DateHelper.formatDisplay(_tanggalSelesai!),
                       ),
                     ),
                   ),
@@ -264,20 +273,30 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                       final lemburBaru = LemburModel(
                         lamaLembur: lamaLembur.toString(),
                         catatanLembur: _catatanLembur ?? '',
-                        waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
-                        waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser!.id!,
+                        waktuMulai: DateHelper.toBackend(_tanggalMulai!),
+                        waktuSelesai: DateHelper.toBackend(_tanggalSelesai!), userId: currentUser!.id!,
                       );
                       if(isEdit){
+                        print('DATA LEMBUR DI EDIT ${lemburModel.toString()}');
+                        print('ID LEMBUR DI EDIT ${lemburModel!.id.toString()}');
+
                         context.read<LemburBloc>().add(
-                          EditLemburEvent(pengajuanId: lemburModel!.id.toString(), lemburBaru, userId: currentUser.id!,
-                              kategori: PengajuanKategori.lembur.toString(), tanggal_mulai: _dateTimeFormat.format(_tanggalMulai!),
-                              alasan: _catatanLembur ?? '', tanggal_selesai: _dateTimeFormat.format(_tanggalSelesai!), durasi: lamaLembur.toString()),
+                          EditLemburEvent(pengajuanId: lemburModel!.id.toString(), lemburBaru,
+                              userId: currentUser.id!,
+                              kategori: PengajuanKategori.lembur.toString(),
+                              tanggal_mulai: DateHelper.toBackend(_tanggalMulai!),
+                              alasan: _catatanLembur ?? '',
+                              tanggal_selesai: DateHelper.toBackend(_tanggalSelesai!),
+                              durasi: lamaLembur.toString()),
                         );
                       }else{
                         context.read<LemburBloc>().add(
                           AddLemburEvent(lemburBaru, userId: currentUser.id!,
-                              kategori: PengajuanKategori.lembur.toString(), tanggal_mulai: _dateTimeFormat.format(_tanggalMulai!),
-                              alasan: _catatanLembur ?? '', tanggal_selesai: _dateTimeFormat.format(_tanggalSelesai!), durasi: lamaLembur.toString()),
+                              kategori: PengajuanKategori.lembur.toString(),
+                              tanggal_mulai: DateHelper.toBackend(_tanggalMulai!),
+                              alasan: _catatanLembur ?? '',
+                              tanggal_selesai: DateHelper.toBackend(_tanggalSelesai!),
+                              durasi: lamaLembur.toString()),
                         );
                       }
                     },
