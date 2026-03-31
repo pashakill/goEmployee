@@ -10,6 +10,11 @@ abstract class KehadiranState extends Equatable {
   List<Object> get props => [];
 }
 
+class KehadiranPageGlobalErorr extends KehadiranState {
+  final NetworkError error;
+  KehadiranPageGlobalErorr(this.error);
+}
+
 class CheckinInitial extends KehadiranState {}
 
 class CheckinLoading extends KehadiranState {}

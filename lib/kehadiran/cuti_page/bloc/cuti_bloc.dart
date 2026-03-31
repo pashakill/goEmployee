@@ -26,7 +26,6 @@ class CutiBloc extends Bloc<CutiEvent, CutiState> {
         emit(CutiPageFailedState(error: 'Gagal Mendapatkan List Data'));
       }
     }catch(e){
-      print('object $e');
       if (e is NetworkError) {
         emit(CutiPageGlobalErorr(e));
       } else {

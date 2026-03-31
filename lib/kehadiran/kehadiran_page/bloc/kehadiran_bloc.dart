@@ -15,12 +15,20 @@ class KehadiranBloc extends Bloc<KehadiranEvent, KehadiranState> {
 
   void _onCheckInButtonPressed(CheckinButtonPressed event, Emitter<KehadiranState> emit) async {
     emit(CheckinLoading());
-    var data = await kehadiranApi.checkIn(user_id: event.user_id,
-        latitude: event.latitude, longitude: event.longitude);
-    if(data.success){
-      emit(CheckinSuccess(kehadiranModel: data));
-    }else{
-      emit(CheckinFailure(error: 'Login Gagal'));
+    try{
+      var data = await kehadiranApi.checkIn(user_id: event.user_id,
+          latitude: event.latitude, longitude: event.longitude);
+      if(data.success){
+        emit(CheckinSuccess(kehadiranModel: data));
+      }else{
+        emit(CheckinFailure(error: 'Login Gagal'));
+      }
+    }catch (e){
+      if (e is NetworkError) {
+        emit(KehadiranPageGlobalErorr(e));
+      } else {
+        emit(KehadiranPageGlobalErorr(UnknownError()));
+      }
     }
   }
 }

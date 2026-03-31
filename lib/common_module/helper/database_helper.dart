@@ -162,32 +162,32 @@ class DatabaseHelper {
       )
     ''');
 
-      await db.execute('''
-        CREATE TABLE pengajuan (
-          id INTEGER PRIMARY KEY,
-          kategori TEXT,
-          tanggal_mulai TEXT,
-          tanggal_selesai TEXT,
-          jam_mulai TEXT,
-          jam_selesai TEXT,
-          lama TEXT,
-          latitude TEXT,
-          longitude TEXT,
-          alasan TEXT,
-          berkas TEXT,
-          izin_kategori TEXT,
-          jam_izin TEXT,
-          status_manager TEXT,
-          status_hrd TEXT,
-          created_at TEXT,
-          cuti_kategori TEXT,
-          alamat TEXT,
-          tanggal_pengajuan TEXT,
-          user TEXT
-        )
-      ''');
+    await db.execute('''
+      CREATE TABLE pengajuan (
+        id INTEGER PRIMARY KEY,
+        kategori TEXT,
+        tanggal_mulai TEXT,
+        tanggal_selesai TEXT,
+        jam_mulai TEXT,
+        jam_selesai TEXT,
+        lama TEXT,
+        latitude TEXT,
+        longitude TEXT,
+        alasan TEXT,
+        berkas TEXT,
+        izin_kategori TEXT,
+        jam_izin TEXT,
+        status_manager TEXT,
+        status_hrd TEXT,
+        created_at TEXT,
+        cuti_kategori TEXT,
+        alamat TEXT,
+        tanggal_pengajuan TEXT,
+        user TEXT
+      )
+    ''');
 
-      await db.execute('''
+    await db.execute('''
       CREATE TABLE lembur (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -240,28 +240,6 @@ class DatabaseHelper {
         alasan TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'PENDING',
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    ''');
-
-      await db.execute('''
-        CREATE TABLE users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama TEXT NOT NULL,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        company_name TEXT NOT NULL,
-        role TEXT NOT NULL,
-        date_now TEXT NOT NULL,
-        time_checkin TEXT,
-        time_checkout TEXT,
-        late_checkin TEXT,
-        photo TEXT,
-        jadwal_mulai_kerja TEXT,
-        jadwal_selesai_kerja TEXT,
-        latitude TEXT,
-        longitude TEXT,
-        radius TEXT,
-        division TEXT
       )
     ''');
 
@@ -420,13 +398,11 @@ class DatabaseHelper {
   }
 
 
-  Future<List<PengajuanData>> getPengajuan(int userId) async {
+  Future<List<PengajuanData>> getPengajuan() async {
     final db = await database;
 
     final result = await db.query(
       'pengajuan',
-      where: 'user_id = ?',
-      whereArgs: [userId],
       orderBy: 'created_at DESC',
     );
 

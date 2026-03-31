@@ -21,6 +21,7 @@ class _WfhPageState extends State<WfhPage> {
   User? _currentUser;
   late WfhBloc _bloc;
   List<PengajuanData> pengajuanData = [];
+  bool isOffline = false;
 
   @override
   void initState() {
@@ -60,7 +61,7 @@ class _WfhPageState extends State<WfhPage> {
     ));
   }
 
-  Future<void> _loadRiwayatLembur() async {
+  Future<void> _loadRiwayatWfh() async {
     setState(() {
       _isLoading = true;
     });
@@ -157,6 +158,33 @@ class _WfhPageState extends State<WfhPage> {
           WfhState>(
         bloc: _bloc,
         listener: (context, state) {
+          if (state is WfhPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+            isOffline = true;
+
+            if(mounted){
+              _loadRiwayatWfh();
+            }
+          }
+
           if(state is DeleteWfhFailedState){
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Gagal Menghapus Data Wfh")));
@@ -174,7 +202,8 @@ class _WfhPageState extends State<WfhPage> {
           }
 
           if(state is GetDataListWfhSuccessState){
-            print('kesini masuk wfh');
+            isOffline = false;
+
             List<WfhModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => WfhModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();
@@ -192,7 +221,7 @@ class _WfhPageState extends State<WfhPage> {
                 SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
               );
 
-              _loadRiwayatLembur();
+              _loadRiwayatWfh();
             }
           }
 
@@ -272,7 +301,7 @@ class _WfhPageState extends State<WfhPage> {
                     : ListView.builder(
                   itemCount: wfhList.length,
                   itemBuilder: (context, index) {
-                    return SlidablePengajuanItem(
+                    return isOffline ? WfhCard(wfhModel: wfhList[index]) : SlidablePengajuanItem(
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahWfh, arguments: {

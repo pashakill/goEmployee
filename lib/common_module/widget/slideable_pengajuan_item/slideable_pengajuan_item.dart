@@ -3,7 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../repo/pengajuan_response.dart';
 
 class SlidablePengajuanItem extends StatelessWidget {
-  final PengajuanData pengajuanData;
+  final PengajuanData? pengajuanData;
   final Widget child;
 
   final Function(int data) onEdit;
@@ -11,7 +11,7 @@ class SlidablePengajuanItem extends StatelessWidget {
 
   const SlidablePengajuanItem({
     super.key,
-    required this.pengajuanData,
+    this.pengajuanData,
     required this.child,
     required this.onEdit,
     required this.onDelete,
@@ -19,25 +19,25 @@ class SlidablePengajuanItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isLocked = pengajuanData.status_hrd == 'approve' || pengajuanData.status_manager == 'approve';
+    bool isLocked = pengajuanData!.status_hrd == 'approve' || pengajuanData!.status_manager == 'approve';
     if(isLocked){
       return child;
     }
 
     return Slidable(
-      key: ValueKey(pengajuanData.id),
+      key: ValueKey(pengajuanData!.id),
       /// 👉 SWIPE KIRI → EDIT
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
         children: [
           SlidableAction(
-            onPressed: (_) => onEdit(pengajuanData.id),
+            onPressed: (_) => onEdit(pengajuanData!.id),
             backgroundColor: Colors.blue,
             icon: Icons.edit,
             label: 'Edit',
           ),
           SlidableAction(
-            onPressed: (_) => onDelete(pengajuanData.id),
+            onPressed: (_) => onDelete(pengajuanData!.id),
             backgroundColor: Colors.red,
             icon: Icons.delete,
             label: 'Delete',

@@ -35,6 +35,8 @@ extension IzinTipeExtension on IzinTipe {
   }
 }
 
+
+
 // 2. Buat Model Izin Terpadu
 class IzinConverterModel {
   final String id;
@@ -142,6 +144,7 @@ class IzinConverterModel {
   // --- Helper untuk Parsing Enum ---
 
   static IzinTipe _parseTipe(String? tipe) {
+    print('parseType ${tipe}');
     switch (tipe) {
       case 'TELAT_MASUK':
         return IzinTipe.telatMasuk;

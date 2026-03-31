@@ -9,7 +9,7 @@ abstract class PersetujuanState extends Equatable {
   List<Object> get props => [];
 }
 
-class PersetujuanPageGlobalErorr extends DinasState {
+class PersetujuanPageGlobalErorr extends PersetujuanState {
   final NetworkError error;
   PersetujuanPageGlobalErorr(this.error);
 }

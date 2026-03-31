@@ -284,6 +284,29 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
       ),
       body: BlocConsumer<DinasBloc, DinasState>(
         listener: (context, state) async {
+
+          if (state is DinasPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+          }
+
           if(state is EditDinasSuccessState){
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Sukses Melakukan update Dinas')),

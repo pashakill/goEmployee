@@ -304,6 +304,28 @@ class _KehadiranPageState extends State<KehadiranPage> {
       ),
       body: BlocConsumer<KehadiranBloc, KehadiranState>(
           listener: (context, state) {
+            if (state is KehadiranPageGlobalErorr) {
+              final error = state.error;
+
+              if (error is NoInternetError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+                );
+              } else if (error is TimeoutError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Server lambat")),
+                );
+              } else if (error is ServerError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Server error ${error.code}")),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(error.message)),
+                );
+              }
+            }
+
             if (state is CheckinSuccess) {
               _processCheckIn(state.kehadiranModel.kehadiranResponse?.jamMasuk ?? '',
                   state.kehadiranModel.kehadiranResponse?.terlambat ?? '');

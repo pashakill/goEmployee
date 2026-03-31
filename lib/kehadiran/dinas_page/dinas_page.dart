@@ -19,6 +19,7 @@ class _DinasPageState extends State<DinasPage> {
   User? _currentUser;
   bool sortByTanggal = false;
   List<PengajuanData> pengajuanData = [];
+  bool isOffline = false;
 
   void _sortByTanggal() {
     setState(() {
@@ -73,7 +74,7 @@ class _DinasPageState extends State<DinasPage> {
   }
 
   /// Mengambil data lembur dari database
-  Future<void> _loadRiwayatLembur() async {
+  Future<void> _loadRiwayatDinas() async {
     setState(() {
       _isLoading = true;
     });
@@ -90,6 +91,14 @@ class _DinasPageState extends State<DinasPage> {
         }
         setState(() => _isLoading = false);
         return;
+      }
+
+      if(!dinasList.isEmpty){
+        dinasList.clear();
+      }
+
+      if(!pengajuanData.isEmpty){
+        pengajuanData.clear();
       }
 
       // 2. Ambil riwayat lembur berdasarkan ID user
@@ -148,6 +157,33 @@ class _DinasPageState extends State<DinasPage> {
           DinasState>(
         bloc: _bloc,
         listener: (context, state) async {
+          if (state is DinasPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+            isOffline = true;
+
+            if(mounted){
+              _loadRiwayatDinas();
+            }
+          }
+
           if(state is DeleteDinasSuccessState){
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Berhasil Menghapus Data Dinas")),
@@ -167,6 +203,7 @@ class _DinasPageState extends State<DinasPage> {
           }
 
           if(state is GetDataListDinasSuccessState){
+            isOffline = false;
             if(!dinasList.isEmpty){
               dinasList.clear();
             }
@@ -194,7 +231,7 @@ class _DinasPageState extends State<DinasPage> {
                 SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
               );
 
-              _loadRiwayatLembur();
+              _loadRiwayatDinas();
             }
           }
 
@@ -246,7 +283,7 @@ class _DinasPageState extends State<DinasPage> {
                   itemCount: dinasList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
-                    return SlidablePengajuanItem(
+                    return isOffline? DinasCard(dinasModel: dinasList[index]) : SlidablePengajuanItem(
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahDinasPage, arguments: {

@@ -43,7 +43,7 @@ class DeleteWfhSuccessState extends WfhState {
   List<Object> get props => [];
 }
 
-class WfhPageGlobalErorr extends DinasState {
+class WfhPageGlobalErorr extends WfhState {
   final NetworkError error;
   WfhPageGlobalErorr(this.error);
 }

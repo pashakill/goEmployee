@@ -296,6 +296,29 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
       // UBAH: 'TabBarView' menjadi 'SingleChildScrollView'
       body: BlocConsumer<IzinBloc, IzinState>(
         listener: (context, state) async {
+
+          if (state is IzinPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+          }
+
           if(state is EditIzinSuccessState){
             Get.back();
             widget.onIzinAdded?.call();

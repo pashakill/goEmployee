@@ -16,22 +16,38 @@ class PersetujuanBloc extends Bloc<PersetujuanEvent, PersetujuanState> {
   }
 
   void _onFetchPersetujuan(PersetujuanFetchedEvent event, Emitter<PersetujuanState> emit) async {
-    emit(PersetujuanPageLoadingState());
-    var data = await persetujuanApi.getDataListPengajuan(userId: event.userId.toString(), userRole: event.role, divisiId: event.divisiId);();
-    if(data.success){
-      emit(GetDataListPersetujuanSuccessState(dataCutiModel: data));
-    }else{
-      emit(PersetujuanPageFailedState(error: 'Gagal Mendapatkan List Data'));
+    try{
+      emit(PersetujuanPageLoadingState());
+      var data = await persetujuanApi.getDataListPengajuan(userId: event.userId.toString(), userRole: event.role, divisiId: event.divisiId);();
+      if(data.success){
+        emit(GetDataListPersetujuanSuccessState(dataCutiModel: data));
+      }else{
+        emit(PersetujuanPageFailedState(error: 'Gagal Mendapatkan List Data'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(PersetujuanPageGlobalErorr(e));
+      } else {
+        emit(PersetujuanPageGlobalErorr(UnknownError()));
+      }
     }
   }
 
   void _onApprovePersetujuan(ApprovePersetujuanEvent event, Emitter<PersetujuanState> emit) async {
     emit(PersetujuanPageLoadingState());
-    var data = await persetujuanApi.approveDataPengajuan(pengajuan_id: event.userId, role: event.role, action: event.actions, divisi_id: event.divisiId);
-    if(data.success){
-      emit(ApprovePersetujuanSuccessState());
-    }else{
-      emit(PersetujuanPageFailedState(error: 'Approve Gagal'));
+    try{
+      var data = await persetujuanApi.approveDataPengajuan(pengajuan_id: event.userId, role: event.role, action: event.actions, divisi_id: event.divisiId);
+      if(data.success){
+        emit(ApprovePersetujuanSuccessState());
+      }else{
+        emit(PersetujuanPageFailedState(error: 'Approve Gagal'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(PersetujuanPageGlobalErorr(e));
+      } else {
+        emit(PersetujuanPageGlobalErorr(UnknownError()));
+      }
     }
   }
 }

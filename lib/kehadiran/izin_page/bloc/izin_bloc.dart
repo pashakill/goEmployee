@@ -19,61 +19,93 @@ class IzinBloc extends Bloc<IzinEvent, IzinState> {
 
   void _onFetchIzin(IzinFetchedEvent event, Emitter<IzinState> emit) async {
     emit(IzinPageLoadingState());
-    var data = await pengajuanApi.getList(userId: event.userId.toString(), kategori: PengajuanKategori.izin);();
-    if(data.success){
-      emit(GetDataListIzinSuccessState(dataCutiModel: data));
-    }else{
-      emit(IzinPageFailedState(error: 'Gagal Mendapatkan List Data'));
+    try{
+      var data = await pengajuanApi.getList(userId: event.userId.toString(), kategori: PengajuanKategori.izin);();
+      if(data.success){
+        emit(GetDataListIzinSuccessState(dataCutiModel: data));
+      }else{
+        emit(IzinPageFailedState(error: 'Gagal Mendapatkan List Data'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(IzinPageGlobalErorr(e));
+      } else {
+        emit(IzinPageGlobalErorr(UnknownError()));
+      }
     }
   }
 
   void _onAddIzin(AddIzinEvent event, Emitter<IzinState> emit) async {
     emit(IzinPageLoadingState());
-    var data = await pengajuanApi.addPengajuan(
-        userId: event.userId.toString(),
-        izinKategori: event.izinTipe,
-        kategori: PengajuanKategori.izin,
-        tanggalMulai: event.tanggal,
-        alasan: event.alasan,
-        jamIzin: event.jam,
-        tanggalSelesai: event.tanggal
-    );
-    if(data.success){
-      emit(AddIzinSuccessState(izinConverterModel: event.izinConverterModel));
-    }else{
-      emit(IzinPageFailedState(error: 'Menambahkan Dinas Gagal'));
+    try{
+      var data = await pengajuanApi.addPengajuan(
+          userId: event.userId.toString(),
+          izinKategori: event.izinTipe,
+          kategori: PengajuanKategori.izin,
+          tanggalMulai: event.tanggal,
+          alasan: event.alasan,
+          jamIzin: event.jam,
+          tanggalSelesai: event.tanggal
+      );
+      if(data.success){
+        emit(AddIzinSuccessState(izinConverterModel: event.izinConverterModel));
+      }else{
+        emit(IzinPageFailedState(error: 'Menambahkan Dinas Gagal'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(IzinPageGlobalErorr(e));
+      } else {
+        emit(IzinPageGlobalErorr(UnknownError()));
+      }
     }
   }
 
   void _onEditIzin(EditIzinEvent event, Emitter<IzinState> emit) async {
     emit(IzinPageLoadingState());
-    var data = await pengajuanApi.editPengajuan(
-        userId: event.userId.toString(),
-        izinKategori: event.izinTipe,
-        kategori: PengajuanKategori.izin,
-        tanggalMulai: event.tanggal,
-        alasan: event.alasan,
-        jamIzin: event.jam,
-        tanggalSelesai: event.tanggal,
-        pengajuanId: event.id
-    );
-    if(data.success){
-      emit(EditIzinSuccessState(izinConverterModel: event.izinConverterModel));
-    }else{
-      emit(IzinPageFailedState(error: 'Menambahkan Dinas Gagal'));
+    try{
+      var data = await pengajuanApi.editPengajuan(
+          userId: event.userId.toString(),
+          izinKategori: event.izinTipe,
+          kategori: PengajuanKategori.izin,
+          tanggalMulai: event.tanggal,
+          alasan: event.alasan,
+          jamIzin: event.jam,
+          tanggalSelesai: event.tanggal,
+          pengajuanId: event.id
+      );
+      if(data.success){
+        emit(EditIzinSuccessState(izinConverterModel: event.izinConverterModel));
+      }else{
+        emit(IzinPageFailedState(error: 'Menambahkan Dinas Gagal'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(IzinPageGlobalErorr(e));
+      } else {
+        emit(IzinPageGlobalErorr(UnknownError()));
+      }
     }
   }
 
   void _onDeleteIzin(DeleteIzinEvent event, Emitter<IzinState> emit) async {
     emit(IzinPageLoadingState());
-    var data = await pengajuanApi.hapusPengajuan(
-        userId: event.userId.toString(),
-        pengajuanId: event.id
-    );
-    if(data){
-      emit(DeleteIzinSuccessState());
-    }else{
-      emit(DeleteIzinFailedState());
+    try{
+      var data = await pengajuanApi.hapusPengajuan(
+          userId: event.userId.toString(),
+          pengajuanId: event.id
+      );
+      if(data){
+        emit(DeleteIzinSuccessState());
+      }else{
+        emit(DeleteIzinFailedState());
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(IzinPageGlobalErorr(e));
+      } else {
+        emit(IzinPageGlobalErorr(UnknownError()));
+      }
     }
   }
 }

@@ -18,7 +18,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
 
   bool _isLoading = true;
   User? _currentUser;
-
+  bool isOffline = false;
   late PersetujuanBloc _bloc;
 
   @override
@@ -308,11 +308,44 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
       body: BlocConsumer<PersetujuanBloc, PersetujuanState>(
         bloc: _bloc,
         listener: (context, state) async {
+          if (state is PersetujuanPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+            isOffline = true;
+
+            if(mounted){
+              _loadRiwayatPersetujuan();
+            }
+          }
+
           if (state is PersetujuanPageLoadingState) {
             setState(() => _isLoading = true);
           }
 
           if (state is GetDataListPersetujuanSuccessState) {
+            isOffline = true;
+
+            if(!persetujuanData.isEmpty){
+              persetujuanData.clear();
+            }
+
             setState(() {
               persetujuanData =
                   state.dataCutiModel.data!.pengajuan.toList();
@@ -355,5 +388,46 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
         },
       ),
     );
+  }
+
+  Future<void> _loadRiwayatPersetujuan() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Ambil user yang sedang login (sesuai cara kita sebelumnya)
+      final User? currentUser = await _dbHelper.getSingleUser();
+      if (currentUser == null || currentUser.id == null) {
+        // Handle error: user tidak ditemukan
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User tidak ditemukan!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      if(!persetujuanData.isEmpty){
+        persetujuanData.clear();
+      }
+
+      // 2. Ambil riwayat lembur berdasarkan ID user
+      final List<PengajuanData> pengajuanData = await _dbHelper.getPengajuan();
+
+      // 3. Update UI dengan data baru
+      setState(() {
+        persetujuanData = pengajuanData;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat riwayat: $e')),
+        );
+      }
+    }
   }
 }

@@ -23,6 +23,7 @@ class _LemburPageState extends State<LemburPage> {
   bool sortByDurasi = false;
   bool sortByTanggal = false;
   List<PengajuanData> pengajuanData=[];
+  bool isOffline = false;
 
   void _sortByDurasi() {
     setState(() {
@@ -105,6 +106,14 @@ class _LemburPageState extends State<LemburPage> {
         return;
       }
 
+      if(!lemburList.isEmpty){
+        lemburList.clear();
+      }
+
+      if(!pengajuanData.isEmpty){
+        pengajuanData.clear();
+      }
+
       // 2. Ambil riwayat lembur berdasarkan ID user
       final List<LemburModel> riwayatLembur = await _dbHelper.getRiwayatLembur(currentUser.id!);
 
@@ -168,6 +177,33 @@ class _LemburPageState extends State<LemburPage> {
       body: BlocConsumer<LemburBloc, LemburState>(
         bloc: _bloc,
         listener: (context, state) async {
+          if (state is LemburPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+            isOffline = true;
+
+            if(mounted){
+              _loadRiwayatLembur();
+            }
+          }
+
           if(state is DeleteLemburFailedState){
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Gagal Menghapus Data Lembur")));
@@ -186,6 +222,8 @@ class _LemburPageState extends State<LemburPage> {
           }
 
           if(state is GetDataListLemburiSuccessState){
+            isOffline = false;
+
             if(!lemburList.isEmpty){
               lemburList.clear();
             }
@@ -295,7 +333,7 @@ class _LemburPageState extends State<LemburPage> {
                   itemCount: lemburList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
-                    return SlidablePengajuanItem(
+                    return isOffline ? LemburCard(lemburModel: lemburList[index]) : SlidablePengajuanItem(
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahLemburPage, arguments: {

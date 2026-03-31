@@ -21,6 +21,7 @@ class _CutiPageState extends State<CutiPage> {
   bool sortByJenis = false;
   bool sortByTanggal = false;
   late CutiBloc _bloc;
+  bool isOffline = false;
 
   @override
   void initState() {
@@ -86,6 +87,7 @@ class _CutiPageState extends State<CutiPage> {
 
   /// Mengambil data cuti dari database
   Future<void> _loadRiwayatCuti() async {
+    print('load Dari DATABASE');
     setState(() {
       _isLoading = true;
     });
@@ -104,14 +106,28 @@ class _CutiPageState extends State<CutiPage> {
         return;
       }
 
+      if(!cutiList.isEmpty){
+        cutiList.clear();
+      }
+
+      if(!pengajuanData.isEmpty){
+        pengajuanData.clear();
+      }
+
       // 2. Ambil riwayat cuti berdasarkan ID user
       final List<CutiModel> riwayat = await _dbHelper.getRiwayatCuti(currentUser.id!);
-
-      // 3. Update UI dengan data baru
-      setState(() {
-        cutiList = riwayat;
-        _isLoading = false;
-      });
+      if(riwayat.isEmpty){
+        setState(() {
+          cutiList = [];
+          _isLoading = false;
+        });
+      }else{
+        // 3. Update UI dengan data baru
+        setState(() {
+          cutiList = riwayat;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -190,12 +206,8 @@ class _CutiPageState extends State<CutiPage> {
             final error = state.error;
 
             if (error is NoInternetError) {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: Text("No Internet"),
-                  content: Text(error.message),
-                ),
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
               );
             } else if (error is TimeoutError) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -209,8 +221,11 @@ class _CutiPageState extends State<CutiPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(error.message)),
               );
+            }
+            isOffline = true;
 
-              print('disini ya ');
+            if(mounted){
+              _loadRiwayatCuti();
             }
           }
 
@@ -233,6 +248,8 @@ class _CutiPageState extends State<CutiPage> {
           }
 
           if(state is GetDataListCutiSuccessState){
+            isOffline = false;
+
             if(!cutiList.isEmpty){
               cutiList.clear();
             }
@@ -345,7 +362,7 @@ class _CutiPageState extends State<CutiPage> {
                   itemCount: cutiList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
-                    return SlidablePengajuanItem(
+                    return isOffline ? CutiCard(cuti: cutiList[index]) : SlidablePengajuanItem(
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahCutiPage, arguments: {
@@ -371,6 +388,7 @@ class _CutiPageState extends State<CutiPage> {
       ),
     );
   }
+
 
   Future<void> _forceLogout() async {
     await _dbHelper.deleteCurrentUserAndLogout();

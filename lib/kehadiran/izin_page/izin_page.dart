@@ -18,7 +18,7 @@ class _IzinPageState extends State<IzinPage> {
   User? _currentUser;
   late IzinBloc _bloc;
   List<PengajuanData> pengajuanData = [];
-
+  bool isOffline = false;
 
   @override
   void initState() {
@@ -75,6 +75,14 @@ class _IzinPageState extends State<IzinPage> {
         }
         setState(() => _isLoading = false);
         return;
+      }
+
+      if(!izinList.isEmpty){
+        izinList.clear();
+      }
+
+      if(!pengajuanData.isEmpty){
+        pengajuanData.clear();
       }
 
       // 2. Ambil riwayat lembur berdasarkan ID user
@@ -158,6 +166,33 @@ class _IzinPageState extends State<IzinPage> {
           IzinState>(
         bloc: _bloc,
         listener: (context, state) async {
+          if (state is IzinPageGlobalErorr) {
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              );
+            } else if (error is TimeoutError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server lambat")),
+              );
+            } else if (error is ServerError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Server error ${error.code}")),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+            }
+            isOffline = true;
+
+            if(mounted){
+              _loadRiwayatIzin();
+            }
+          }
+
           if(state is DeleteIzinFailedState){
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Gagal Menghapus Data Izin")));
@@ -175,6 +210,8 @@ class _IzinPageState extends State<IzinPage> {
           }
 
           if(state is GetDataListIzinSuccessState){
+            isOffline = false;
+
             if(!izinList.isEmpty){
               izinList.clear();
             }
@@ -280,7 +317,7 @@ class _IzinPageState extends State<IzinPage> {
                     : ListView.builder(
                   itemCount: izinList.length,
                   itemBuilder: (context, index) {
-                    return SlidablePengajuanItem(
+                    return isOffline ? IzinCard(izinConverter: izinList[index]) : SlidablePengajuanItem(
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahIzinPage, arguments: {
