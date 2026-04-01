@@ -178,25 +178,31 @@ class _LemburPageState extends State<LemburPage> {
         bloc: _bloc,
         listener: (context, state) async {
           if (state is LemburPageGlobalErorr) {
+            LoadingDialog.hide(context);
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
+
             isOffline = true;
 
             if(mounted){
@@ -205,12 +211,16 @@ class _LemburPageState extends State<LemburPage> {
           }
 
           if(state is DeleteLemburFailedState){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Gagal Menghapus Data Lembur")));
-
+            ErrorBottomSheet.show(
+              context,
+              message: "Gagal Menghapus Data Lembur",
+            );
+            LoadingDialog.hide(context);
           }
 
           if(state is DeleteLemburSuccessState){
+            LoadingDialog.hide(context);
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Berhasil Menghapus Data Lembur")));
 
@@ -218,7 +228,7 @@ class _LemburPageState extends State<LemburPage> {
           }
 
           if(state is LemburPageLoadingState){
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if(state is GetDataListLemburiSuccessState){
@@ -243,6 +253,7 @@ class _LemburPageState extends State<LemburPage> {
             });
 
             await DatabaseHelper.instance.replaceLembur(lemburList);
+            LoadingDialog.hide(context);
           }
 
           if(state is LemburPageFailedState){
@@ -252,6 +263,7 @@ class _LemburPageState extends State<LemburPage> {
               );
 
               _loadRiwayatLembur();
+              LoadingDialog.hide(context);
             }
           }
 
@@ -329,7 +341,9 @@ class _LemburPageState extends State<LemburPage> {
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 )
-                    : ListView.builder(
+                    : RefreshIndicator(child:
+                ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: lemburList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
@@ -351,7 +365,9 @@ class _LemburPageState extends State<LemburPage> {
                       child: LemburCard(lemburModel: lemburList[index]),
                     );
                   },
-                ),
+                ), onRefresh: () async {
+                  _loadUserData();
+                })
               ),
             ],
           );

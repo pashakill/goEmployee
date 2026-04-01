@@ -146,7 +146,7 @@ class _IzinPageState extends State<IzinPage> {
             onPressed: () {
               AppNavigator.to(Routes.tambahIzinPage,
                   arguments: {
-                    'onIzinAdded': (IzinConverterModel izinConverterModel) {
+                    'onIzinAdded': () {
                       /*
                       setState(() {
                         izinList.add(izinConverterModel);
@@ -170,35 +170,48 @@ class _IzinPageState extends State<IzinPage> {
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
+
             isOffline = true;
 
             if(mounted){
               _loadRiwayatIzin();
             }
+
+            LoadingDialog.hide(context);
           }
 
           if(state is DeleteIzinFailedState){
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Gagal Menghapus Data Izin")));
+            ErrorBottomSheet.show(
+              context,
+              message: "Gagal Menghapus Data Izin",
+            );
+
+            LoadingDialog.hide(context);
           }
 
           if(state is DeleteIzinSuccessState){
+            LoadingDialog.hide(context);
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Berhasil Menghapus Data Izin")));
 
@@ -206,10 +219,11 @@ class _IzinPageState extends State<IzinPage> {
           }
 
           if(state is IzinPageLoadingState){
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if(state is GetDataListIzinSuccessState){
+            print('GetDataListIzinSuccessState');
             isOffline = false;
 
             if(!izinList.isEmpty){
@@ -231,6 +245,7 @@ class _IzinPageState extends State<IzinPage> {
             });
 
             await DatabaseHelper.instance.replaceIzin(izinList);
+            LoadingDialog.hide(context);
           }
 
           if(state is IzinPageFailedState){
@@ -240,6 +255,7 @@ class _IzinPageState extends State<IzinPage> {
               );
 
               _loadRiwayatIzin();
+              LoadingDialog.hide(context);
             }
           }
 
@@ -314,14 +330,16 @@ class _IzinPageState extends State<IzinPage> {
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 )
-                    : ListView.builder(
+                    : RefreshIndicator(child:
+                ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: izinList.length,
                   itemBuilder: (context, index) {
                     return isOffline ? IzinCard(izinConverter: izinList[index]) : SlidablePengajuanItem(
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahIzinPage, arguments: {
-                          'onIzinAdded': (IzinConverterModel izinConverterModel) {
+                          'onIzinAdded': () {
                             _loadUserData();
                           },
                           'editIzin': izinList[index]
@@ -335,7 +353,9 @@ class _IzinPageState extends State<IzinPage> {
                       child: IzinCard(izinConverter: izinList[index]),
                     );
                   },
-                ),
+                ), onRefresh: () async {
+                      _loadUserData();
+                })
               ),
             ],
           );

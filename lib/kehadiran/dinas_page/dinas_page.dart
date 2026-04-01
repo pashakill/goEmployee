@@ -130,7 +130,7 @@ class _DinasPageState extends State<DinasPage> {
             onPressed: () {
               AppNavigator.to(Routes.tambahDinasPage,
                   arguments: {
-                    'onCutiAdded': (DinasModel dinasModel) {
+                    'onDinasAdded': () {
                       /*
                       setState(() {
                         dinasList.add(dinasModel);
@@ -161,20 +161,24 @@ class _DinasPageState extends State<DinasPage> {
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
             isOffline = true;
@@ -182,11 +186,16 @@ class _DinasPageState extends State<DinasPage> {
             if(mounted){
               _loadRiwayatDinas();
             }
+
+            LoadingDialog.hide(context);
           }
 
           if(state is DeleteDinasSuccessState){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Berhasil Menghapus Data Dinas")),
+            LoadingDialog.hide(context);
+
+            ErrorBottomSheet.show(
+              context,
+              message: "Gagal Menghapus Data Dinas",
             );
 
             _loadUserData();
@@ -196,10 +205,12 @@ class _DinasPageState extends State<DinasPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Gagal Menghapus Data Dinas")),
             );
+
+            LoadingDialog.hide(context);
           }
 
           if(state is DinasPageLoadingState){
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if(state is GetDataListDinasSuccessState){
@@ -223,6 +234,7 @@ class _DinasPageState extends State<DinasPage> {
             });
 
             await DatabaseHelper.instance.replaceDinas(dinasList);
+            LoadingDialog.hide(context);
           }
 
           if(state is DinasPageFailedState){
@@ -232,6 +244,7 @@ class _DinasPageState extends State<DinasPage> {
               );
 
               _loadRiwayatDinas();
+              LoadingDialog.hide(context);
             }
           }
 
@@ -279,7 +292,9 @@ class _DinasPageState extends State<DinasPage> {
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 )
-                    : ListView.builder(
+                    : RefreshIndicator( child:
+                ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: dinasList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
@@ -287,7 +302,7 @@ class _DinasPageState extends State<DinasPage> {
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahDinasPage, arguments: {
-                          'onCutiAdded': (DinasModel dinasModel) {
+                          'onDinasAdded': () {
                             _loadUserData();
                           },
                           'editDinas': dinasList[index]
@@ -301,7 +316,9 @@ class _DinasPageState extends State<DinasPage> {
                       child: DinasCard(dinasModel: dinasList[index]),
                     );
                   },
-                ),
+                ), onRefresh: () async{
+                      _loadUserData();
+                })
               ),
             ],
           );

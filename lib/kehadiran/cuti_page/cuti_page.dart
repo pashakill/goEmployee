@@ -206,20 +206,24 @@ class _CutiPageState extends State<CutiPage> {
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
             isOffline = true;
@@ -227,15 +231,19 @@ class _CutiPageState extends State<CutiPage> {
             if(mounted){
               _loadRiwayatCuti();
             }
+            LoadingDialog.hide(context);
           }
 
           if(state is CutiPageLoadingState){
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if(state is DeleteCutiSuccessState){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Berhasil Menghapus Data Cuti")),
+            LoadingDialog.hide(context);
+
+            ErrorBottomSheet.show(
+              context,
+              message: "Gagal Menghapus Data Cuti",
             );
 
             _loadUserData();
@@ -245,6 +253,7 @@ class _CutiPageState extends State<CutiPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Gagal Menghapus Data Cuti")),
             );
+            LoadingDialog.hide(context);
           }
 
           if(state is GetDataListCutiSuccessState){
@@ -274,6 +283,7 @@ class _CutiPageState extends State<CutiPage> {
             });
 
             await DatabaseHelper.instance.replaceCuti(cutiList, _currentUser!.id!);
+            LoadingDialog.hide(context);
           }
 
           if(state is CutiPageFailedState){
@@ -283,6 +293,7 @@ class _CutiPageState extends State<CutiPage> {
               );
 
               _loadRiwayatCuti();
+              LoadingDialog.hide(context);
             }
           }
 
@@ -358,7 +369,9 @@ class _CutiPageState extends State<CutiPage> {
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 )
-                    : ListView.builder(
+                    : RefreshIndicator(child:
+                ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: cutiList.length,
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
@@ -380,7 +393,9 @@ class _CutiPageState extends State<CutiPage> {
                       child: CutiCard(cuti: cutiList[index]),
                     );
                   },
-                ),
+                ), onRefresh: () async {
+                  _loadUserData();
+                }),
               ),
             ],
           );

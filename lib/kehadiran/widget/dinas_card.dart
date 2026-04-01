@@ -13,64 +13,50 @@ class DinasCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16.0),
+        // 1. ICON (Dinamis berdasarkan Tipe)
+        leading: SvgPicture.asset(
+          'assets/icons/ic_maps.svg',
+          width: 32,
+        ),
+
+        // 2. JUDUL (Dinamis berdasarkan Tipe)
+        title: Row(
           children: [
-            SvgPicture.asset(
-              'assets/icons/ic_maps.svg',
-              width: 24,
-            ),
-            const SizedBox(width: 10),
+            const Icon(Icons.date_range, size: 16, color: Colors.grey),
+            const SizedBox(width: 6),
 
-            // 🔥 WAJIB Expanded biar ga overflow
+            // 🔥 biar teks panjang ga keluar layar
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- Tanggal ---
-                  Row(
-                    children: [
-                      const Icon(Icons.date_range, size: 16, color: Colors.grey),
-                      const SizedBox(width: 6),
-
-                      // 🔥 biar teks panjang ga keluar layar
-                      Expanded(
-                        child: Text(
-                          '${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(dinasModel.tanggalMulai))} - ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(dinasModel.tanggalSelesai))}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // --- Alamat ---
-                  Text(
-                    dinasModel.alamat ?? '-',
-                    style: const TextStyle(fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // --- Alasan ---
-                  Text(
-                    dinasModel.alasan ?? '-',
-                    style: const TextStyle(fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+              child: Text(
+                '${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(dinasModel.tanggalMulai))} - ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(dinasModel.tanggalSelesai))}',
+                style: const TextStyle(fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
+
+        // 3. SUBTITLE (Menampilkan Tanggal dan Alasan)
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 6),
+            Text(
+              dinasModel.alamat ?? '-',
+              style: const TextStyle(color: Colors.black54),
+            ),
+            Text(
+              dinasModel.alasan ?? '-',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+        // 4. TRAILING (Dinamis berdasarkan Status)
+        isThreeLine: false,
       ),
     );
   }

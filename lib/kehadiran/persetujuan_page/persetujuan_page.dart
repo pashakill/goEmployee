@@ -298,10 +298,10 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Persetujuan"),
+        title: const Text("Persetujuan", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white,),
           onPressed: () => AppNavigator.back(),
         ),
       ),
@@ -310,24 +310,30 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
         listener: (context, state) async {
           if (state is PersetujuanPageGlobalErorr) {
             final error = state.error;
+            LoadingDialog.hide(context);
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
+
             isOffline = true;
 
             if(mounted){
@@ -337,10 +343,11 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
 
           if (state is PersetujuanPageLoadingState) {
             setState(() => _isLoading = true);
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if (state is GetDataListPersetujuanSuccessState) {
-            isOffline = true;
+            isOffline = false;
 
             if(!persetujuanData.isEmpty){
               persetujuanData.clear();
@@ -351,14 +358,15 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
                   state.dataCutiModel.data!.pengajuan.toList();
               _isLoading = false;
             });
-
             await DatabaseHelper.instance.replacePengajuan(state.dataCutiModel.data!.pengajuan.toList());
+            LoadingDialog.hide(context);
           }
 
           if (state is ApprovePersetujuanSuccessState) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Berhasil update status")),
             );
+            LoadingDialog.hide(context);
             _fetchData();
           }
 
@@ -368,6 +376,8 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );
+
+            LoadingDialog.hide(context);
           }
         },
         builder: (context, state) {
@@ -379,12 +389,16 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
             return const Center(child: Text("Tidak ada data"));
           }
 
-          return ListView.builder(
+          return RefreshIndicator(child:
+          ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
             itemCount: persetujuanData.length,
             itemBuilder: (context, index) {
               return buildCard(persetujuanData[index]);
             },
-          );
+          ), onRefresh: () async {
+            _loadUser();
+          });
         },
       ),
     );

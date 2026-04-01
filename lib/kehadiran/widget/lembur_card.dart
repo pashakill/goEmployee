@@ -32,18 +32,18 @@ class LemburCard extends StatelessWidget {
           children: [
             const SizedBox(height: 6),
             Text(
-              'Durasi ${lemburModel.lamaLembur}',
+              '${DateHelper.formatDisplay(DateHelper.fromBackend(lemburModel.waktuMulai))} - ${DateHelper.formatDisplay(DateHelper.fromBackend(lemburModel.waktuSelesai))}',
+              style: const TextStyle(color: Colors.black54),
+            ),
+            Text(
+              'Durasi ${lemburModel.lamaLembur} Jam',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
-        trailing: Text(
-          '${DateHelper.formatDisplay(DateHelper.fromBackend(lemburModel.waktuMulai))} - ${DateHelper.formatDisplay(DateHelper.fromBackend(lemburModel.waktuSelesai))}',
-          style: const TextStyle(color: Colors.black54),
-        ),
         // 4. TRAILING (Dinamis berdasarkan Status)
-        isThreeLine: true,
+        isThreeLine: false,
       )
     );
   }

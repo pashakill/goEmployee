@@ -159,25 +159,32 @@ class _WfhPageState extends State<WfhPage> {
         bloc: _bloc,
         listener: (context, state) {
           if (state is WfhPageGlobalErorr) {
+            LoadingDialog.hide(context);
+
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
+
             isOffline = true;
 
             if(mounted){
@@ -186,11 +193,17 @@ class _WfhPageState extends State<WfhPage> {
           }
 
           if(state is DeleteWfhFailedState){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Gagal Menghapus Data Wfh")));
+            LoadingDialog.hide(context);
+
+            ErrorBottomSheet.show(
+              context,
+              message: "Gagal Menghapus Data Wfh",
+            );
           }
 
           if(state is DeleteWfhSuccessState){
+            LoadingDialog.hide(context);
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Berhasil Menghapus Data Wfh")));
 
@@ -198,7 +211,7 @@ class _WfhPageState extends State<WfhPage> {
           }
 
           if(state is WfhPageLoadingState){
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if(state is GetDataListWfhSuccessState){
@@ -213,10 +226,14 @@ class _WfhPageState extends State<WfhPage> {
               pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
               _isLoading = false;
             });
+
+            LoadingDialog.hide(context);
           }
 
           if(state is WfhPageFailedState){
             if (mounted) {
+              LoadingDialog.hide(context);
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
               );
@@ -298,7 +315,9 @@ class _WfhPageState extends State<WfhPage> {
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 )
-                    : ListView.builder(
+                    : RefreshIndicator(child:
+                ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: wfhList.length,
                   itemBuilder: (context, index) {
                     return isOffline ? WfhCard(wfhModel: wfhList[index]) : SlidablePengajuanItem(
@@ -319,7 +338,9 @@ class _WfhPageState extends State<WfhPage> {
                       child: WfhCard(wfhModel: wfhList[index]),
                     );
                   },
-                ),
+                ), onRefresh: () async {
+                      _loadUserData();
+                })
               ),
             ],
           );

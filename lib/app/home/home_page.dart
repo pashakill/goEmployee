@@ -77,17 +77,16 @@ class _HomePageState extends State<HomePage> {
           bloc: _bloc,
           listener: (context, state) {
             if(state is HomePageLoadingState){
-
+              LoadingDialog.show(context, message: "Tunggu Sebentar...");
             }
 
             if(state is GetDataListNotificationSuccessState){
-              print('kesini masuk');
 
               setState(() {
                 notifList.addAll(state.notificationModel.data!.dataNotificationModels);
                 _isLoading = false;
               });
-
+              LoadingDialog.hide(context);
             }
 
             if(state is HomePageFailedState){
@@ -137,7 +136,7 @@ class _HomePageState extends State<HomePage> {
       return const Center(child: Text('Gagal memuat data.'));
     }
 
-    return Container(
+    return RefreshIndicator(child: Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -231,23 +230,23 @@ class _HomePageState extends State<HomePage> {
                                 ? const Center(child: CircularProgressIndicator())
                                 : notifList.isEmpty
                                 ? Center(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Image.asset(
-                                      'assets/image/null_notifcation.jpg',
-                                      width: 120,
-                                      height: 120,
-                                      fit: BoxFit.cover,
-                                    ),
-                                    Text(
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        'Tidak ada pemberitahuan'),
-                                  ],
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    'assets/image/null_notifcation.jpg',
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Text(
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      'Tidak ada pemberitahuan'),
+                                ],
+                              ),
                             )
                                 : ListView.builder(
                               physics: const NeverScrollableScrollPhysics(),
@@ -266,7 +265,9 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
+    ), onRefresh: () async {
+      _loadUserData();
+    });
   }
 
   void _fetchNotification() {

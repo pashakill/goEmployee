@@ -209,30 +209,39 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
       body: BlocConsumer<CutiBloc, CutiState>(
         listener: (context, state) async {
 
+          if (state is CutiPageLoadingState) {
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
+          }
+
           if (state is CutiPageGlobalErorr) {
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
           }
 
           if(state is UpdateCutiSuccessState){
             widget.onCutiAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           }
 
@@ -259,6 +268,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
             print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
              */
             widget.onCutiAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           }
 
@@ -266,6 +276,8 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );
+
+            LoadingDialog.hide(context);
           }
         },
         builder: (context, state) {

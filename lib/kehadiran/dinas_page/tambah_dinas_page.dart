@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 
 class TambahDinasPage extends StatefulWidget {
+  Function()? get onDinasAdded => Get.arguments?['onDinasAdded'];
+
   const TambahDinasPage({super.key});
 
   @override
@@ -82,6 +84,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
       _currentMapPosition = _initialPosition;
 
       _isLoading = false;
+      _setInitialPosition(LatLng(double.parse(data!.latitude), double.parse(data!.longTitude)));
     }else{
       // 3. Panggil fungsi untuk mengambil lokasi saat init
       _fetchCurrentLocation();
@@ -278,23 +281,28 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
         listener: (context, state) async {
 
           if (state is DinasPageGlobalErorr) {
+            LoadingDialog.hide(context);
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
           }
@@ -304,34 +312,23 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
               const SnackBar(content: Text('Sukses Melakukan update Dinas')),
             );
 
+            widget.onDinasAdded?.call();
             Get.back();
           }
 
           if (state is DinasPageLoadingState) {
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if (state is AddDinasSuccessState) {
-            // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
-            final User? currentUser = await _dbHelper.getSingleUser();
-            if (currentUser == null || currentUser.id == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
-              );
-              return;
-            }
-
-            // 4. PANGGIL FUNGSI INSERT DARI DATABASEHELPER
-            //    Ini akan menyimpan data ke database SQLCipher
-            final int dinasId = await _dbHelper.insertDinas(state.dinasModel);
-            print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
-            // 5. PANGGIL CALLBACK (kode Anda sudah benar)
-            //    Ini akan meng-update UI di halaman DaftarCutiPage
+            widget.onDinasAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           } else if (state is DinasPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
             );
+            LoadingDialog.hide(context);
           }
         },
         builder: (context, state) {
@@ -567,9 +564,10 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                                         tanggalSelesai: convertToMysqlFormat(_tglAkhirController.text),
                                         alamat: alamatSaatIni,
                                         latitude: _latController.text,
-                                        longTitude: _longController.text, radius: '',
-                                        alasan: _alasanController.text, tanggalPengajuan: _tanggalPengajuan.toString()
-
+                                        longTitude: _longController.text,
+                                        radius: '',
+                                        alasan: _alasanController.text,
+                                        tanggalPengajuan: _tanggalPengajuan.toString()
                                     );
 
                                     if (isEdit) {

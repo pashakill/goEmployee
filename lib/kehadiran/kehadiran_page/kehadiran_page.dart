@@ -308,37 +308,48 @@ class _KehadiranPageState extends State<KehadiranPage> {
               final error = state.error;
 
               if (error is NoInternetError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+                ErrorBottomSheet.show(
+                  context,
+                  message: "Tidak Ada Koneksi Internet",
                 );
               } else if (error is TimeoutError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Server lambat")),
+                ErrorBottomSheet.show(
+                  context,
+                  message: "Server Lambat",
                 );
               } else if (error is ServerError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Server error ${error.code}")),
+                ErrorBottomSheet.show(
+                  context,
+                  message: "Server error ${error.code}",
                 );
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(error.message)),
+                ErrorBottomSheet.show(
+                  context,
+                  message: "${error.message}",
                 );
               }
+
+              LoadingDialog.hide(context);
             }
 
             if (state is CheckinSuccess) {
               _processCheckIn(state.kehadiranModel.kehadiranResponse?.jamMasuk ?? '',
                   state.kehadiranModel.kehadiranResponse?.terlambat ?? '');
+
+              LoadingDialog.hide(context);
             }
 
             if(state is CheckinLoading){
-
+              LoadingDialog.show(context, message: "Tunggu Sebentar...");
             }
 
             if(state is CheckinFailure){
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Login Gagal: ${state.error}')),
+              ErrorBottomSheet.show(
+                context,
+                message: "Checkin Gagal: ${state.error}",
               );
+
+              LoadingDialog.hide(context);
             }
 
           },

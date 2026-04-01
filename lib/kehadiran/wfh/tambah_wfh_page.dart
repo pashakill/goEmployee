@@ -19,7 +19,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
   String? _alasanWfh;
   DateTime? _tanggalMulai;
   DateTime? _tanggalSelesai;
-  int lamaWfh = 1;
+  int lamaWfh = 0;
   late DateTime _tanggalPengajuan;
   final TextEditingController _tglPengajuanController = TextEditingController();
 
@@ -50,38 +50,18 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
   }
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
-    // Pilih tanggal dulu
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      locale: const Locale('id', 'ID'),
-    );
+    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
 
-    if (pickedDate == null) return;
-
-    // Gabungkan tanggal & waktu
-    final DateTime pickedDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-    );
-
-    setState(() {
-      if (isStart) {
-        _tanggalMulai = pickedDateTime;
-      } else {
-        _tanggalSelesai = pickedDateTime;
-      }
-
-      if (_tanggalMulai != null && _tanggalSelesai != null) {
-        lamaWfh = _tanggalSelesai!
-            .difference(_tanggalMulai!)
-            .inDays
-            .abs(); // hitung durasi dalam hari
-      }
-    });
+    if (pickedDate != null) {
+      setState(() {
+        if (isStart) {
+          _tanggalMulai = pickedDate;
+        } else {
+          _tanggalSelesai = pickedDate;
+        }
+        _hitungLamaWfh();
+      });
+    }
   }
 
   Future<void> _simpanWfh() async {
@@ -140,49 +120,45 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
       body: BlocConsumer<WfhBloc, WfhState>(
         listener: (context, state) async {
           if (state is WfhPageGlobalErorr) {
+            LoadingDialog.hide(context);
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
           }
 
           if(state is EditWfhSuccessState){
+            LoadingDialog.hide(context);
             widget.onWfhAdded?.call();
+            Get.back();
           }
 
           if (state is CutiPageLoadingState) {
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if (state is AddWfhSuccessState) {
-
-            // 2. Ambil user yang sedang login (sesuai cara kita sebelumnya)
-            final User? currentUser = await _dbHelper.getSingleUser();
-            if (currentUser == null || currentUser.id == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Error: Gagal mendapatkan data user!')),
-              );
-              return;
-            }
-            //    Ini akan menyimpan data ke database SQLCipher
-            final int dinasId = await _dbHelper.insertWfh(state.wfhModel);
-            print('Wfh baru berhasil disimpan ke DB dengan ID: $dinasId');
             widget.onWfhAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           } else if (state is WfhPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -328,5 +304,22 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
         },
       ),
     );
+  }
+
+  void _hitungLamaWfh() {
+    if (_tanggalMulai != null && _tanggalSelesai != null) {
+      int totalHari = 0;
+      DateTime current = _tanggalMulai!;
+
+      while (!current.isAfter(_tanggalSelesai!)) {
+        if (current.weekday != DateTime.saturday &&
+            current.weekday != DateTime.sunday) {
+          totalHari++;
+        }
+        current = current.add(const Duration(days: 1));
+      }
+
+      lamaWfh = totalHari;
+    }
   }
 }

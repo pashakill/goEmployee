@@ -116,7 +116,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         );
         _dbHelper.insertLembur(lemburBaru);
         widget.onLemburAdded?.call();
-        Navigator.pop(context);
+        Get.back();
       }catch(e){
         e.printError();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,20 +148,24 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
           }
@@ -171,11 +175,12 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
               const SnackBar(content: Text('Sukses Melakukan update Lembur')));
 
             widget.onLemburAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           }
 
           if (state is LemburPageLoadingState) {
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if (state is AddLemburSuccessState) {
@@ -190,6 +195,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
             _dbHelper.insertLembur(lemburBaru);
              */
             widget.onLemburAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           } else if (state is LemburPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(

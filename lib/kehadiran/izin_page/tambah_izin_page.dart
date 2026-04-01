@@ -294,34 +294,40 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
         listener: (context, state) async {
 
           if (state is IzinPageGlobalErorr) {
+            LoadingDialog.hide(context);
             final error = state.error;
 
             if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
               );
             } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
               );
             } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
               );
             }
           }
 
           if(state is EditIzinSuccessState){
-            Get.back();
             widget.onIzinAdded?.call();
+            LoadingDialog.hide(context);
+            Get.back();
           }
 
           if (state is IzinPageLoadingState) {
-
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if (state is AddIzinSuccessState) {
@@ -330,6 +336,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
               // final int newDbId = await _dbHelper.insertIzin(state.izinConverterModel); // Panggil fungsi insert DB
               // Panggil callback (jika ada) dan kembali
               widget.onIzinAdded?.call();
+              LoadingDialog.hide(context);
               //_showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
               Get.back();
             } catch (e) {
@@ -339,6 +346,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Gagal Menambahkan Cuti: ${state.error}')),
             );
+            LoadingDialog.hide(context);
           }
         },
         builder: (context, state) {
