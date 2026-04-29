@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:get_it/get_it.dart';
 import 'package:goemployee/goemployee.dart';
 
@@ -24,6 +26,7 @@ class _LemburPageState extends State<LemburPage> {
   bool sortByTanggal = false;
   List<PengajuanData> pengajuanData=[];
   bool isOffline = false;
+
 
   void _sortByDurasi() {
     setState(() {
@@ -148,18 +151,11 @@ class _LemburPageState extends State<LemburPage> {
           IconButton(
             icon: const Icon(Icons.add_circle),
             color: Colors.white,
-            onPressed: () {
-              AppNavigator.to(Routes.tambahLemburPage,
-                  arguments: {
-                    'onLemburAdded': () {
-                      /*
-                      setState(() {
-                        lemburList.add(lemburModel);
-                      });
-                       */
-                      _loadUserData();
-                    },
-                  });
+            onPressed: () async {
+              final result = await Get.toNamed(Routes.tambahLemburPage);
+              if (result == true) {
+                _loadUserData();
+              }
             },
           )
         ],

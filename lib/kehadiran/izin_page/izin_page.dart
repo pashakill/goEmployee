@@ -168,6 +168,7 @@ class _IzinPageState extends State<IzinPage> {
         listener: (context, state) async {
           if (state is IzinPageGlobalErorr) {
             final error = state.error;
+            LoadingDialog.hide(context);
 
             if (error is NoInternetError) {
               ErrorBottomSheet.show(

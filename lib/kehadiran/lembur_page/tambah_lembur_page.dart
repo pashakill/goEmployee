@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:intl/intl.dart';
 
 class TambahLemburPage extends StatefulWidget {
-  Function()? get onLemburAdded => Get.arguments?['onLemburAdded'];
-
   const TambahLemburPage({super.key});
 
   @override
@@ -24,9 +21,12 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
   // Format tanggal dan waktu lokal Indonesia
   bool isEdit = false;
   LemburModel? lemburModel;
+  Function()? _onLemburAdded;
+
 
   void _initEditMode() {
     final args = Get.arguments;
+    _onLemburAdded = args?['onLemburAdded'];
 
     if (args != null && args['editLembur'] != null) {
       lemburModel = args['editLembur'];
@@ -45,10 +45,6 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
       _tanggalSelesai!.difference(_tanggalMulai!).inMinutes.abs();
 
       lamaLembur = (selisih / 60).ceil();
-
-      print("Mulai: $_tanggalMulai");
-      print("Selesai: $_tanggalSelesai");
-      print("Durasi jam: $lamaLembur");
     }
   }
 
@@ -115,7 +111,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
           waktuSelesai: DateHelper.toBackend(_tanggalSelesai!), userId: currentUser.id!,
         );
         _dbHelper.insertLembur(lemburBaru);
-        widget.onLemburAdded?.call();
+        _onLemburAdded?.call();
         Get.back();
       }catch(e){
         e.printError();
@@ -174,7 +170,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Sukses Melakukan update Lembur')));
 
-            widget.onLemburAdded?.call();
+            _onLemburAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
           }
@@ -184,19 +180,9 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
           }
 
           if (state is AddLemburSuccessState) {
-            /*
-            final User? currentUser = await _dbHelper.getSingleUser();
-            final lemburBaru = LemburModel(
-              lamaLembur: lamaLembur.toString(),
-              catatanLembur: _catatanLembur ?? '',
-              waktuMulai: _dateTimeFormat.format(_tanggalMulai!),
-              waktuSelesai: _dateTimeFormat.format(_tanggalSelesai!), userId: currentUser!.id!,
-            );
-            _dbHelper.insertLembur(lemburBaru);
-             */
-            widget.onLemburAdded?.call();
+            _onLemburAdded?.call();
             LoadingDialog.hide(context);
-            Get.back();
+            Get.back(result: true);
           } else if (state is LemburPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Gagal Menambahkan Lembur: ${state.error}')),
@@ -283,9 +269,6 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                         waktuSelesai: DateHelper.toBackend(_tanggalSelesai!), userId: currentUser!.id!,
                       );
                       if(isEdit){
-                        print('DATA LEMBUR DI EDIT ${lemburModel.toString()}');
-                        print('ID LEMBUR DI EDIT ${lemburModel!.id.toString()}');
-
                         context.read<LemburBloc>().add(
                           EditLemburEvent(pengajuanId: lemburModel!.id.toString(), lemburBaru,
                               userId: currentUser.id!,

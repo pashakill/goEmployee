@@ -10,10 +10,11 @@ class LemburModel {
   final String waktuMulai; // Format: HH:mm:ss
   final String waktuSelesai; // Format: HH:mm:ss
   final String lamaLembur; // Format: HH:mm
-  //Hapus: final String tanggalLembur;
+  final String? tanggalPengajuan;
 
   LemburModel({
     this.id,
+    this.tanggalPengajuan,
     required this.userId,
     required this.lamaLembur,
     required this.catatanLembur,
@@ -50,6 +51,7 @@ class LemburModel {
 
   factory LemburModel.fromApi(PengajuanData data, String userId) {
     return LemburModel(userId: int.parse(userId), lamaLembur: data.lama,
+        tanggalPengajuan: data.tanggal_pengajuan,
         catatanLembur: data.alasan, waktuMulai: data.tanggal_mulai, waktuSelesai: data.tanggal_selesai, id: data.id
     );
   }

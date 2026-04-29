@@ -37,7 +37,6 @@ class _HomePageState extends State<HomePage> {
     try {
       // Panggil fungsi getSingleUser (sesuai permintaan terakhir Anda)
       final User? user = await _dbHelper.getSingleUser();
-      print('data Home ${user.toString()}');
       if (user != null) {
         // Sukses! Simpan data ke state
         setState(() {

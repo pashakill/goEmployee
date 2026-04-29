@@ -15,8 +15,10 @@ class PersetujuanApi {
     }
   }
 
-  Future<DataCutiModel> approveDataPengajuan({required int pengajuan_id, required String role, required String action, required String divisi_id}) async {
+  Future<DataCutiModel> approveDataPengajuan({required int pengajuan_id, required String role, required String action,
+    required String divisi_id, required String actor_id}) async {
     final response = await network.post("/approve", {
+      "actor_id": actor_id,
       "pengajuan_id": pengajuan_id,
       "role": role,
       "action": action,

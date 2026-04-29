@@ -5,8 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:goemployee/goemployee.dart';
 
 class TambahIzinPage extends StatefulWidget {
-  Function()? get onIzinAdded => Get.arguments?['onIzinAdded'];
-
   const TambahIzinPage({super.key});
 
   @override
@@ -36,6 +34,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
   final TextEditingController _absenTanggalController = TextEditingController();
   final TextEditingController _absenAlasanController = TextEditingController();
   DateTime? _absenTanggal;
+  Function()? _onIzinAdded;
 
   bool isEdit = false;
   IzinConverterModel? _editIzin;
@@ -67,7 +66,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
 
 
     final args = Get.arguments;
-
+    _onIzinAdded = args?['onIzinAdded'];
     if (args != null && args['editIzin'] != null) {
       isEdit = true;
       _editIzin = args['editIzin'];
@@ -321,7 +320,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           }
 
           if(state is EditIzinSuccessState){
-            widget.onIzinAdded?.call();
+            _onIzinAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
           }
@@ -335,7 +334,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
             try {
               // final int newDbId = await _dbHelper.insertIzin(state.izinConverterModel); // Panggil fungsi insert DB
               // Panggil callback (jika ada) dan kembali
-              widget.onIzinAdded?.call();
+              _onIzinAdded?.call();
               LoadingDialog.hide(context);
               //_showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
               Get.back();

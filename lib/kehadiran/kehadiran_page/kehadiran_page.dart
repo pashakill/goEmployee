@@ -306,6 +306,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
           listener: (context, state) {
             if (state is KehadiranPageGlobalErorr) {
               final error = state.error;
+              LoadingDialog.hide(context);
 
               if (error is NoInternetError) {
                 ErrorBottomSheet.show(

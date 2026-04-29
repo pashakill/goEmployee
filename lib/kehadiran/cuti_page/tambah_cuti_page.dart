@@ -6,8 +6,6 @@ import 'package:intl/intl.dart';
 
 
 class TambahCutiPage extends StatefulWidget {
-  Function()? get onCutiAdded => Get.arguments?['onCutiAdded'];
-
   const TambahCutiPage({super.key});
 
   @override
@@ -26,6 +24,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
 
   bool isEdit = false;
   CutiModel? editData;
+  Function()? _onCutiAdded;
 
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
@@ -47,6 +46,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   /// =========================
   void _initEditMode() {
     final args = Get.arguments;
+    _onCutiAdded = args?['onCutiAdded'];
 
     if (args != null && args['editCuti'] != null) {
       editData = args['editCuti'];
@@ -185,7 +185,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
         // 5. PANGGIL CALLBACK (kode Anda sudah benar)
         //    Ini akan meng-update UI di halaman DaftarCutiPage
-        widget.onCutiAdded?.call();
+        _onCutiAdded?.call();
         Get.back();
       } catch (e) {
         // Tangani jika ada error saat simpan ke DB
@@ -240,7 +240,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
           }
 
           if(state is UpdateCutiSuccessState){
-            widget.onCutiAdded?.call();
+            _onCutiAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
           }
@@ -267,7 +267,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
             final int cutiId = await _dbHelper.insertCuti(cutiBaru, currentUser!.id!);
             print('Cuti baru berhasil disimpan ke DB dengan ID: $cutiId');
              */
-            widget.onCutiAdded?.call();
+            _onCutiAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
           }

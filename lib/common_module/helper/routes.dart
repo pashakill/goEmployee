@@ -11,6 +11,7 @@ import 'package:goemployee/kehadiran/persetujuan_page/bloc/bloc_persetujuan.dart
 import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
 
 import '../../kehadiran/lembur_page/bloc/lembur_bloc.dart';
+import '../../kehadiran/slip_gaji/bloc/slip_gaji_bloc.dart';
 
 class Routes {
   // Nama semua route (biar konsisten)
@@ -33,6 +34,11 @@ class Routes {
   static const String tambahIzinPage = '$izinPage/tambahIzin';
   static const String persetujuanPage = '$karyawan/persetujuan_page';
 
+  static const String presensiBackdatePage = '$karyawan/presensi_backdate_page';
+  static const String tambahPresensiBackdatePage = '$presensiBackdatePage/tambahPresensi';
+
+  static const String slipGajiPage = '$karyawan/slipGaji';
+
 
   // Daftar semua route
   static final pages = [
@@ -45,13 +51,16 @@ class Routes {
     GetPage(name: lemburPage, page: () => LemburPage()),
     GetPage(name: tambahLemburPage, page: () => BlocProvider(create: (context) => getIt<LemburBloc>(), child: TambahLemburPage())),
     GetPage(name: dinasPage, page: () => DinasPage()),
+    GetPage(name: presensiBackdatePage, page: () => PresensiBackdatePage()),
     GetPage(name: tambahDinasPage, page: () => BlocProvider(create: (context) => getIt<DinasBloc>(), child: TambahDinasPage())),
     GetPage(name: wfhPage, page: () => WfhPage()),
     GetPage(name: izinPage, page: () => IzinPage()),
+    GetPage(name: slipGajiPage, page: () => BlocProvider(create: (context) => getIt<SlipGajiBloc>(), child: SlipGajiPage())),
     GetPage(name: persetujuanPage, page: () => BlocProvider(create: (context) => getIt<PersetujuanBloc>(), child: PersetujuanPage())),
     GetPage(name: tambahCutiPage, page: () => BlocProvider(create: (context) => getIt<CutiBloc>(), child: TambahCutiPage())),
     GetPage(name: tambahWfh, page: () => BlocProvider(create: (context) => getIt<WfhBloc>(), child: TambahWfhPage())),
-    GetPage(name: tambahIzinPage, page: () => BlocProvider(create: (context) => getIt<IzinBloc>(), child: TambahIzinPage()))
+    GetPage(name: tambahIzinPage, page: () => BlocProvider(create: (context) => getIt<IzinBloc>(), child: TambahIzinPage())),
+    GetPage(name: tambahPresensiBackdatePage, page: () => BlocProvider(create: (context) => getIt<PresensiBackdateBloc>(), child: TambahPresensiBackdatePage())),
   ];
 }
 

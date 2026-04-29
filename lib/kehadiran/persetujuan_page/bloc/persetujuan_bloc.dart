@@ -36,7 +36,7 @@ class PersetujuanBloc extends Bloc<PersetujuanEvent, PersetujuanState> {
   void _onApprovePersetujuan(ApprovePersetujuanEvent event, Emitter<PersetujuanState> emit) async {
     emit(PersetujuanPageLoadingState());
     try{
-      var data = await persetujuanApi.approveDataPengajuan(pengajuan_id: event.userId, role: event.role, action: event.actions, divisi_id: event.divisiId);
+      var data = await persetujuanApi.approveDataPengajuan(pengajuan_id: event.pengajuanId, role: event.role, action: event.actions, divisi_id: event.divisiId, actor_id: event.actor_id);
       if(data.success){
         emit(ApprovePersetujuanSuccessState());
       }else{

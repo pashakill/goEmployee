@@ -4,6 +4,7 @@ enum PengajuanKategori {
   dinas,
   wfh,
   izin,
+  presensiBackdate
 }
 
 extension PengajuanKategoriExt on PengajuanKategori {
@@ -19,6 +20,9 @@ extension PengajuanKategoriExt on PengajuanKategori {
         return "wfh";
       case PengajuanKategori.izin:
         return "izin";
+
+      case PengajuanKategori.presensiBackdate:
+        return "backdate";
     }
   }
 }

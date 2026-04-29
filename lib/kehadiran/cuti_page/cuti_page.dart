@@ -13,7 +13,6 @@ class CutiPage extends StatefulWidget {
 class _CutiPageState extends State<CutiPage> {
   // List sekarang dimulai sebagai list kosong
   List<CutiModel> cutiList = [];
-  // State untuk helper
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   bool _isLoading = true; // State untuk loading
   User? _currentUser;
@@ -54,7 +53,6 @@ class _CutiPageState extends State<CutiPage> {
       }
     } catch (e) {
       // Error saat loading data
-      print("CutiPage Erorr: $e");
       _forceLogout();
     }
   }
@@ -87,7 +85,6 @@ class _CutiPageState extends State<CutiPage> {
 
   /// Mengambil data cuti dari database
   Future<void> _loadRiwayatCuti() async {
-    print('load Dari DATABASE');
     setState(() {
       _isLoading = true;
     });
@@ -203,6 +200,7 @@ class _CutiPageState extends State<CutiPage> {
         bloc: _bloc,
         listener: (context, state) async {
           if (state is CutiPageGlobalErorr) {
+            LoadingDialog.hide(context);
             final error = state.error;
 
             if (error is NoInternetError) {

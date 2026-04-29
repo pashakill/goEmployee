@@ -217,6 +217,14 @@ class _WfhPageState extends State<WfhPage> {
           if(state is GetDataListWfhSuccessState){
             isOffline = false;
 
+            if(!wfhList.isEmpty){
+              wfhList.clear();
+            }
+
+            if(!pengajuanData.isEmpty){
+              pengajuanData.clear();
+            }
+
             List<WfhModel> listFromServer = state.dataCutiModel.data!.pengajuan
                 .map((p) => WfhModel.fromApi(p, _currentUser!.id.toString()))
                 .toList();

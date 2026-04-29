@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goemployee/goemployee.dart';
+import 'package:intl/intl.dart';
 
 class LemburCard extends StatelessWidget {
   final LemburModel lemburModel;
@@ -40,6 +41,7 @@ class LemburCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+            Text('Di Ajukan Pada : ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(lemburModel.tanggalPengajuan ?? ''))}', style: TextStyle(fontSize: 12),),
           ],
         ),
         // 4. TRAILING (Dinamis berdasarkan Status)

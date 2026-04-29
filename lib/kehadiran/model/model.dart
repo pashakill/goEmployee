@@ -4,3 +4,5 @@ export 'dinas_model.dart';
 export 'wfh_model.dart';
 export 'izin_converter_model.dart';
 export 'izin_model.dart';
+export 'presensi_backdate_model.dart';
+export 'slip_gaji_model.dart';

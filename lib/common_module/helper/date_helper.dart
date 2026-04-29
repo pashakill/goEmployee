@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class DateHelper {
@@ -31,6 +32,8 @@ class DateHelper {
       parsed.second,
     ).toLocal();
   }
+
+
 
   /// ==============================
   /// LOCAL → BACKEND (UTC, MYSQL FORMAT)
@@ -67,5 +70,47 @@ class DateHelper {
     final menit = totalMinutes % 60;
 
     return "$jam jam $menit menit";
+  }
+
+  static String timeOnly(DateTime date) {
+    return "${date.hour.toString().padLeft(2, '0')}:"
+        "${date.minute.toString().padLeft(2, '0')}:00";
+  }
+
+  static String dateOnly(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
+
+  static String formatJam(String time) {
+    return time.split('.').first.padLeft(8, '0');
+  }
+
+  static TimeOfDay stringToTimeOfDay(String timeString) {
+    final parts = timeString.split(":");
+
+    return TimeOfDay(
+      hour: int.parse(parts[0]),
+      minute: int.parse(parts[1]),
+    );
+  }
+
+  static String getMonthName(int month) {
+    const months = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember'
+    ];
+
+    return months[month];
   }
 }

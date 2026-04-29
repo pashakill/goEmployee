@@ -103,6 +103,7 @@ class CutiCard extends StatelessWidget {
                 ),
               ],
             ),
+            Text('Di Ajukan Pada : ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(cuti.tanggalPengajuan ?? ''))}', style: TextStyle(fontSize: 12),),
           ],
         ),
       ),

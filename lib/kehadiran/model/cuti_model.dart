@@ -51,7 +51,7 @@ class CutiModel {
       alasan: data.alasan,
       dokumenUrl: data.berkas.isNotEmpty ? data.berkas : '',
       status: data.status_hrd,
-      tanggalPengajuan: data.created_at,
+      tanggalPengajuan: data.tanggal_pengajuan,
     );
   }
 

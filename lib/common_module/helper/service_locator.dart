@@ -13,6 +13,8 @@ import 'package:goemployee/kehadiran/persetujuan_page/api/api.dart';
 import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
 
 import '../../kehadiran/persetujuan_page/bloc/persetujuan_bloc.dart';
+import '../../kehadiran/slip_gaji/api/slip_gaji_api.dart';
+import '../../kehadiran/slip_gaji/bloc/slip_gaji_bloc.dart';
 
 final getIt = GetIt.instance;
 
@@ -22,6 +24,7 @@ void setupLocator() {
 
   // 2. Repository
   getIt.registerLazySingleton<AuthApi>(() => AuthApi(network: getIt<NetworkHelper>()),);
+  getIt.registerLazySingleton<SlipGajiApi>(() => SlipGajiApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<KehadiranApi>(() => KehadiranApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<PengajuanApi>(() => PengajuanApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<PersetujuanApi>(() => PersetujuanApi(network: getIt<NetworkHelper>()),);
@@ -37,4 +40,6 @@ void setupLocator() {
   getIt.registerFactory<IzinBloc>(() => IzinBloc(pengajuanApi: getIt<PengajuanApi>()));
   getIt.registerFactory<PersetujuanBloc>(() => PersetujuanBloc(persetujuanApi: getIt<PersetujuanApi>()));
   getIt.registerFactory<HomeBloc>(() => HomeBloc(homeApi: getIt<HomeApi>()));
+  getIt.registerFactory<PresensiBackdateBloc>(() => PresensiBackdateBloc(pengajuanApi: getIt<PengajuanApi>()));
+  getIt.registerFactory<SlipGajiBloc>(() => SlipGajiBloc(slipGajiApi: getIt<SlipGajiApi>()));
 }

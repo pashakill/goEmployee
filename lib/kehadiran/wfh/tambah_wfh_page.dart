@@ -5,8 +5,6 @@ import 'package:goemployee/goemployee.dart';
 import 'package:intl/intl.dart';
 
 class TambahWfhPage extends StatefulWidget {
-  Function()? get onWfhAdded => Get.arguments?['onWfhAdded'];
-
   const TambahWfhPage({super.key});
 
   @override
@@ -28,6 +26,8 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
   WfhModel? wfhModel;
   bool isEdit = false;
 
+  Function()? _onWfhAdded;
+
   @override
   void initState() {
     super.initState();
@@ -38,7 +38,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
 
   void _initEditMode() {
     final args = Get.arguments;
-
+    _onWfhAdded = args?['onWfhAdded'];
     if (args != null && args['editWfh'] != null) {
       wfhModel = args['editWfh'];
       isEdit = true;
@@ -97,7 +97,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
         print('Dinas baru berhasil disimpan ke DB dengan ID: $dinasId');
         // 5. PANGGIL CALLBACK (kode Anda sudah benar)
         //    Ini akan meng-update UI di halaman DaftarCutiPage
-        widget.onWfhAdded?.call();
+        _onWfhAdded?.call();
         Navigator.pop(context);
       } catch (e) {
         // Tangani jika ada error saat simpan ke DB
@@ -148,7 +148,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
 
           if(state is EditWfhSuccessState){
             LoadingDialog.hide(context);
-            widget.onWfhAdded?.call();
+            _onWfhAdded?.call();
             Get.back();
           }
 
@@ -157,7 +157,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
           }
 
           if (state is AddWfhSuccessState) {
-            widget.onWfhAdded?.call();
+            _onWfhAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
           } else if (state is WfhPageFailedState) {
@@ -225,6 +225,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
                   // Alasan
                   TextFormField(
                     maxLines: 3,
+                    initialValue: _alasanWfh ?? '',
                     decoration: const InputDecoration(
                       labelText: 'Alasan WFH',
                       border: OutlineInputBorder(),

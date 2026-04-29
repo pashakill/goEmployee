@@ -15,11 +15,12 @@ class PersetujuanFetchedEvent extends PersetujuanEvent {
 }
 
 class ApprovePersetujuanEvent extends PersetujuanEvent {
-  final int userId;
+  final int pengajuanId;
   final String role;
   final String actions;
   final divisiId;
+  final actor_id;
 
-  const ApprovePersetujuanEvent({required this.userId, required this.role, required this.divisiId,
-    required this.actions});
+  const ApprovePersetujuanEvent({required this.pengajuanId, required this.role, required this.divisiId,
+    required this.actions, required this.actor_id});
 }

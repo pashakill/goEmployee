@@ -10,8 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 
 class TambahDinasPage extends StatefulWidget {
-  Function()? get onDinasAdded => Get.arguments?['onDinasAdded'];
-
   const TambahDinasPage({super.key});
 
   @override
@@ -32,6 +30,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
   DateTime? _tanggalAkhir;
   String _kunciLokasi = 'yes';
   late DateTime _tanggalPengajuan;
+  Function()? _onDinasAdded;
 
   // --- State untuk Google Map ---
   final Completer<GoogleMapController> _mapController = Completer();
@@ -60,6 +59,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
     _tglPengajuanController.text = DateFormat('dd-MM-yyyy').format(_tanggalPengajuan); // BARU
 
     final args = Get.arguments;
+    _onDinasAdded = args?['onDinasAdded'];
     if (args != null && args['editDinas'] != null) {
       data = args['editDinas'];
       isEdit = true;
@@ -312,7 +312,8 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
               const SnackBar(content: Text('Sukses Melakukan update Dinas')),
             );
 
-            widget.onDinasAdded?.call();
+            _onDinasAdded?.call();
+            LoadingDialog.hide(context);
             Get.back();
           }
 
@@ -321,7 +322,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
           }
 
           if (state is AddDinasSuccessState) {
-            widget.onDinasAdded?.call();
+            _onDinasAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
           } else if (state is DinasPageFailedState) {

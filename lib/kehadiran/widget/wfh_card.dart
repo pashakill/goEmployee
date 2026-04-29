@@ -45,6 +45,8 @@ class WfhCard extends StatelessWidget {
               'Durasi ${wfhModel.lamaWfh} hari',
               style: const TextStyle(fontSize: 14, color: Colors.black),
             ),
+
+            Text('Di Ajukan Pada : ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(wfhModel.tanggalPengajuan ?? ''))}', style: TextStyle(fontSize: 12),),
           ],
         ),
       ),

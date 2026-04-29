@@ -162,6 +162,18 @@ class DatabaseHelper {
       )
     ''');
 
+      await db.execute('''
+        CREATE TABLE presensi_backdate (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER,
+          tanggal TEXT,
+          jam_masuk TEXT,
+          jam_keluar TEXT,
+          alasan TEXT,
+          tanggal_pengajuan TEXT
+        )
+      ''');
+
     await db.execute('''
       CREATE TABLE pengajuan (
         id INTEGER PRIMARY KEY,
@@ -307,6 +319,47 @@ class DatabaseHelper {
 
     print('DatabaseHelper: Cuti baru (ID: $id) untuk user $userId berhasil disimpan.');
     return id;
+  }
+
+  Future<void> replacePresensiBackdate(List<PresensiBackdateModel> list) async {
+    final db = await instance.database;
+    final batch = db.batch();
+    // 1. Hapus semua data lama
+    batch.delete('presensi_backdate');
+    // 2. Urutkan berdasarkan tanggal terbaru
+    list.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+    // 3. Ambil maksimal 5 data
+    final limitedList = list.take(5).toList();
+    // 4. Insert ulang
+    for (var item in limitedList) {
+      final data = item.toMap();
+      // Tambahkan tanggal_pengajuan
+      data['tanggal_pengajuan'] =
+          DateFormat('yyyy-MM-dd').format(DateTime.now());
+      batch.insert(
+        'presensi_backdate',
+        data,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    // 5. Eksekusi batch
+    await batch.commit(noResult: true);
+    print('DatabaseHelper: Data presensi backdate berhasil di-replace (max 5 data).');
+  }
+
+  Future<List<PresensiBackdateModel>> getPresensiBackdate(int userId) async {
+    final db = await instance.database;
+
+    final result = await db.query(
+      'presensi_backdate',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'tanggal DESC',
+    );
+
+    if (result.isEmpty) return [];
+
+    return result.map((e) => PresensiBackdateModel.fromMap(e)).toList();
   }
 
   Future<int> insertPengajuan(PengajuanData p) async {

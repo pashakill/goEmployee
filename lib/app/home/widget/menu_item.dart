@@ -24,15 +24,13 @@ class MenuGridWidget extends StatelessWidget {
     MenuItem(iconPath: 'assets/icons/ic_overtime.svg', title: 'Lembur', routeName: Routes.lemburPage),
     MenuItem(iconPath: 'assets/icons/ic_location.svg', title: 'Dinas', routeName: Routes.dinasPage),
     MenuItem(iconPath: 'assets/icons/ic_wfh.svg', title: 'WFH', routeName: Routes.wfhPage),
-    MenuItem(iconPath: 'assets/icons/ic_ijin.svg', title: 'Izin', routeName: Routes.izinPage),
+    MenuItem(iconPath: 'assets/icons/ic_ijin.svg', title: 'Izin', routeName: Routes.presensiBackdatePage),
     MenuItem(iconPath: 'assets/icons/ic_persetujuan.svg', title: 'Persetujuan', routeName: Routes.persetujuanPage),
     MenuItem(iconPath: 'assets/icons/ic_others.svg', title: 'Lainnya', routeName: null),
 
-    MenuItem(iconPath: 'assets/icons/ic_history.svg', title: 'Riwayat', routeName: '/riwayat'),
-    MenuItem(iconPath: 'assets/icons/ic_salary.svg', title: 'Gaji', routeName: '/gaji'),
-    MenuItem(iconPath: 'assets/icons/ic_task.svg', title: 'Tugas', routeName: '/tugas'),
-    MenuItem(iconPath: 'assets/icons/ic_team.svg', title: 'Tim', routeName: '/tim'),
-    MenuItem(iconPath: 'assets/icons/ic_report.svg', title: 'Laporan', routeName: '/laporan'),
+    MenuItem(iconPath: 'assets/icons/ic_salary.svg', title: 'Gaji', routeName: Routes.slipGajiPage),
+    MenuItem(iconPath: 'assets/icons/ic_report.svg', title: 'Presensi Backdate', routeName: Routes.presensiBackdatePage),
+    MenuItem(iconPath: 'assets/icons/ic_report.svg', title: 'Laporan Absensi', routeName: Routes.tambahPresensiBackdatePage),
   ];
 
   @override
@@ -190,7 +188,7 @@ class MenuGridWidget extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          Expanded(child: Text(
                             menu.title,
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
@@ -199,7 +197,8 @@ class MenuGridWidget extends StatelessWidget {
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
-                          ),
+                          ),),
+                          SizedBox(height: 10,)
                         ],
                       ),
                     );

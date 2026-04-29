@@ -8,3 +8,5 @@ export 'persetujuan_page/persetujuan.dart';
 export 'kehadiran_page/api/api.dart';
 export 'kehadiran_page/repo/repo.dart';
 export 'kehadiran_page/model/model.dart';
+export 'presensi_backdate_page/presensi_backdate.dart';
+export 'slip_gaji/slip_gaji.dart';

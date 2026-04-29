@@ -69,7 +69,7 @@ class DinasModel {
           ? data.tanggal_selesai
           : "0000-00-00",
       alasan: data.alasan,
-      tanggalPengajuan: data.created_at,
+      tanggalPengajuan: data.tanggal_pengajuan,
       alamat: data.alamat,
       latitude: data.latitude,
       longTitude: data.longitude,

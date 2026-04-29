@@ -53,6 +53,7 @@ class DinasCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+            Text('Di Ajukan Pada : ${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(dinasModel.tanggalPengajuan ?? ''))}', style: TextStyle(fontSize: 12),),
           ],
         ),
         // 4. TRAILING (Dinamis berdasarkan Status)

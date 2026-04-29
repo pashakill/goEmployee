@@ -159,6 +159,7 @@ class _DinasPageState extends State<DinasPage> {
         listener: (context, state) async {
           if (state is DinasPageGlobalErorr) {
             final error = state.error;
+            LoadingDialog.hide(context);
 
             if (error is NoInternetError) {
               ErrorBottomSheet.show(
