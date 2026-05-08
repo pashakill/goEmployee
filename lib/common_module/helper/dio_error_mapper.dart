@@ -16,11 +16,13 @@ class TimeoutError extends NetworkError {
 
 class ServerError extends NetworkError {
   final int? code;
-  ServerError(this.code) : super("Server error ($code)");
+
+  ServerError(this.code, String message)
+      : super(message);
 }
 
 class UnknownError extends NetworkError {
-  UnknownError() : super("Terjadi kesalahan");
+  UnknownError([String message = "Terjadi kesalahan"]) : super(message);
 }
 
 // ===== MAPPER =====
@@ -28,15 +30,25 @@ NetworkError mapDioError(DioException e) {
   switch (e.type) {
     case DioExceptionType.connectionError:
       return NoInternetError();
+
     case DioExceptionType.connectionTimeout:
-      return NoInternetError();
     case DioExceptionType.receiveTimeout:
-      return NoInternetError();
+      return TimeoutError();
+
     case DioExceptionType.sendTimeout:
       return TimeoutError();
 
     case DioExceptionType.badResponse:
-      return ServerError(e.response?.statusCode);
+    /// 🔥 AMBIL MESSAGE BACKEND
+      final message =
+          e.response?.data?['message'] ??
+              e.error?.toString() ??
+              "Server error";
+
+      return ServerError(
+        e.response?.statusCode,
+        message,
+      );
 
     case DioExceptionType.unknown:
       if (e.message != null &&

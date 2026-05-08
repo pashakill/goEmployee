@@ -24,6 +24,19 @@ class DatabaseHelper {
     return _database!;
   }
 
+  Future<void> updateUserCheckOut(int id, String checkoutTime) async {
+    final db = await database;
+
+    await db.update(
+      "users",
+      {
+        "time_checkout": checkoutTime,
+      },
+      where: "id = ?",
+      whereArgs: [id],
+    );
+  }
+
   // Fungsi inisialisasi utama
   Future<Database> _initDatabase() async {
     try {
@@ -103,6 +116,32 @@ class DatabaseHelper {
     return sha256.convert(utf8.encode(key)).toString();
   }
 
+  Future<void> resetAttendance(int id) async {
+    final db = await database;
+    await db.update(
+      'users',
+      {
+        'time_checkin': null,
+        'time_checkout': null,
+        'date_now': DateTime.now().toIso8601String().split("T")[0],
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> resetIfNewDay(int userId, String lastDate) async {
+    final db = await database;
+    final today = DateTime.now().toIso8601String().split("T")[0];
+
+    if (lastDate != today) {
+      await db.rawUpdate(
+        "UPDATE users SET time_checkin = NULL, time_checkout = NULL, date_now = ? WHERE id = ?",
+        [today, userId],
+      );
+    }
+  }
+
   // Fungsi untuk membuat string acak yang kuat (256-bit)
   String _generateDatabaseKey() {
     final random = Random.secure();
@@ -117,6 +156,7 @@ class DatabaseHelper {
     // Buat tabel Anda di sini
       await db.execute('''
         CREATE TABLE users (
+        email TEXT,
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nama TEXT NOT NULL,
         username TEXT NOT NULL UNIQUE,
@@ -260,9 +300,7 @@ class DatabaseHelper {
 
   Future<void> replaceCuti(List<CutiModel> cutiList, int userId) async {
     final db = await instance.database;
-
     final batch = db.batch();
-
     // 1. Hapus semua data lama
     batch.delete('cuti');
 

@@ -9,6 +9,7 @@ import 'package:goemployee/kehadiran/izin_page/bloc/bloc.dart';
 import 'package:goemployee/kehadiran/kehadiran_page/bloc/bloc.dart';
 import 'package:goemployee/kehadiran/persetujuan_page/bloc/bloc_persetujuan.dart';
 import 'package:goemployee/kehadiran/wfh/bloc/bloc.dart';
+import 'package:goemployee/user/user_view/profile/profile_page.dart';
 
 import '../../kehadiran/lembur_page/bloc/lembur_bloc.dart';
 import '../../kehadiran/slip_gaji/bloc/slip_gaji_bloc.dart';
@@ -38,6 +39,9 @@ class Routes {
   static const String tambahPresensiBackdatePage = '$presensiBackdatePage/tambahPresensi';
 
   static const String slipGajiPage = '$karyawan/slipGaji';
+  static const String listAbsen = '$karyawan/listAbsen';
+  static const String profilePage = '$home/profilePage';
+  static const String notificationPage = '$home/notificationPage';
 
 
   // Daftar semua route
@@ -61,6 +65,9 @@ class Routes {
     GetPage(name: tambahWfh, page: () => BlocProvider(create: (context) => getIt<WfhBloc>(), child: TambahWfhPage())),
     GetPage(name: tambahIzinPage, page: () => BlocProvider(create: (context) => getIt<IzinBloc>(), child: TambahIzinPage())),
     GetPage(name: tambahPresensiBackdatePage, page: () => BlocProvider(create: (context) => getIt<PresensiBackdateBloc>(), child: TambahPresensiBackdatePage())),
+    GetPage(name: listAbsen, page: () => BlocProvider(create: (context) => getIt<ListAbsenBloc>(), child: ListAbsenPage())),
+    GetPage(name: profilePage, page: () => ProfilePage()),
+    GetPage(name: notificationPage, page: () => NotificationPage()),
   ];
 }
 

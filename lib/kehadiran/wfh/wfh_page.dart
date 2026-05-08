@@ -329,6 +329,7 @@ class _WfhPageState extends State<WfhPage> {
                   itemCount: wfhList.length,
                   itemBuilder: (context, index) {
                     return isOffline ? WfhCard(wfhModel: wfhList[index]) : SlidablePengajuanItem(
+                      currentUserRole: _currentUser!.role,
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahWfh, arguments: {

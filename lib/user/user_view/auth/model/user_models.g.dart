@@ -7,6 +7,7 @@ part of 'user_models.dart';
 // **************************************************************************
 
 UserModels _$LoginResponseFromJson(Map<String, dynamic> json) => UserModels(
+  json['email'] as String,
   json['id'] as int,
   json['nama'] as String,
   json['username'] as String,
@@ -16,7 +17,7 @@ UserModels _$LoginResponseFromJson(Map<String, dynamic> json) => UserModels(
   json['date_now'] as String,
   json['time_checkin'] as String?,
   json['time_checkout'] as String?,
-  json['late_checkin'] as String?,
+  json['late_checkin'] as String? ?? "0",
   json['photo'] as String?,
   json['jadwal_mulai_kerja'] as String?,
   json['jadwal_selesai_kerja'] as String?,
@@ -27,6 +28,7 @@ UserModels _$LoginResponseFromJson(Map<String, dynamic> json) => UserModels(
 );
 
 Map<String, dynamic> _$LoginResponseToJson(UserModels instance) => <String, dynamic>{
+  'email': instance.email,
   'id': instance.id,
   'nama': instance.nama,
   'username': instance.username,

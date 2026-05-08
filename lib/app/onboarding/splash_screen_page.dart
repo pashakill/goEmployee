@@ -12,6 +12,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   final SessionManager _sessionManager = SessionManager();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final MobileSecurityChecker _security = MobileSecurityChecker();
 
   @override
   void initState() {
@@ -50,7 +51,13 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 2));
 
     try {
-      // --- INI ADALAH FUNGSI ANDA ---
+      final isRooted = await _security.isRooted();
+
+      if (isRooted) {
+        _showBlockDialog();
+        return;
+      }
+
       // 1. Mencoba mengambil ID user dari secure storage
       final String? userIdString = await _sessionManager.getSession();
       // -----------------------------
@@ -88,39 +95,100 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
+  void _showBlockDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Security Alert"),
+        content: const Text(
+          "Device root/jailbreak terdeteksi.\nAplikasi tidak dapat digunakan.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // optional: keluar paksa
+              Navigator.of(context).pop();
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green,
       // Tampilkan logo dan teks di tengah layar
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Ganti FlutterLogo dengan logo Anda
-            Icon(
-              Icons.shield_outlined, // Ganti dengan logo Anda
-              size: 80,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'GoEmployee',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Opsional: Tambahkan loading indicator
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Colors.white),
-            ),
-          ],
+      body: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(
+          20,
+          30,
+          20,
+          30,
         ),
-      ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F9D58),
+              Color(0xFF34A853),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+       child: Center(
+         child: Column(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+             Container(
+               padding: const EdgeInsets.all(10),
+               decoration: BoxDecoration(
+                 color: Colors.white
+                     .withOpacity(0.15),
+                 borderRadius:
+                 BorderRadius.circular(16),
+               ),
+
+               child: const Icon(
+                 Icons.business_center_rounded,
+                 color: Colors.white,
+                 size: 28,
+               ),
+             ),
+
+             const SizedBox(width: 12),
+
+             const Column(
+               crossAxisAlignment: CrossAxisAlignment.center,
+               children: [
+                 Text(
+                   "GoEmployee",
+                   style: TextStyle(
+                     color: Colors.white,
+                     fontSize: 18,
+                     fontWeight:
+                     FontWeight.bold,
+                   ),
+                 ),
+                 SizedBox(height: 2),
+                 Text(
+                   "Employee Management",
+                   style: TextStyle(
+                     color: Colors.white70,
+                     fontSize: 11,
+                   ),
+                 ),
+               ],
+             ),
+           ],
+         ),
+       ),
+      )
     );
   }
 }

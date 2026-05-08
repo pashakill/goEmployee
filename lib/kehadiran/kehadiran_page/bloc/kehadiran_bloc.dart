@@ -11,6 +11,26 @@ class KehadiranBloc extends Bloc<KehadiranEvent, KehadiranState> {
 
   KehadiranBloc({required this.kehadiranApi}) : super(CheckinInitial()) {
     on<CheckinButtonPressed>(_onCheckInButtonPressed);
+    on<CheckoutButtonPressed>(_onCheckout);
+    on<GetStatusAbsen>(_getStatusAbsen);
+  }
+
+  void _getStatusAbsen(GetStatusAbsen event, Emitter<KehadiranState> emit) async {
+    emit(CheckinLoading());
+    try{
+      var data = await kehadiranApi.getStatusAbsen(userId: event.user_id);
+      if(data.success){
+        emit(GetStatusAbsenSuccess(statusKehadiranModel: data.data));
+      }else{
+        emit(CheckinFailure(error: 'Gagal ambil data'));
+      }
+    }catch (e){
+      if (e is NetworkError) {
+        emit(KehadiranPageGlobalErorr(e));
+      } else {
+        emit(KehadiranPageGlobalErorr(UnknownError()));
+      }
+    }
   }
 
   void _onCheckInButtonPressed(CheckinButtonPressed event, Emitter<KehadiranState> emit) async {
@@ -21,9 +41,36 @@ class KehadiranBloc extends Bloc<KehadiranEvent, KehadiranState> {
       if(data.success){
         emit(CheckinSuccess(kehadiranModel: data));
       }else{
-        emit(CheckinFailure(error: 'Login Gagal'));
+        emit(CheckinFailure(error: 'Checkin Gagal'));
       }
     }catch (e){
+      if (e is NetworkError) {
+        emit(KehadiranPageGlobalErorr(e));
+      } else {
+        emit(KehadiranPageGlobalErorr(UnknownError()));
+      }
+    }
+  }
+
+  Future<void> _onCheckout(
+      CheckoutButtonPressed event,
+      Emitter<KehadiranState> emit,
+      ) async {
+    emit(CheckinLoading());
+
+    try {
+      final response = await kehadiranApi.checkout(
+        userId: event.user_id,
+        longitude: event.longitude,
+        latitude: event.latitude,
+      );
+
+      if (response.success) {
+        emit(CheckoutSuccess(kehadiranModel: response));
+      } else {
+        emit(CheckoutFailure("Checkout gagal"));
+      }
+    } catch (e) {
       if (e is NetworkError) {
         emit(KehadiranPageGlobalErorr(e));
       } else {

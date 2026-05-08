@@ -8,6 +8,25 @@ abstract class KehadiranEvent extends Equatable {
   List<Object> get props => [];
 }
 
+class CheckoutButtonPressed extends KehadiranEvent {
+  final String user_id;
+  final String longitude;
+  final String latitude;
+
+  CheckoutButtonPressed({
+    required this.user_id,
+    required this.longitude,
+    required this.latitude,
+  });
+}
+
+class GetStatusAbsen extends KehadiranEvent {
+  final String user_id;
+  GetStatusAbsen({
+    required this.user_id,
+  });
+}
+
 class CheckinButtonPressed extends KehadiranEvent {
   final String user_id;
   final String latitude;

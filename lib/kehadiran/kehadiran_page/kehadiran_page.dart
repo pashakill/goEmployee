@@ -22,9 +22,12 @@ class _KehadiranPageState extends State<KehadiranPage> {
   String _currentAddress = "Mendeteksi lokasi...";
   double? _distanceInMeters;
   double? checkInRadius; // radius check-in dalam meter
-
+  final MobileSecurityChecker _security = MobileSecurityChecker();
   // Titik lokasi kantor
   LatLng? _officeLocation;
+
+  bool isCheckinDone = false;
+  bool isCheckoutDone = false;
 
   StreamSubscription<Position>? _positionStream;
 
@@ -33,20 +36,38 @@ class _KehadiranPageState extends State<KehadiranPage> {
   User? _currentUser;
   bool _isUserDataLoading = true;
 
+
   Future<void> _loadUserData() async {
-    // Asumsi Anda menggunakan getSingleUser (sesuai request terakhir)
     final User? user = await _dbHelper.getSingleUser();
-    print(_currentUser.toString());
+
+    if (user != null) {
+      /// 🔥 CEK & RESET JIKA HARI BERBEDA
+      await _dbHelper.resetIfNewDay(
+        user.id!,
+        user.dateNow ?? '',
+      );
+    }
+
+    final updatedUser = await _dbHelper.getSingleUser();
+
     setState(() {
-      _currentUser = user;
+      _currentUser = updatedUser;
       _isUserDataLoading = false;
+
       _officeLocation = LatLng(
         double.parse(_currentUser!.latitude ?? "0"),
         double.parse(_currentUser!.longitude ?? "0"),
       );
+
       checkInRadius = double.parse(_currentUser!.radius ?? "0");
     });
+
     _initLocation();
+    context.read<KehadiranBloc>().add(
+      GetStatusAbsen(
+        user_id: _currentUser!.id.toString(),
+      ),
+    );
   }
 
   @override
@@ -54,6 +75,57 @@ class _KehadiranPageState extends State<KehadiranPage> {
     super.initState();
     _loadUserData();
   }
+
+  Future<void> _processCheckOut(String checkOutTime) async {
+    if (_currentUser == null || _currentUser!.id == null) return;
+
+    final todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    /// VALIDASI: HARUS SUDAH CHECK-IN
+    if (_currentUser!.dateNow != todayDate ||
+        _currentUser!.timeCheckin == null ||
+        _currentUser!.timeCheckin!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anda belum check-in hari ini')),
+      );
+      return;
+    }
+
+    /// VALIDASI: JANGAN DOUBLE CHECKOUT
+    if (_currentUser!.timeCheckout != null &&
+        _currentUser!.timeCheckout!.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Anda sudah check-out pada jam ${_currentUser!.timeCheckout}'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      /// SIMPAN KE LOCAL DB
+      await _dbHelper.updateUserCheckOut(
+        _currentUser!.id!,
+        checkOutTime,
+      );
+
+      setState(() {
+        _currentUser!.timeCheckout = checkOutTime;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Check-Out Berhasil pada $checkOutTime')),
+      );
+
+      AppNavigator.offAll(Routes.home);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal checkout: $e')),
+      );
+    }
+  }
+
 
   // --- 5. FUNGSI BARU UNTUK PROSES CHECK-IN ---
   Future<void> _processCheckIn(String checkInTimeString, String lateCheckinDuration) async {
@@ -172,6 +244,12 @@ class _KehadiranPageState extends State<KehadiranPage> {
   void dispose() {
     _positionStream?.cancel();
     super.dispose();
+  }
+
+  Future<Position> _getCurrentPosition() async {
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
   }
 
   Future<void> _initLocation() async {
@@ -303,35 +381,54 @@ class _KehadiranPageState extends State<KehadiranPage> {
         ),
       ),
       body: BlocConsumer<KehadiranBloc, KehadiranState>(
-          listener: (context, state) {
+          listener: (context, state) async {
+            if(state is GetStatusAbsenSuccess){
+              LoadingDialog.hide(context);
+
+              setState(() {
+                isCheckinDone = state.statusKehadiranModel.checkin;
+                isCheckoutDone = state.statusKehadiranModel.checkout;
+              });
+
+              print('isCheckinDone${state.statusKehadiranModel.checkin}');
+              print('isCheckoutDone${state.statusKehadiranModel.checkout}');
+
+
+              print('variabel isCheckinDone ${isCheckinDone}');
+              print('variabel isCheckoutDone ${isCheckoutDone}');
+            }
+
             if (state is KehadiranPageGlobalErorr) {
               final error = state.error;
               LoadingDialog.hide(context);
 
               if (error is NoInternetError) {
-                ErrorBottomSheet.show(
-                  context,
-                  message: "Tidak Ada Koneksi Internet",
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Tidak ada Koneksi Internet')),
                 );
               } else if (error is TimeoutError) {
-                ErrorBottomSheet.show(
-                  context,
-                  message: "Server Lambat",
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Server Lambat')),
                 );
               } else if (error is ServerError) {
-                ErrorBottomSheet.show(
-                  context,
-                  message: "Server error ${error.code}",
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Server error ${state.error.message}')),
                 );
               } else {
-                ErrorBottomSheet.show(
-                  context,
-                  message: "${error.message}",
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${state.error.message}')),
                 );
               }
+            }
 
+            if (state is CheckoutSuccess) {
+              final jamKeluar =
+                  state.kehadiranModel.kehadiranResponse?.jamKeluar ?? '';
+
+              await _processCheckOut(jamKeluar);
               LoadingDialog.hide(context);
             }
+
 
             if (state is CheckinSuccess) {
               _processCheckIn(state.kehadiranModel.kehadiranResponse?.jamMasuk ?? '',
@@ -345,12 +442,11 @@ class _KehadiranPageState extends State<KehadiranPage> {
             }
 
             if(state is CheckinFailure){
-              ErrorBottomSheet.show(
-                context,
-                message: "Checkin Gagal: ${state.error}",
-              );
-
               LoadingDialog.hide(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Checkin Gagal: ${state.error}')),
+              );
             }
 
           },
@@ -539,8 +635,8 @@ class _KehadiranPageState extends State<KehadiranPage> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: (_distanceInMeters != null &&
                                         _distanceInMeters! <= checkInRadius! &&
-                                        (_currentUser?.timeCheckin == null || _currentUser!.timeCheckin!.isEmpty))
-                                        ? Colors.green
+                                        !isCheckoutDone)
+                                        ? (isCheckinDone ? Colors.orange : Colors.green)
                                         : Colors.grey,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(30),
@@ -548,22 +644,59 @@ class _KehadiranPageState extends State<KehadiranPage> {
                                     padding: const EdgeInsets.symmetric(vertical: 14),
                                   ),
                                   onPressed: (_distanceInMeters != null &&
+                                      checkInRadius != null &&
                                       _distanceInMeters! <= checkInRadius! &&
-                                      (_currentUser?.timeCheckin == null || _currentUser!.timeCheckin!.isEmpty))
-                                      ? () {
-                                    context.read<KehadiranBloc>().add(
-                                      CheckinButtonPressed(
-                                        user_id: _currentUser?.id.toString() ?? '',
-                                        longitude: _currentPosition?.longitude.toString() ?? '',
-                                        latitude: _currentPosition?.latitude.toString() ?? '',
-                                      ),
-                                    );
+                                      !isCheckoutDone)
+                                      ? () async {
+                                    final position = await _getCurrentPosition();
+
+                                    /// 🔐 SECURITY
+                                    final isSafe = await _security.isSafe(position);
+
+                                    if (!isSafe) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("Fake GPS / Device tidak aman"),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    /// ===== CHECKIN =====
+                                    if (!isCheckinDone) {
+                                      context.read<KehadiranBloc>().add(
+                                        CheckinButtonPressed(
+                                          user_id: _currentUser!.id.toString(),
+                                          latitude: position.latitude.toString(),
+                                          longitude: position.longitude.toString(),
+                                        ),
+                                      );
+                                    }
+
+                                    /// ===== CHECKOUT =====
+                                    else {
+                                      context.read<KehadiranBloc>().add(
+                                        CheckoutButtonPressed(
+                                          user_id: _currentUser!.id.toString(),
+                                          latitude: position.latitude.toString(),
+                                          longitude: position.longitude.toString(),
+                                        ),
+                                      );
+                                    }
                                   }
                                       : null,
-                                  icon: const Icon(Icons.login_rounded, color: Colors.white),
-                                  label: const Text(
-                                    'Check In',
-                                    style: TextStyle(color: Colors.white, fontSize: 16),
+                                  icon: Icon(
+                                    isCheckoutDone
+                                        ? Icons.block
+                                        : (isCheckinDone ? Icons.logout_rounded : Icons.login_rounded),
+                                    color: Colors.white,
+                                  ),
+
+                                  label: Text(
+                                    isCheckoutDone
+                                        ? 'Sudah Absen Hari Ini'
+                                        : (isCheckinDone ? 'Check Out' : 'Check In'),
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
                                   ),
                                 ),
                               ),

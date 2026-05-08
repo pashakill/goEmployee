@@ -337,6 +337,7 @@ class _IzinPageState extends State<IzinPage> {
                   itemCount: izinList.length,
                   itemBuilder: (context, index) {
                     return isOffline ? IzinCard(izinConverter: izinList[index]) : SlidablePengajuanItem(
+                      currentUserRole: _currentUser!.role,
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahIzinPage, arguments: {

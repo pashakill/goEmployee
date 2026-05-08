@@ -264,32 +264,33 @@ class _PresensiBackdatePageState extends State<PresensiBackdatePage> {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  RoundedContainer(
-                    color: Colors.green.withOpacity(0.3),
-                    radius: 24,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    builder: (context) {
-                      return InkWell(
-                        onTap: _sortByTanggal,
-                        borderRadius: BorderRadius.circular(24),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_month),
-                            Icon(
-                              sortByTanggal
-                                  ? Icons.arrow_upward
-                                  : Icons.arrow_downward,
-                              size: 18,
+              Padding(padding: EdgeInsets.only(left: 16, right: 16),
+                  child: Row(
+                    children: [
+                      RoundedContainer(
+                        color: Colors.green.withOpacity(0.3),
+                        radius: 24,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        builder: (context) {
+                          return InkWell(
+                            onTap: _sortByTanggal,
+                            borderRadius: BorderRadius.circular(24),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_month),
+                                Icon(
+                                  sortByTanggal
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                  size: 18,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                          );
+                        },
+                      ),
+                  ],
+              )),
 
               const Divider(),
 
@@ -312,6 +313,7 @@ class _PresensiBackdatePageState extends State<PresensiBackdatePage> {
                     itemBuilder: (context, index) {
                       // Panggilan CutiCard Anda sudah benar
                       return isOffline ? PresensiBackdateCard(presensiBackdateModel: presensiList[index]) : SlidablePengajuanItem(
+                        currentUserRole: _currentUser!.role,
                         pengajuanData: pengajuanData[index],
                         onEdit: (id) {
                           AppNavigator.to(Routes.tambahPresensiBackdatePage, arguments: {

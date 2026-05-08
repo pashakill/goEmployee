@@ -374,6 +374,7 @@ class _CutiPageState extends State<CutiPage> {
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
                     return isOffline ? CutiCard(cuti: cutiList[index]) : SlidablePengajuanItem(
+                      currentUserRole: _currentUser!.role,
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahCutiPage, arguments: {

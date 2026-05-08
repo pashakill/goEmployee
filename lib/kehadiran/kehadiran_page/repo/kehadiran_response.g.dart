@@ -12,6 +12,7 @@ KehadiranResponseModel _$KehadiranResponseFromJson(Map<String, dynamic> json) =>
   json['terlambat'] as String? ?? '',
   json['latitude'] as String? ?? '',
   json['longitude'] as String? ?? '',
+  json['jam_keluar'] as String? ?? '',
 );
 
 Map<String, dynamic> _$KehadiranResponseToJson(KehadiranResponseModel instance) =>
@@ -21,4 +22,5 @@ Map<String, dynamic> _$KehadiranResponseToJson(KehadiranResponseModel instance) 
       'terlambat': instance.terlambat,
       'latitude': instance.latitude,
       'longitude': instance.longitude,
-    };
+      'jam_keluar': instance.jamKeluar
+};

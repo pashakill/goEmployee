@@ -17,19 +17,11 @@ class SlipGajiApi {
         "/slipgaji?user_id=$userId",
       );
 
-      print("RAW RESPONSE: $response");
-      print("TYPE: ${response.runtimeType}");
-
       final model = SlipGajiResponseModel.fromJson(
         Map<String, dynamic>.from(response),
       );
-
-      print("SUCCESS MODEL: ${model.success}");
-      print("DATA LENGTH: ${model.data.length}");
-
       return model;
     } catch (e) {
-      print("ERROR PARSING: $e");
       rethrow;
     }
   }
@@ -48,11 +40,7 @@ class SlipGajiApi {
         "file": file,
       };
       final response = await network.post("/slipgaji/upload", body);
-      if (response['success'] == true) {
-        return SlipGajiResponseModel.fromJson(response);
-      } else {
-        throw ServerError(null);
-      }
+      return SlipGajiResponseModel.fromJson(response);
     }on DioException catch(e){
       throw mapDioError(e);
     }
@@ -63,12 +51,8 @@ class SlipGajiApi {
   Future<List<UserModel>> getListUser() async {
     try {
       final response = await network.get("/user"); // sudah Map
-      if (response['success'] == true) {
-        List data = response['data'];
-        return data.map((e) => UserModel.fromJson(e)).toList();
-      } else {
-        throw ServerError(response['message']);
-      }
+      List data = response['data'];
+      return data.map((e) => UserModel.fromJson(e)).toList();
     } on DioException catch (e) {
       throw mapDioError(e);
     }

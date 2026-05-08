@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:goemployee/goemployee.dart';
 
 class User {
+  String? email;
   int? id;
   String nama;
   String username;
@@ -22,6 +23,7 @@ class User {
   String? division;
 
   User({
+    this.email,
     this.id,
     required this.nama,
     required this.username,
@@ -43,6 +45,7 @@ class User {
 
   Map<String, dynamic> toMap() {
     return {
+      'email':email,
       'id': id,
       'nama': nama,
       'username': username,
@@ -67,6 +70,7 @@ class User {
   /// Konversi dari Map (hasil database) ke User Object
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
+      email: map['email'],
       id: map['id'],
       nama: map['nama'],
       username: map['username'],
@@ -90,6 +94,7 @@ class User {
   factory User.fromLogin(UserModels loginResponse) {
 
     return User(
+      email: loginResponse.email,
       id: loginResponse.id,
       nama: loginResponse.nama,
       username: loginResponse.username,
@@ -99,7 +104,7 @@ class User {
       dateNow: loginResponse.dateNow,
       timeCheckin: loginResponse.timeCheckin,
       timeCheckout: loginResponse.timeCheckout,
-      lateCheckin: loginResponse.lateCheckin,
+      lateCheckin: '${loginResponse.lateCheckin} menit',
       photo: loginResponse.photo,
       jadwalMulaiKerja: loginResponse.jadwalMulaiKerja,
       jadwalSelesaiKerja: loginResponse.jadwalSelesaiKerja,
@@ -114,6 +119,7 @@ class User {
   String toString() {
     return '''
         User(
+          email: $email,
           id: $id,
           nama: $nama,
           username: $username,

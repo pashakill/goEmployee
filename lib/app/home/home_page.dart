@@ -5,7 +5,6 @@ import 'package:goemployee/app/home/api/home_api.dart';
 import 'package:goemployee/app/home/bloc/home_bloc.dart';
 import 'package:goemployee/goemployee.dart';
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -14,31 +13,35 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  // --- 2. TAMBAHKAN STATE & HELPER ---
   User? _currentUser;
   bool _isLoading = true;
+
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final SessionManager _sessionManager = SessionManager();
+
   List<DataNotificationModels> notifList = [];
+
   late HomeBloc _bloc;
 
-  // --- 3. TAMBAHKAN INITSTATE UNTUK LOAD DATA ---
   @override
   void initState() {
     super.initState();
-    _bloc = HomeBloc(homeApi: GetIt.I<HomeApi>());
+
+    _bloc = HomeBloc(
+      homeApi: GetIt.I<HomeApi>(),
+    );
+
     _loadUserData();
   }
 
-  // --- 4. TAMBAHKAN FUNGSI LOAD DATA ---
-  /// Melakukan 'SELECT' data user (berdasarkan asumsi 1 user)
+  /// =========================================
+  /// LOAD USER
+  /// =========================================
   Future<void> _loadUserData() async {
     try {
-      // Panggil fungsi getSingleUser (sesuai permintaan terakhir Anda)
       final User? user = await _dbHelper.getSingleUser();
+
       if (user != null) {
-        // Sukses! Simpan data ke state
         setState(() {
           _currentUser = user;
           _isLoading = false;
@@ -46,233 +49,631 @@ class _HomePageState extends State<HomePage> {
 
         _fetchNotification();
       } else {
-        // Gagal (Tabel 'users' ternyata kosong)
-        _forceLogout(); // Paksa kembali ke login
+        _forceLogout();
       }
     } catch (e) {
-      // Error saat loading data
       print("HomePage Error: $e");
       _forceLogout();
     }
   }
 
-  // --- 5. TAMBAHKAN FUNGSI LOGOUT ---
-  /// Fungsi untuk logout dan kembali ke Login
+  /// =========================================
+  /// FORCE LOGOUT
+  /// =========================================
   Future<void> _forceLogout() async {
     await _dbHelper.deleteCurrentUserAndLogout();
+
     if (mounted) {
       AppNavigator.offAll(Routes.login);
     }
   }
 
-  // --- 6. MODIFIKASI WIDGET BUILD ---
+  /// =========================================
+  /// FETCH NOTIFICATION
+  /// =========================================
+  void _fetchNotification() {
+    if (_currentUser == null) return;
+
+    _bloc.add(
+      NotificationFetchedEvent(
+        userId: _currentUser!.id!,
+      ),
+    );
+  }
+
+  /// =========================================
+  /// BUILD
+  /// =========================================
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        // Tampilkan loading ATAU konten utama
-        body: BlocConsumer<HomeBloc,
-            HomeState>(
+        backgroundColor: const Color(0xFFF5F7FA),
+
+        body: BlocConsumer<HomeBloc, HomeState>(
           bloc: _bloc,
+
           listener: (context, state) {
-            if(state is HomePageLoadingState){
-              LoadingDialog.show(context, message: "Tunggu Sebentar...");
+            if (state is HomePageLoadingState) {
+              LoadingDialog.show(
+                context,
+                message: "Tunggu Sebentar...",
+              );
             }
 
-            if(state is GetDataListNotificationSuccessState){
+            if (state is GetDataListNotificationSuccessState) {
+              notifList.clear();
 
               setState(() {
-                notifList.addAll(state.notificationModel.data!.dataNotificationModels);
+                notifList.addAll(
+                  state.notificationModel.data!
+                      .dataNotificationModels,
+                );
+
                 _isLoading = false;
               });
+
               LoadingDialog.hide(context);
             }
 
-            if(state is HomePageFailedState){
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Gagal memuat riwayat: ${state.error}')),
-                );
+            if (state is HomePageFailedState) {
+              LoadingDialog.hide(context);
 
-                //_loadRiwayatLembur();
-              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Gagal memuat data: ${state.error}',
+                  ),
+                ),
+              );
+            }
+          },
+
+          builder: (context, state) {
+            if (_isLoading) {
+              return _buildLoading();
             }
 
-          },
-          builder: (context, state) {
-            return _isLoading
-                ? _buildLoading() // Tampilkan spinner saat loading
-                : _buildHomeContent(); // Tampilkan UI utama jika selesai
+            return _buildHomeContent();
           },
         ),
       ),
     );
   }
 
-  /// Widget untuk tampilan loading (dengan gradient)
+  /// =========================================
+  /// LOADING
+  /// =========================================
   Widget _buildLoading() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.green.shade800, // Hijau tua
-            Colors.green.shade400, // Hijau lebih terang
+            Color(0xFF0F9D58),
+            Color(0xFF34A853),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+        child: CircularProgressIndicator(
+          color: Colors.white,
+        ),
       ),
     );
   }
 
-  /// Widget untuk UI Home utama (diambil dari kode Anda)
+  /// =========================================
+  /// HOME CONTENT
+  /// =========================================
   Widget _buildHomeContent() {
-    // Safety check, seharusnya tidak terjadi jika _forceLogout() benar
+    final bool hasPhoto =
+        _currentUser!.photo != null && _currentUser!.photo!.isNotEmpty;
     if (_currentUser == null) {
-      return const Center(child: Text('Gagal memuat data.'));
+      return const Center(
+        child: Text("Gagal memuat data"),
+      );
     }
 
-    return RefreshIndicator(child: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.green.shade800, // Hijau tua
-            Colors.green.shade400, // Hijau lebih terang
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      width: double.infinity,
-      height: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadUserData();
+      },
+
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.shield_outlined,
-                      size: 40,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'GoEmployee',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+            /// =========================================
+            /// HEADER
+            /// =========================================
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                30,
+                20,
+                30,
+              ),
+
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0F9D58),
+                    Color(0xFF34A853),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+
+              child: Column(
+                children: [
+                  /// TOP BAR
+                  Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                    children: [
+
+                      /// LOGO
+                      Row(
+                        children: [
+
+                          Container(
+                            padding: const EdgeInsets.all(10),
+
+                            decoration: BoxDecoration(
+                              color: Colors.white
+                                  .withOpacity(0.15),
+
+                              borderRadius:
+                              BorderRadius.circular(16),
+                            ),
+
+                            child: const Icon(
+                              Icons.business_center_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          const Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
+                            children: [
+
+                              Text(
+                                "GoEmployee",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight:
+                                  FontWeight.bold,
+                                ),
+                              ),
+
+                              SizedBox(height: 2),
+
+                              Text(
+                                "Employee Management",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
+
+                      /// ACTIONS
+                      Row(
+                        children: [
+
+                          /// NOTIFICATION
+                          Stack(
+                            children: [
+
+                              GestureDetector(
+                                onTap: (){
+                                  AppNavigator.to(Routes.notificationPage);
+                                },
+                                child: Container(
+                                  padding:
+                                  const EdgeInsets.all(10),
+
+                                  decoration: BoxDecoration(
+                                    color: Colors.white
+                                        .withOpacity(0.15),
+
+                                    borderRadius:
+                                    BorderRadius.circular(
+                                        14),
+                                  ),
+
+                                  child: const Icon(
+                                    Icons.notifications_none,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+
+                              if (notifList.isNotEmpty)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 18,
+                                    height: 18,
+
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius:
+                                      BorderRadius.circular(
+                                          20),
+                                    ),
+
+                                    child: Center(
+                                      child: Text(
+                                        notifList.length > 9
+                                            ? "9+"
+                                            : notifList.length
+                                            .toString(),
+
+                                        style:
+                                        const TextStyle(
+                                          color:
+                                          Colors.white,
+                                          fontSize: 10,
+                                          fontWeight:
+                                          FontWeight
+                                              .bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          /// PROFILE
+                          GestureDetector(
+                            onTap: () {
+                              AppNavigator.to(
+                                Routes.profilePage,
+                              );
+                            },
+
+                            child: Container(
+                              padding:
+                              const EdgeInsets.all(10),
+
+                              decoration: BoxDecoration(
+                                color: Colors.white
+                                    .withOpacity(0.15),
+
+                                borderRadius:
+                                BorderRadius.circular(
+                                    14),
+                              ),
+
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  /// USER CARD
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+
+                      borderRadius:
+                      BorderRadius.circular(24),
+
+                      border: Border.all(
+                        color:
+                        Colors.white.withOpacity(0.15),
+                      ),
+                    ),
+
+                    child: Row(
+                      children: [
+
+                        /// AVATAR
+                        ClipOval(
+                          child: hasPhoto
+                              ? Image.network(
+                            _currentUser!.photo!,
+                            width: 84,
+                            height: 84,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (context, error, stackTrace) {
+                              return _buildInitialAvatar(_currentUser!.nama[0]);
+                            },
+                          )
+                              : _buildInitialAvatar(_currentUser!.nama[0]),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        /// USER INFO
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
+                            children: [
+
+                              Text(
+                                "Hallo 👋",
+
+                                style: TextStyle(
+                                  color: Colors.white
+                                      .withOpacity(0.8),
+                                  fontSize: 12,
+                                ),
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              Text(
+                                _currentUser!.nama ?? "-",
+
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight:
+                                  FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              Container(
+                                padding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+
+                                decoration: BoxDecoration(
+                                  color: Colors.white
+                                      .withOpacity(0.15),
+
+                                  borderRadius:
+                                  BorderRadius.circular(
+                                      30),
+                                ),
+
+                                child: Text(
+                                  "${_currentUser!.role} • ${_currentUser!.division}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight:
+                                    FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            /// =========================================
+            /// CONTENT CARD
+            /// =========================================
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
+
+              child: ContentCardHomePage(
+                user: _currentUser!,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            /// =========================================
+            /// MENU GRID
+            /// =========================================
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
+
+              child: Container(
+                padding: const EdgeInsets.all(18),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+
+                  borderRadius:
+                  BorderRadius.circular(24),
+
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                      Colors.black.withOpacity(0.04),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    SvgImageWithColor(
-                      color: Colors.white,
-                      path: 'assets/icons/ic_notification.svg',
-                      width: 24,
-                    ),
-                    SizedBox(
-                      width: 12,
-                    ),
-                    // --- (TAMBAHKAN LOGOUT ONTAP) ---
-                    GestureDetector(
-                      onTap: _forceLogout, // Panggil fungsi logout
-                      child: SvgImageWithColor(
-                        color: Colors.white,
-                        path: 'assets/icons/ic_setting.svg',
-                        width: 32,
-                      ),
+
+                child: MenuGridWidget(
+                  canCheckIn:
+                  _currentUser?.timeCheckin ==
+                      null ||
+                      _currentUser!
+                          .timeCheckin!
+                          .isEmpty, role: _currentUser!.role,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            /// =========================================
+            /// NOTIFICATION
+            /// =========================================
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
+
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+
+                  borderRadius:
+                  BorderRadius.circular(24),
+
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                      Colors.black.withOpacity(0.04),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
                     ),
                   ],
-                )
-              ],
-            ),
-            SizedBox(
-              height: 16,
-            ),
-            // --- (KIRIM DATA USER KE CARD) ---
-            // (Pastikan ContentCardHomePage bisa menerima 'user')
-            RoundedCardWidget(widget: ContentCardHomePage(user: _currentUser!)),
-            const SizedBox(height: 16),
-            RoundedCardWidget(widget: MenuGridWidget(canCheckIn: _currentUser?.timeCheckin == null || _currentUser!.timeCheckin!.isEmpty),),
-            // Expanded agar ListView punya tinggi terbatas
-            const SizedBox(height: 16),
-            RoundedCardWidget(
-                widget: Container(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              'Pemberitahuan'),
-                          SizedBox(
-                            height: 8,
-                          ),
+                ),
 
-                          Container(
-                            child: _isLoading
-                                ? const Center(child: CircularProgressIndicator())
-                                : notifList.isEmpty
-                                ? Center(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/image/null_notifcation.jpg',
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  Text(
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      'Tidak ada pemberitahuan'),
-                                ],
-                              ),
-                            )
-                                : ListView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: notifList.length,
-                              itemBuilder: (context, index) {
-                                // Panggilan CutiCard Anda sudah benar
-                                return NotificationCard(notificationModels: notifList[index]);
-                              },
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+                  children: [
+
+                    /// TITLE
+                    Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+
+                      children: [
+
+                        const Text(
+                          "Pemberitahuan",
+
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                            FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    /// EMPTY STATE
+                    if (notifList.isEmpty)
+                      Center(
+                        child: Column(
+                          children: [
+                            Image.asset(
+                              'assets/image/null_notifcation.jpg',
+                              width: 140,
+                              height: 140,
                             ),
-                          ),
-                        ]
-                    ))),
-            SizedBox(height: 20,)
 
+                            const SizedBox(height: 8),
+
+                            const Text(
+                              "Tidak ada pemberitahuan",
+
+                              style: TextStyle(
+                                fontWeight:
+                                FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    /// LIST NOTIF
+                    if (notifList.isNotEmpty)
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+
+                        // 🔥 BATAS MAX 5
+                        itemCount: notifList.length > 5 ? 5 : notifList.length,
+
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: NotificationCard(
+                              notificationModels: notifList[index],
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
-    ), onRefresh: () async {
-      _loadUserData();
-    });
+    );
   }
 
-  void _fetchNotification() {
-    if (_currentUser == null) return;
-    _bloc.add(NotificationFetchedEvent(
-        userId: _currentUser!.id!
-    ));
+  Widget _buildInitialAvatar(String initials) {
+    return Container(
+      width: 84,
+      height: 84,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.green.shade900,
+            Colors.green.shade600,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 34,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
   }
 }

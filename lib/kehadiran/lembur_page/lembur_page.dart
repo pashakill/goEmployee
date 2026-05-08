@@ -344,6 +344,7 @@ class _LemburPageState extends State<LemburPage> {
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
                     return isOffline ? LemburCard(lemburModel: lemburList[index]) : SlidablePengajuanItem(
+                      currentUserRole: _currentUser!.role,
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahLemburPage, arguments: {

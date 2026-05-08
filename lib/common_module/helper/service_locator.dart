@@ -29,6 +29,7 @@ void setupLocator() {
   getIt.registerLazySingleton<PengajuanApi>(() => PengajuanApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<PersetujuanApi>(() => PersetujuanApi(network: getIt<NetworkHelper>()),);
   getIt.registerLazySingleton<HomeApi>(() => HomeApi(network: getIt<NetworkHelper>()),);
+  getIt.registerLazySingleton<ListAbsenApi>(() => ListAbsenApi(network: getIt<NetworkHelper>()),);
 
   // 3. BLoC
   getIt.registerFactory<LoginBloc>(() => LoginBloc(authApi: getIt<AuthApi>()));
@@ -42,4 +43,6 @@ void setupLocator() {
   getIt.registerFactory<HomeBloc>(() => HomeBloc(homeApi: getIt<HomeApi>()));
   getIt.registerFactory<PresensiBackdateBloc>(() => PresensiBackdateBloc(pengajuanApi: getIt<PengajuanApi>()));
   getIt.registerFactory<SlipGajiBloc>(() => SlipGajiBloc(slipGajiApi: getIt<SlipGajiApi>()));
+  getIt.registerFactory<ListAbsenBloc>(() => ListAbsenBloc(listAbsenApi: getIt<ListAbsenApi>()));
+
 }

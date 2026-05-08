@@ -17,11 +17,7 @@ class HomeApi {
         "user_id": userId,
       };
       final response = await network.get("/notification", data: body);
-      if (response['success'] == true) {
-        return NotificationModel.fromJson(response);
-      } else {
-        throw ServerError(null);
-      }
+      return NotificationModel.fromJson(response);
     }on DioException catch(e){
       throw mapDioError(e);
     }

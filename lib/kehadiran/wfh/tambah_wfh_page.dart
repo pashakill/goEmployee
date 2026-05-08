@@ -152,13 +152,13 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
             Get.back();
           }
 
-          if (state is CutiPageLoadingState) {
+          if (state is WfhPageLoadingState) {
             LoadingDialog.show(context, message: "Tunggu Sebentar...");
           }
 
           if (state is AddWfhSuccessState) {
-            _onWfhAdded?.call();
             LoadingDialog.hide(context);
+            _onWfhAdded?.call();
             Get.back();
           } else if (state is WfhPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,7 @@ part 'user_models.g.dart';
 
 @JsonSerializable(createFactory: true, createToJson: true)
 class UserModels {
+  final String email;
   final int id;
   final String nama;
   final String username;
@@ -23,6 +24,7 @@ class UserModels {
   final String? division;
 
   UserModels(
+      this.email,
       this.id,
       this.nama,
       this.username,

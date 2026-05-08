@@ -300,6 +300,7 @@ class _DinasPageState extends State<DinasPage> {
                   itemBuilder: (context, index) {
                     // Panggilan CutiCard Anda sudah benar
                     return isOffline? DinasCard(dinasModel: dinasList[index]) : SlidablePengajuanItem(
+                      currentUserRole: _currentUser!.role,
                       pengajuanData: pengajuanData[index],
                       onEdit: (id) {
                         AppNavigator.to(Routes.tambahDinasPage, arguments: {

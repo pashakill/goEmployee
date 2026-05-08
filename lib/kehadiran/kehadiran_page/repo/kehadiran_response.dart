@@ -14,8 +14,9 @@ class KehadiranResponseModel {
   final String terlambat;
   final String latitude;
   final String longitude;
+  final String? jamKeluar;
 
-  KehadiranResponseModel(this.tanggal, this.jamMasuk, this.terlambat, this.latitude, this.longitude);
+  KehadiranResponseModel(this.tanggal, this.jamMasuk, this.terlambat, this.latitude, this.longitude, this.jamKeluar);
 
   factory KehadiranResponseModel.fromJson(Map<String, dynamic> json) =>
       _$KehadiranResponseFromJson(json);

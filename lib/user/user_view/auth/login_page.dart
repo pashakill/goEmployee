@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:goemployee/goemployee.dart';
-import 'package:intl/intl.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -28,34 +27,9 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) async {
-
-          if (state is LoginPageGlobalErorr) {
-            final error = state.error;
-
-            if (error is NoInternetError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("TIdak Ada Koneksi Internet")),
-              );
-            } else if (error is TimeoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server lambat")),
-              );
-            } else if (error is ServerError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Server error ${error.code}")),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error.message)),
-              );
-            }
-          }
-
           if (state is LoginSuccess) {
-            //init Data Login
             final newUser = User.fromLogin(state.loginResponse);
-            // 2. Panggil DatabaseHelper untuk insert
-            print('newUser ${newUser.toString()}');
+
             try {
               final dbHelper = DatabaseHelper.instance;
               int userId = await dbHelper.insertUser(newUser);
@@ -64,94 +38,102 @@ class _LoginPageState extends State<LoginPage> {
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Gagal menyimpan data user',
-                    style: TextStyle(color: Colors.black),),
+                  content: Text('Gagal menyimpan data user'),
                   backgroundColor: Colors.white,
-                  duration: Duration(seconds: 2),
                 ),
               );
             }
-          } else if (state is LoginFailure) {
-            // Tampilkan pesan error
+          }
+
+          if (state is LoginFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Login Gagal: ${state.error}')),
             );
           }
         },
+
         builder: (context, state) {
           return Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.green.shade800, // Hijau tua
-                  Colors.green.shade400, // Hijau lebih terang
-                ],
+                colors: [Color(0xFF0F9D58), Color(0xFF34A853)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
+
             child: Center(
               child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // ... (Logo dan Judul Anda tetap sama) ...
-                    const Icon(
-                      Icons.shield_outlined,
-                      size: 80,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'GoEmployee',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const Text(
-                      'Silakan login untuk melanjutkan',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
 
-                    // ... (Form Card Anda tetap sama) ...
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24.0),
-                      padding: const EdgeInsets.all(24.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16.0),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1.0,
+                      const Icon(
+                        Icons.business_center_rounded,
+                        size: 90,
+                        color: Colors.white,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      const Text(
+                        "GoEmployee",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          // --- 3. PASANG CONTROLLER (di pemanggilan widget) ---
-                          _buildTextField(
-                            label: 'Employee ID',
-                            icon: Icons.person_outline,
-                            controller: _employeeIdController, // Kirim controller
-                          ),
-                          const SizedBox(height: 20),
 
-                          _buildPasswordField(
-                            controller: _passwordController, // Kirim controller
-                          ),
-                          const SizedBox(height: 32),
+                      const SizedBox(height: 6),
 
-                          _buildLoginButton(),
-                        ],
+                      const Text(
+                        "Login untuk melanjutkan",
+                        style: TextStyle(
+                          color: Colors.white70,
+                        ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 40),
+
+                      /// CARD LOGIN
+                      Container(
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            )
+                          ],
+                        ),
+
+                        child: Column(
+                          children: [
+
+                            _field(
+                              controller: _employeeIdController,
+                              label: "Username",
+                              icon: Icons.person_outline,
+                            ),
+
+                            const SizedBox(height: 18),
+                            _passwordField(),
+                            const SizedBox(height: 28),
+
+                            _loginButton(context),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -161,45 +143,50 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // --- 3. TERIMA CONTROLLER (di helper method) ---
-  Widget _buildTextField({
+  /// =========================
+  /// INPUT FIELD MODERN
+  /// =========================
+  Widget _field({
+    required TextEditingController controller,
     required String label,
     required IconData icon,
-    required TextEditingController controller, // Terima controller
   }) {
     return TextField(
-      controller: controller, // Pasang controller di sini
+      controller: controller,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.white70),
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 2),
+
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
         ),
       ),
     );
   }
 
-  // --- 3. TERIMA CONTROLLER (di helper method) ---
-  Widget _buildPasswordField({
-    required TextEditingController controller, // Terima controller
-  }) {
+  /// =========================
+  /// PASSWORD FIELD
+  /// =========================
+  Widget _passwordField() {
     return TextField(
-      controller: controller, // Pasang controller di sini
-      style: const TextStyle(color: Colors.white),
+      controller: _passwordController,
       obscureText: !_isPasswordVisible,
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        labelText: 'Password',
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white),
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+
         suffixIcon: IconButton(
           icon: Icon(
-            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-            color: Colors.white,
+            _isPasswordVisible
+                ? Icons.visibility_off
+                : Icons.visibility,
+            color: Colors.white70,
           ),
           onPressed: () {
             setState(() {
@@ -207,123 +194,68 @@ class _LoginPageState extends State<LoginPage> {
             });
           },
         ),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 2),
+
+        labelText: "Password",
+        labelStyle: const TextStyle(color: Colors.white70),
+
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
+
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
         ),
       ),
     );
   }
 
-  // --- Widget Helper untuk Tombol Login ---
-  Widget _buildLoginButton() {
+  /// =========================
+  /// BUTTON LOGIN MODERN
+  /// =========================
+  Widget _loginButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.green.shade800,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30.0),
+      height: 50,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Colors.white, Color(0xFFE8F5E9)],
           ),
+          borderRadius: BorderRadius.circular(14),
         ),
-        onPressed: () async {
-          /*
-          LOGIC JIKA DISURUH MEMBUAT USER DARI DATA OFFLINE
-          final String username = _employeeIdController.text;
-          final String password = _passwordController.text;
 
-          if (username.isEmpty || password.isEmpty) {
-            showAppSnackBar(context, 'Username atau Password tidak boleh kosong.', SnackBarType.error);
-            return;
-          }
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+          ),
 
-          // --- MULAI DARI SINI ---
+          onPressed: () {
+            final username = _employeeIdController.text;
+            final password = _passwordController.text;
 
-          // 1.  memanggil helper dengan username & password
-          final dbHelper = DatabaseHelper.instance;
-          final User? user = await dbHelper.getUserLogin(username, password);
-
-          // 2.  mengecek apakah 'user' ada (login berhasil)
-          if (user != null) {
-
-            // --- LOGIN BERHASIL ---
-            // 'user' adalah OBJEK LENGKAP dari database (hasil SELECT)
-            // Isinya: user.id, user.nama, user.username, user.role, dll.
-
-            // 3. INI JAWABANNYA: Ambil 'id' dari objek 'user'
-            // 'user.id' ini adalah 'user_id' yang Anda cari
-            final int? userId = user.id;
-
-            // 4. Cek apakah ID-nya valid
-            if (userId != null) {
-
-              await SessionManager().saveSession(userId.toString());
-
-              if (mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
-              }
-            } else {
-              // (Skenario error jika id dari db null)
-              showAppSnackBar(context, 'Login gagal: ID user tidak valid.', SnackBarType.error);
+            if (username.isEmpty || password.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Field tidak boleh kosong")),
+              );
+              return;
             }
-          } else {
-            // --- LOGIN GAGAL ---
-            // 'user' adalah null karena tidak ada data yang cocok
-            showAppSnackBar(context, 'Username atau Password salah.', SnackBarType.error);
-          }
 
-           */
-
-
-          // --- 4. BACA TEXT DARI CONTROLLER ---
-          // Gunakan .text untuk mendapatkan nilai string-nya
-          final String username = _employeeIdController.text;
-          final String password = _passwordController.text;
-
-          print('--- Tombol Login Ditekan ---');
-          print('Employee ID: $username');
-          print('Password: $password'); // <-- Jangan print password di production!
-
-          // Contoh validasi sederhana
-          if (username.isEmpty) {
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Employee ID tidak boleh kosong!', style: TextStyle(color: Colors.black),),
-                backgroundColor: Colors.white, // Beri warna untuk error
-                duration: Duration(seconds: 2), // Tampilkan selama 2 detik
+            context.read<LoginBloc>().add(
+              LoginButtonPressed(
+                username: username,
+                password: password,
               ),
             );
+          },
 
-            return;
-          }
-
-          if(password.isEmpty){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Password tidak boleh kosong!', style: TextStyle(color: Colors.black),),
-                backgroundColor: Colors.white, // Beri warna untuk error
-                duration: Duration(seconds: 2), // Tampilkan selama 2 detik
-              ),
-            );
-            return;
-          }
-          context.read<LoginBloc>().add(
-            LoginButtonPressed(password: _passwordController.text, username: _employeeIdController.text),
-          );
-        },
-        child: const Text(
-          'LOGIN',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+          child: const Text(
+            "LOGIN",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+              letterSpacing: 1,
+            ),
           ),
         ),
       ),

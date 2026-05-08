@@ -17,8 +17,8 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
 
   bool _isLoading = true;
   User? _currentUser;
-  bool isOffline = false;
   late PersetujuanBloc _bloc;
+
   String searchName = "";
 
   /// FILTER
@@ -40,12 +40,22 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
     'PENDING'
   ];
 
+  bool isManager() => _currentUser?.role == 'manager';
+
+  bool isHR() =>
+      _currentUser?.division?.toUpperCase() == 'HR';
+
+  bool isKaryawan() =>
+      _currentUser?.role == 'karyawan';
+
   @override
   void initState() {
     super.initState();
+
     _bloc = PersetujuanBloc(
       persetujuanApi: GetIt.I<PersetujuanApi>(),
     );
+
     _loadUser();
   }
 
@@ -70,7 +80,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
         _fetchData();
       }
     } catch (e) {
-      print("ERROR LOAD USER: $e");
+      debugPrint("ERROR LOAD USER: $e");
     }
   }
 
@@ -91,20 +101,26 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   /// =========================
   List<PengajuanData> _getFilteredData() {
     return persetujuanData.where((data) {
+
       final finalStatus = getFinalStatus(data);
 
       final matchKategori =
-          selectedKategori == null || data.kategori == selectedKategori;
+          selectedKategori == null ||
+              data.kategori == selectedKategori;
 
       final matchStatus =
-          selectedStatus == null || finalStatus == selectedStatus;
+          selectedStatus == null ||
+              finalStatus == selectedStatus;
 
-      final matchName = searchName.isEmpty ||
-          (data.user ?? '')
-              .toLowerCase()
-              .contains(searchName.toLowerCase());
+      final matchName =
+          searchName.isEmpty ||
+              (data.user ?? '')
+                  .toLowerCase()
+                  .contains(searchName.toLowerCase());
 
-      return matchKategori && matchStatus && matchName;
+      return matchKategori &&
+          matchStatus &&
+          matchName;
     }).toList();
   }
 
@@ -115,11 +131,13 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
     final manager = data.status_manager;
     final hrd = data.status_hrd;
 
-    if (manager == 'reject' || hrd == 'reject') {
+    if (manager == 'reject' ||
+        hrd == 'reject') {
       return 'REJECTED';
     }
 
-    if (manager == 'approve' && hrd == 'approve') {
+    if (manager == 'approve' &&
+        hrd == 'approve') {
       return 'APPROVED';
     }
 
@@ -136,18 +154,23 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
       case 'APPROVED':
         color = Colors.green;
         break;
+
       case 'REJECTED':
         color = Colors.red;
         break;
+
       default:
         color = Colors.orange;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
         status,
@@ -163,103 +186,176 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   /// =========================
   /// STATUS CHIP
   /// =========================
-  Widget statusChip(String label, String status) {
+  Widget statusChip(
+      String label,
+      String status,
+      ) {
     Color color;
 
     switch (status) {
       case 'approve':
         color = Colors.green;
         break;
+
       case 'reject':
         color = Colors.red;
         break;
+
       default:
         color = Colors.orange;
     }
 
-    return Chip(
-      label: Text("$label: $status"),
-      backgroundColor: color.withOpacity(0.2),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        "$label : ${status.toUpperCase()}",
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 
-  List<Widget> _buildStatusChips(PengajuanData data) {
-    return [
-      statusChip("Manager", data.status_manager),
-      const SizedBox(width: 8),
-      statusChip("HRD", data.status_hrd),
-    ];
+  List<Widget> _buildStatusChips(
+      PengajuanData data,
+      ) {
+    List<Widget> chips = [];
+
+    if (!isManager()) {
+      chips.add(
+        statusChip(
+          "Manager",
+          data.status_manager,
+        ),
+      );
+    }
+
+    chips.add(
+      statusChip(
+        "HRD",
+        data.status_hrd,
+      ),
+    );
+
+    return chips;
   }
 
   /// =========================
   /// ACTION BUTTON
   /// =========================
   Widget actionButton(PengajuanData data) {
+
     final role = _currentUser?.role;
-    final division = _currentUser?.division?.toUpperCase();
 
-    if (role == 'karyawan') return const SizedBox();
+    final division =
+    _currentUser?.division?.toUpperCase();
 
+    /// HR APPROVAL
     if (division == 'HR') {
-      if (data.status_hrd == 'approve' || data.status_hrd == 'reject') {
+
+      if (data.status_hrd == 'approve' ||
+          data.status_hrd == 'reject') {
         return const SizedBox();
       }
+
       return _buildButtonRow(data, 'hrd');
     }
 
-    if (data.status_manager == 'approve' || data.status_manager == 'reject') {
+    /// KARYAWAN TIDAK BISA APPROVE
+    if (role == 'karyawan') {
+      return const SizedBox();
+    }
+
+    /// MANAGER APPROVAL
+    if (data.status_manager == 'approve' ||
+        data.status_manager == 'reject') {
       return const SizedBox();
     }
 
     return _buildButtonRow(data, 'manager');
   }
 
-  Widget _buildButtonRow(PengajuanData data, String role) {
+  Widget _buildButtonRow(
+      PengajuanData data,
+      String role,
+      ) {
     return Row(
       children: [
+
+        /// APPROVE
         Expanded(
-          child: ElevatedButton(
+          child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
+              elevation: 0,
               backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                vertical: 14,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius:
+                BorderRadius.circular(14),
               ),
             ),
             onPressed: () {
               _bloc.add(
                 ApprovePersetujuanEvent(
-                  actor_id: _currentUser?.id.toString() ?? "",
+                  actor_id:
+                  _currentUser?.id.toString() ?? "",
                   pengajuanId: data.id,
                   role: role,
-                  divisiId: _currentUser?.division,
+                  divisiId:
+                  _currentUser?.division,
                   actions: 'approve',
                 ),
               );
             },
-            child: const Text("Approve"),
+            icon: const Icon(Icons.check_rounded),
+            label: const Text("Approve"),
           ),
         ),
-        const SizedBox(width: 8),
+
+        const SizedBox(width: 12),
+
+        /// REJECT
         Expanded(
-          child: ElevatedButton(
+          child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
+              elevation: 0,
               backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                vertical: 14,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius:
+                BorderRadius.circular(14),
               ),
             ),
             onPressed: () {
               _bloc.add(
                 ApprovePersetujuanEvent(
-                  actor_id: _currentUser?.id.toString() ?? "",
+                  actor_id:
+                  _currentUser?.id.toString() ?? "",
                   pengajuanId: data.id,
                   role: role,
-                  divisiId: _currentUser?.division,
+                  divisiId:
+                  _currentUser?.division,
                   actions: 'reject',
                 ),
               );
             },
-            child: const Text("Reject"),
+            icon: const Icon(Icons.close_rounded),
+            label: const Text("Reject"),
           ),
         ),
       ],
@@ -267,121 +363,234 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   }
 
   /// =========================
-  /// CARD
+  /// MODERN CARD
   /// =========================
   Widget _modernCard(PengajuanData data) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// HEADER
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                data.kategori.toUpperCase(),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+          children: [
+
+            /// HEADER
+            Row(
+              children: [
+
+                /// ICON
+                Container(
+                  padding:
+                  const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.green
+                        .withOpacity(0.1),
+                    borderRadius:
+                    BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_rounded,
+                    color: Colors.green,
+                    size: 24,
+                  ),
                 ),
-              ),
-              _statusBadge(getFinalStatus(data)),
-            ],
-          ),
 
-          const SizedBox(height: 8),
+                const SizedBox(width: 14),
 
-          Text(
-            data.user ?? "-",
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
-          ),
+                /// TITLE
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
 
-          const SizedBox(height: 10),
+                      Text(
+                        data.kategori
+                            .toUpperCase(),
+                        style:
+                        const TextStyle(
+                          fontSize: 15,
+                          fontWeight:
+                          FontWeight.bold,
+                        ),
+                      ),
 
-          buildKategoriCard(data),
+                      const SizedBox(height: 4),
 
-          const SizedBox(height: 10),
+                      Text(
+                        data.user ?? '-',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color:
+                          Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-          Row(children: _buildStatusChips(data)),
+                /// STATUS
+                if (!isManager())
+                  _statusBadge(
+                    getFinalStatus(data),
+                  ),
+              ],
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 18),
 
-          actionButton(data),
-        ],
+            /// CONTENT
+            buildKategoriCard(data),
+
+            const SizedBox(height: 16),
+
+            /// STATUS CHIP
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children:
+              _buildStatusChips(data),
+            ),
+
+            const SizedBox(height: 18),
+
+            /// BUTTON
+            actionButton(data),
+          ],
+        ),
       ),
     );
   }
 
   /// =========================
-  /// KATEGORI CARD
+  /// BUILD KATEGORI CARD
   /// =========================
-  Widget buildKategoriCard(PengajuanData data) {
+  Widget buildKategoriCard(
+      PengajuanData data,
+      ) {
     switch (data.kategori) {
+
       case 'cuti':
         return CutiCard(
-            cuti: CutiModel.fromApi(data, _currentUser!.id.toString()));
+          cuti: CutiModel.fromApi(
+            data,
+            _currentUser!.id.toString(),
+          ),
+        );
+
       case 'izin':
         return IzinCard(
-            izinConverter:
-            IzinConverterModel.fromApi(data, _currentUser!.id.toString()));
+          izinConverter:
+          IzinConverterModel.fromApi(
+            data,
+            _currentUser!.id.toString(),
+          ),
+        );
+
       case 'lembur':
         return LemburCard(
-            lemburModel:
-            LemburModel.fromApi(data, _currentUser!.id.toString()));
+          lemburModel:
+          LemburModel.fromApi(
+            data,
+            _currentUser!.id.toString(),
+          ),
+        );
+
       case 'dinas':
         return DinasCard(
-            dinasModel:
-            DinasModel.fromApi(data, _currentUser!.id.toString()));
+          dinasModel:
+          DinasModel.fromApi(
+            data,
+            _currentUser!.id.toString(),
+          ),
+        );
+
       case 'backdate':
         return PresensiBackdateCard(
-            presensiBackdateModel:
-            PresensiBackdateModel.fromApi(data, _currentUser!.id.toString()));
+          presensiBackdateModel:
+          PresensiBackdateModel.fromApi(
+            data,
+            _currentUser!.id.toString(),
+          ),
+        );
+
       case 'wfh':
         return WfhCard(
-            wfhModel:
-            WfhModel.fromApi(data, _currentUser!.id.toString()));
+          wfhModel:
+          WfhModel.fromApi(
+            data,
+            _currentUser!.id.toString(),
+          ),
+        );
+
       default:
-        return const Text("Kategori tidak dikenali");
+        return const Text(
+          "Kategori tidak dikenali",
+        );
     }
   }
 
   /// =========================
   /// LISTENER
   /// =========================
-  void _listener(BuildContext context, PersetujuanState state) {
-    if (state is PersetujuanPageLoadingState) {
-      setState(() => _isLoading = true);
-      LoadingDialog.show(context, message: "Tunggu Sebentar...");
+  void _listener(
+      BuildContext context,
+      PersetujuanState state,
+      ) {
+
+    if (state
+    is PersetujuanPageLoadingState) {
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      LoadingDialog.show(
+        context,
+        message: "Tunggu Sebentar...",
+      );
     }
 
-    if (state is GetDataListPersetujuanSuccessState) {
+    if (state
+    is GetDataListPersetujuanSuccessState) {
+
       setState(() {
-        persetujuanData = state.dataCutiModel.data!.pengajuan.toList();
+        persetujuanData =
+            state.dataCutiModel.data!
+                .pengajuan
+                .toList();
+
         _isLoading = false;
       });
 
       LoadingDialog.hide(context);
     }
 
-    if (state is ApprovePersetujuanSuccessState) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Berhasil update status")),
+    if (state
+    is ApprovePersetujuanSuccessState) {
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Berhasil update status",
+          ),
+        ),
       );
 
       LoadingDialog.hide(context);
+
       _fetchData();
     }
   }
@@ -392,101 +601,347 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor:
+      const Color(0xFFF4F7FB),
+
       appBar: AppBar(
         elevation: 0,
+        centerTitle: true,
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+
         title: const Text(
           "Approval",
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => AppNavigator.back(),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black87,
+          ),
+          onPressed: () =>
+              AppNavigator.back(),
         ),
       ),
+
       body: Column(
         children: [
-          /// FILTER
+
+          /// =========================
+          /// SEARCH + FILTER
+          /// =========================
           Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Cari nama karyawan...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchName = value;
-                });
-              },
+            padding:
+            const EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              18,
             ),
-          ),
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedKategori,
-                    hint: const Text("Kategori"),
-                    items: kategoriList.map((e) {
-                      return DropdownMenuItem(
-                        value: e,
-                        child: Text(e.toUpperCase()),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() => selectedKategori = val);
-                    },
-                  ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius:
+              const BorderRadius.only(
+                bottomLeft:
+                Radius.circular(28),
+                bottomRight:
+                Radius.circular(28),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color:
+                  Colors.black.withOpacity(
+                      0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedStatus,
-                    hint: const Text("Status"),
-                    items: statusList.map((e) {
-                      return DropdownMenuItem(value: e, child: Text(e));
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() => selectedStatus = val);
-                    },
+              ],
+            ),
+
+            child: Column(
+              children: [
+
+                /// SEARCH
+                if (!isKaryawan())
+                  Container(
+                    decoration: BoxDecoration(
+                      color:
+                      const Color(0xFFF6F7FB),
+                      borderRadius:
+                      BorderRadius.circular(
+                          18),
+                    ),
+
+                    child: TextField(
+                      decoration:
+                      InputDecoration(
+                        hintText:
+                        "Cari nama karyawan...",
+                        hintStyle: TextStyle(
+                          color: Colors
+                              .grey.shade500,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search_rounded,
+                          color: Colors
+                              .grey.shade600,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding:
+                        const EdgeInsets
+                            .symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+
+                      onChanged: (value) {
+                        setState(() {
+                          searchName = value;
+                        });
+                      },
+                    ),
                   ),
+
+                const SizedBox(height: 14),
+
+                /// FILTER
+                Row(
+                  children: [
+
+                    /// KATEGORI
+                    Expanded(
+                      child: Container(
+                        padding:
+                        const EdgeInsets
+                            .symmetric(
+                          horizontal: 12,
+                        ),
+
+                        decoration:
+                        BoxDecoration(
+                          color: const Color(
+                              0xFFF6F7FB),
+                          borderRadius:
+                          BorderRadius
+                              .circular(
+                              16),
+                        ),
+
+                        child:
+                        DropdownButtonHideUnderline(
+                          child:
+                          DropdownButton<
+                              String>(
+                            value:
+                            selectedKategori,
+                            isExpanded: true,
+                            hint: const Text(
+                                "Kategori"),
+                            icon: const Icon(
+                              Icons
+                                  .keyboard_arrow_down_rounded,
+                            ),
+
+                            items:
+                            kategoriList
+                                .map((e) {
+                              return DropdownMenuItem(
+                                value: e,
+                                child: Text(
+                                  e.toUpperCase(),
+                                ),
+                              );
+                            }).toList(),
+
+                            onChanged: (val) {
+                              setState(() {
+                                selectedKategori =
+                                    val;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    /// STATUS
+                    Expanded(
+                      child: Container(
+                        padding:
+                        const EdgeInsets
+                            .symmetric(
+                          horizontal: 12,
+                        ),
+
+                        decoration:
+                        BoxDecoration(
+                          color: const Color(
+                              0xFFF6F7FB),
+                          borderRadius:
+                          BorderRadius
+                              .circular(
+                              16),
+                        ),
+
+                        child:
+                        DropdownButtonHideUnderline(
+                          child:
+                          DropdownButton<
+                              String>(
+                            value:
+                            selectedStatus,
+                            isExpanded: true,
+                            hint: const Text(
+                                "Status"),
+
+                            icon: const Icon(
+                              Icons
+                                  .keyboard_arrow_down_rounded,
+                            ),
+
+                            items: statusList
+                                .map((e) {
+                              return DropdownMenuItem(
+                                value: e,
+                                child:
+                                Text(e),
+                              );
+                            }).toList(),
+
+                            onChanged: (val) {
+                              setState(() {
+                                selectedStatus =
+                                    val;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
+          const SizedBox(height: 8),
+
+          /// =========================
           /// LIST
+          /// =========================
           Expanded(
-            child: BlocConsumer<PersetujuanBloc, PersetujuanState>(
+            child: BlocConsumer<
+                PersetujuanBloc,
+                PersetujuanState>(
               bloc: _bloc,
               listener: _listener,
+
               builder: (context, state) {
-                final list = _getFilteredData();
+
+                final list =
+                _getFilteredData();
 
                 if (_isLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child:
+                    CircularProgressIndicator(),
+                  );
                 }
 
                 if (list.isEmpty) {
-                  return const Center(child: Text("Tidak ada data"));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment:
+                      MainAxisAlignment
+                          .center,
+                      children: [
+
+                        Container(
+                          padding:
+                          const EdgeInsets
+                              .all(24),
+                          decoration:
+                          BoxDecoration(
+                            color: Colors
+                                .grey.shade100,
+                            shape:
+                            BoxShape.circle,
+                          ),
+
+                          child: Icon(
+                            Icons
+                                .inbox_rounded,
+                            size: 56,
+                            color: Colors
+                                .grey.shade500,
+                          ),
+                        ),
+
+                        const SizedBox(
+                            height: 18),
+
+                        const Text(
+                          "Tidak ada data approval",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                            FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(
+                            height: 6),
+
+                        Text(
+                          "Data approval akan muncul di sini",
+                          style: TextStyle(
+                            color: Colors
+                                .grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async => _loadUser(),
+                  onRefresh: () async {
+                    _loadUser();
+                  },
+
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
+                    padding:
+                    const EdgeInsets
+                        .fromLTRB(
+                      16,
+                      10,
+                      16,
+                      24,
+                    ),
+
                     itemCount: list.length,
-                    itemBuilder: (context, index) {
-                      return _modernCard(list[index]);
+
+                    itemBuilder:
+                        (context, index) {
+
+                      return Padding(
+                        padding:
+                        const EdgeInsets
+                            .only(
+                          bottom: 14,
+                        ),
+
+                        child: _modernCard(
+                          list[index],
+                        ),
+                      );
                     },
                   ),
                 );

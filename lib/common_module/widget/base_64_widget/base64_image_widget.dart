@@ -5,23 +5,34 @@ import 'package:flutter/material.dart';
 class Base64ImageWidget extends StatelessWidget {
   final String base64String;
 
-  const Base64ImageWidget({super.key, required this.base64String});
+  const Base64ImageWidget({
+    super.key,
+    required this.base64String,
+  });
 
   @override
   Widget build(BuildContext context) {
     try {
-      // Decode Base64 menjadi Uint8List
-      Uint8List bytes = base64Decode(base64String);
-      return SizedBox(
-        width: 120,
+      String cleaned = base64String;
+
+      if (cleaned.contains(',')) {
+        cleaned = cleaned.split(',').last;
+      }
+
+      final bytes = base64Decode(cleaned);
+
+      return Image.memory(
         height: 120,
-        child: Image.memory(
-          bytes,
-          fit: BoxFit.cover, // bisa disesuaikan
-        ),
+        width: 120,
+        bytes,
+        fit: BoxFit.contain,
       );
     } catch (e) {
-      return const Center(child: Text('Gagal menampilkan gambar'));
+      return Container(
+        height: 120,
+        alignment: Alignment.center,
+        child: const Icon(Icons.broken_image),
+      );
     }
   }
 }

@@ -5,12 +5,14 @@ import '../../repo/pengajuan_response.dart';
 class SlidablePengajuanItem extends StatelessWidget {
   final PengajuanData? pengajuanData;
   final Widget child;
+  final String currentUserRole;
 
   final Function(int data) onEdit;
   final Function(int data) onDelete;
 
   const SlidablePengajuanItem({
     super.key,
+    required this.currentUserRole,
     this.pengajuanData,
     required this.child,
     required this.onEdit,
@@ -19,7 +21,14 @@ class SlidablePengajuanItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isLocked = pengajuanData!.status_hrd == 'approve' || pengajuanData!.status_manager == 'approve';
+    final bool isManager = currentUserRole == 'manager';
+    final bool isLocked = pengajuanData?.status_hrd == 'approve' ||
+            /// jika manager approve:
+            /// manager masih boleh edit/delete
+            (
+                pengajuanData?.status_manager == 'approve' &&
+                    !isManager
+            );
     if(isLocked){
       return child;
     }

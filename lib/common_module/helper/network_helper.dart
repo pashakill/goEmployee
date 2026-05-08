@@ -4,7 +4,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'dio_error_mapper.dart';
 
 // Ganti dengan IP PC/Laptop tempat server Dart berjalan
-const String _baseUrl = 'http://192.168.18.184:8080';
+const String _baseUrl = 'http://192.168.76.90:8080';
 const String _apiKey = 'RAHASIA123456';
 
 class NetworkHelper {
@@ -13,14 +13,47 @@ class NetworkHelper {
   NetworkHelper()
       : _dio = Dio(BaseOptions(
     baseUrl: _baseUrl,
-    connectTimeout: const Duration(seconds: 15), // Timeout lebih aman untuk HP
+    connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 15),
     headers: {
       'x-api-key': _apiKey,
       'Content-Type': 'application/json',
     },
   )) {
-    // Logging untuk debug
+
+    /// 🔥 GLOBAL INTERCEPTOR
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          return handler.next(options);
+        },
+
+        onResponse: (response, handler) {
+          /// 🔥 CEK FORMAT API KAMU
+          final data = response.data;
+
+          if (data is Map && data['success'] == false) {
+            /// 🚨 PAKSA JADI ERROR
+            return handler.reject(
+              DioException(
+                requestOptions: response.requestOptions,
+                response: response,
+                type: DioExceptionType.badResponse,
+                error: data['message'], // ← ambil message backend
+              ),
+            );
+          }
+
+          return handler.next(response);
+        },
+
+        onError: (error, handler) {
+          return handler.next(error);
+        },
+      ),
+    );
+
+    /// Logging (biarin tetap)
     _dio.interceptors.add(PrettyDioLogger(
       requestHeader: true,
       requestBody: true,

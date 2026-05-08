@@ -19,12 +19,7 @@ class PengajuanApi {
       };
 
       final response = await network.get("/pengajuan/list", data: body);
-
-      if (response['success'] == true) {
-        return DataCutiModel.fromJson(response);
-      } else {
-        throw ServerError(null);
-      }
+      return DataCutiModel.fromJson(response);
     }on DioException catch(e){
       throw mapDioError(e);
     }
@@ -68,11 +63,7 @@ class PengajuanApi {
       };
 
       final response = await network.post("/pengajuan/buat", body);
-      if (response['success'] == true) {
-        return AddDataCutiModel.fromJson(response);
-      } else {
-        throw ServerError(null);
-      }
+      return AddDataCutiModel.fromJson(response);
     }on DioException catch(e){
       throw mapDioError(e);
     }
@@ -117,11 +108,7 @@ class PengajuanApi {
       };
 
       final response = await network.post("/pengajuan/update", body);
-      if (response['success'] == true) {
-        return AddDataCutiModel.fromJson(response);
-      } else {
-        throw ServerError(null);
-      }
+      return AddDataCutiModel.fromJson(response);
     }on DioException catch(e){
       throw mapDioError(e);
     }
@@ -136,13 +123,8 @@ class PengajuanApi {
         "user_id": userId,
         "id": pengajuanId,
       };
-
       final response = await network.post("/pengajuan/delete", body);
-      if (response['success'] == true) {
-        return true;
-      } else {
-        throw ServerError(null);
-      }
+      return true;
     }on DioException catch(e){
       throw mapDioError(e);
     }

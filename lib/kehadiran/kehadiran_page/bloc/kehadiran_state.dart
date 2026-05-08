@@ -5,7 +5,6 @@ enum LoginStatus { initial, valid, invalid, loading, success, failure }
 
 abstract class KehadiranState extends Equatable {
   const KehadiranState();
-
   @override
   List<Object> get props => [];
 }
@@ -16,7 +15,6 @@ class KehadiranPageGlobalErorr extends KehadiranState {
 }
 
 class CheckinInitial extends KehadiranState {}
-
 class CheckinLoading extends KehadiranState {}
 
 class CheckinSuccess extends KehadiranState {
@@ -24,6 +22,24 @@ class CheckinSuccess extends KehadiranState {
   const CheckinSuccess({required this.kehadiranModel});
   @override
   List<Object> get props => [kehadiranModel];
+}
+
+class GetStatusAbsenSuccess extends KehadiranState {
+  final StatusKehadiranModel statusKehadiranModel;
+
+  const GetStatusAbsenSuccess({required this.statusKehadiranModel});
+  @override
+  List<Object> get props => [statusKehadiranModel];
+}
+
+class CheckoutSuccess extends KehadiranState {
+  final KehadiranModel kehadiranModel;
+  CheckoutSuccess({required this.kehadiranModel});
+}
+
+class CheckoutFailure extends KehadiranState {
+  final String error;
+  CheckoutFailure(this.error);
 }
 
 class CheckinFailure extends KehadiranState {
