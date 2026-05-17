@@ -17,13 +17,9 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
 
   DateTime? fromDate;
   DateTime? toDate;
-
   String? selectedStatus;
-
   List<AbsensiModel> absensiList = [];
-
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-
   bool _isLoading = true;
   User? _currentUser;
 

@@ -81,7 +81,7 @@ class MenuGridWidget extends StatelessWidget {
     ),
   ];
 
-  /// 🔥 FILTER ROLE
+  /// GAJADI DI PAKE
   List<AppMenuItem> get filteredMenu {
     return allMenuItems.where((item) {
       if (item.title == 'Laporan Absensi') {
@@ -94,8 +94,8 @@ class MenuGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayItems =
-    filteredMenu.length > 8 ? filteredMenu.sublist(0, 8) : filteredMenu;
+    //final displayItems = filteredMenu.length > 8 ? filteredMenu.sublist(0, 8) : filteredMenu;
+    final displayItems = allMenuItems.length > 8 ? allMenuItems.sublist(0, 8) : allMenuItems;
 
     return Center(
       child: SizedBox(
@@ -162,7 +162,7 @@ class MenuGridWidget extends StatelessWidget {
   }
 
   void _showAllMenuBottomSheet(BuildContext context) {
-    final otherMenus = filteredMenu.skip(8).toList();
+    final otherMenus = allMenuItems.skip(8).toList();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,

@@ -4,7 +4,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'dio_error_mapper.dart';
 
 // Ganti dengan IP PC/Laptop tempat server Dart berjalan
-const String _baseUrl = 'http://172.20.10.4:8080';
+const String _baseUrl = 'http://192.168.18.12:8080';
 const String _apiKey = 'RAHASIA123456';
 
 class NetworkHelper {
