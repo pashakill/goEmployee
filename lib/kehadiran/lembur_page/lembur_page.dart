@@ -354,10 +354,21 @@ class _LemburPageState extends State<LemburPage> {
                           'editLembur': lemburList[index]
                         });
                       },
-                      onDelete: (id) {
-                        _bloc.add(DeleteLemburEvent(
-                            userId: _currentUser!.id!, pengajuanId: id.toString()
-                        ));
+                      onDelete: (id) async {
+                        final confirm = await KonfirmasiDialog.show(
+                          context: context,
+                          title: "Pengajuan Lembur",
+                          message: "Yakin ingin menghapus data lembur ini?",
+                          confirmText: "Hapus",
+                          confirmColor: Colors.green,
+                          icon: Icons.dangerous_rounded,
+                        );
+
+                        if (confirm) {
+                          _bloc.add(DeleteLemburEvent(
+                              userId: _currentUser!.id!, pengajuanId: id.toString()
+                          ));
+                        }
                       },
                       child: LemburCard(lemburModel: lemburList[index]),
                     );

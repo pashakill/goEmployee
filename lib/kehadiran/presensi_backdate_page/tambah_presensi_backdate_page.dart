@@ -213,7 +213,7 @@ class _TambahPresensiBackdatePageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Presensi Backdate',
+        title: Text(isEdit ? "Edit Presensi Backdate" : "Presensi Backdate",
             style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
         iconTheme:
@@ -389,8 +389,8 @@ class _TambahPresensiBackdatePageState
                     ),
                     child: Text(
                       isEdit
-                          ? 'Update Backdate'
-                          : 'Submit Backdate',
+                          ? 'Simpan Presensi Backdate'
+                          : 'Simpan Presensi Backdate',
                       style: const TextStyle(
                           color: Colors.white),
                     ),

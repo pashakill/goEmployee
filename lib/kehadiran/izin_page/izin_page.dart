@@ -159,7 +159,7 @@ class _IzinPageState extends State<IzinPage> {
             },
           )
         ],
-        title: const Text('Pengajuan Izin', style: TextStyle(color: Colors.white)),
+        title: const Text('Izin', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
       ),
       body: BlocConsumer<IzinBloc,
@@ -347,10 +347,22 @@ class _IzinPageState extends State<IzinPage> {
                           'editIzin': izinList[index]
                         });
                       },
-                      onDelete: (id) {
-                        _bloc.add(DeleteIzinEvent(
-                            userId: _currentUser!.id!, id: id.toString()
-                        ));
+                      onDelete: (id) async {
+                        final confirm = await KonfirmasiDialog.show(
+                          context: context,
+                          title: "Pengajuan Izin",
+                          message: "Yakin ingin menghapus data izin ini?",
+                          confirmText: "Hapus",
+                          confirmColor: Colors.green,
+                          icon: Icons.dangerous_rounded,
+                        );
+
+                        if (confirm) {
+                          _bloc.add(DeleteIzinEvent(
+                              userId: _currentUser!.id!, id: id.toString()
+                          ));
+                        }
+
                       },
                       child: IzinCard(izinConverter: izinList[index]),
                     );

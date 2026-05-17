@@ -251,10 +251,10 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
           title: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               SizedBox(height: 8),
               Text(
-                'Pengajuan Dinas',
+                isEdit ? "Edit Dinas" : "Pengajuan Dinas",
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -309,7 +309,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
 
           if(state is EditDinasSuccessState){
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sukses Melakukan update Dinas')),
+              const SnackBar(content: Text('Sukses mengubah data Dinas')),
             );
 
             _onDinasAdded?.call();
@@ -606,7 +606,7 @@ class _TambahDinasPageState extends State<TambahDinasPage> {
                                   }
                                 },
                                 child: Text(
-                                  isEdit ? 'Update pengajuan' : 'Submit Pengajuan',
+                                  isEdit ? 'Simpan Dinas' : 'Simpan Dinas',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,

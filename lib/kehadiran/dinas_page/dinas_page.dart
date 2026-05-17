@@ -310,10 +310,21 @@ class _DinasPageState extends State<DinasPage> {
                           'editDinas': dinasList[index]
                         });
                       },
-                      onDelete: (id) {
-                        _bloc.add(DeleteDinasEvent(
-                            userId: _currentUser!.id!, id: id
-                        ));
+                      onDelete: (id) async {
+                        final confirm = await KonfirmasiDialog.show(
+                          context: context,
+                          title: "Pengajuan Dinas",
+                          message: "Yakin ingin menghapus data dinas ini?",
+                          confirmText: "Hapus",
+                          confirmColor: Colors.green,
+                          icon: Icons.dangerous_rounded,
+                        );
+
+                        if (confirm) {
+                          _bloc.add(DeleteDinasEvent(
+                              userId: _currentUser!.id!, id: id
+                          ));
+                        }
                       },
                       child: DinasCard(dinasModel: dinasList[index]),
                     );

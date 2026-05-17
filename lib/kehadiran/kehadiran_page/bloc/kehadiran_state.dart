@@ -32,6 +32,16 @@ class GetStatusAbsenSuccess extends KehadiranState {
   List<Object> get props => [statusKehadiranModel];
 }
 
+
+class GetActiveLocationSuccess extends KehadiranState {
+  final ActiveLocationResponseModel activeLocationResponseModel;
+
+  const GetActiveLocationSuccess({required this.activeLocationResponseModel});
+  @override
+  List<Object> get props => [activeLocationResponseModel];
+}
+
+
 class CheckoutSuccess extends KehadiranState {
   final KehadiranModel kehadiranModel;
   CheckoutSuccess({required this.kehadiranModel});

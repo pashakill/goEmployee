@@ -21,6 +21,14 @@ class GetDataListAbsenSuccessState extends ListAbsenState {
   List<Object> get props => [data];
 }
 
+class GetSummaryAbsenSuccessState extends ListAbsenState {
+  final AbsensiSummaryResponseModel data;
+
+  const GetSummaryAbsenSuccessState({required this.data});
+  @override
+  List<Object> get props => [data];
+}
+
 
 class ListAbsenPageGlobalErorr extends ListAbsenState {
   final NetworkError error;

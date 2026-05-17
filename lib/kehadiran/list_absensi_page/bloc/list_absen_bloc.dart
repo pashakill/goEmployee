@@ -11,7 +11,9 @@ class ListAbsenBloc extends Bloc<ListAbsenEvent, ListAbsenState> {
   final ListAbsenApi listAbsenApi;
 
   ListAbsenBloc({required this.listAbsenApi}) : super(ListAbsenPageInitialState()) {
-    on<ListAbsenFetchedEvent>(_onFetchWfh);}
+    on<ListAbsenFetchedEvent>(_onFetchWfh);
+    on<FetchSummaryEvent>(_onFetchSummary);
+  }
 
   void _onFetchWfh(ListAbsenFetchedEvent event, Emitter<ListAbsenState> emit) async {
     emit(ListAbsenPageLoadingState());
@@ -21,6 +23,24 @@ class ListAbsenBloc extends Bloc<ListAbsenEvent, ListAbsenState> {
         emit(GetDataListAbsenSuccessState(data: data.data));
       }else{
         emit(ListAbsenPageFailedState(error: 'Gagal Mendapatkan List Data'));
+      }
+    }catch(e){
+      if (e is NetworkError) {
+        emit(ListAbsenPageGlobalErorr(e));
+      } else {
+        emit(ListAbsenPageGlobalErorr(UnknownError()));
+      }
+    }
+  }
+
+  void _onFetchSummary(FetchSummaryEvent event, Emitter<ListAbsenState> emit) async {
+    emit(ListAbsenPageLoadingState());
+    try{
+      var data = await listAbsenApi.getSummaryUser(userId: event.userId.toString(), from: event.from, to: event.to);
+      if(data.success){
+        emit(GetSummaryAbsenSuccessState(data: data));
+      }else{
+        emit(ListAbsenPageFailedState(error: 'Gagal Mendapatkan data summary '));
       }
     }catch(e){
       if (e is NetworkError) {

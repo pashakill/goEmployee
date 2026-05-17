@@ -339,10 +339,21 @@ class _WfhPageState extends State<WfhPage> {
                           'editWfh': wfhList[index]
                         });
                       },
-                      onDelete: (id) {
-                        _bloc.add(DeleteWfhEvent(
-                            userId: _currentUser!.id!, id: id.toString()
-                        ));
+                      onDelete: (id) async {
+                        final confirm = await KonfirmasiDialog.show(
+                          context: context,
+                          title: "Pengajuan WFH",
+                          message: "Yakin ingin menghapus data wfh ini?",
+                          confirmText: "Hapus",
+                          confirmColor: Colors.green,
+                          icon: Icons.dangerous_rounded,
+                        );
+
+                        if (confirm) {
+                          _bloc.add(DeleteWfhEvent(
+                              userId: _currentUser!.id!, id: id.toString()
+                          ));
+                        }
                       },
                       child: WfhCard(wfhModel: wfhList[index]),
                     );

@@ -13,6 +13,7 @@ class KehadiranBloc extends Bloc<KehadiranEvent, KehadiranState> {
     on<CheckinButtonPressed>(_onCheckInButtonPressed);
     on<CheckoutButtonPressed>(_onCheckout);
     on<GetStatusAbsen>(_getStatusAbsen);
+    on<GetActiveLocation>(_getActiveLocation);
   }
 
   void _getStatusAbsen(GetStatusAbsen event, Emitter<KehadiranState> emit) async {
@@ -21,6 +22,25 @@ class KehadiranBloc extends Bloc<KehadiranEvent, KehadiranState> {
       var data = await kehadiranApi.getStatusAbsen(userId: event.user_id);
       if(data.success){
         emit(GetStatusAbsenSuccess(statusKehadiranModel: data.data));
+      }else{
+        emit(CheckinFailure(error: 'Gagal ambil data'));
+      }
+    }catch (e){
+      if (e is NetworkError) {
+        emit(KehadiranPageGlobalErorr(e));
+      } else {
+        emit(KehadiranPageGlobalErorr(UnknownError()));
+      }
+    }
+  }
+
+  void _getActiveLocation(GetActiveLocation event, Emitter<KehadiranState> emit) async {
+    emit(CheckinLoading());
+    try{
+      var data = await kehadiranApi.getActiveLocation(userId: event.user_id);
+      if(data.success){
+        print('success');
+        emit(GetActiveLocationSuccess(activeLocationResponseModel: data));
       }else{
         emit(CheckinFailure(error: 'Gagal ambil data'));
       }

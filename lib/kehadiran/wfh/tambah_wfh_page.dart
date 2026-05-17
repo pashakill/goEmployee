@@ -112,8 +112,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-        const Text('Formulir WFH', style: TextStyle(color: Colors.white)),
+        title: Text(isEdit ? "Edit WFH" : "Tambah WFH", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -294,7 +293,7 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(
-                      isEdit ? 'Edit WFH' : 'Ajukan WFH',
+                      isEdit ? 'Simpan WFH' : 'Simpan WFH',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),

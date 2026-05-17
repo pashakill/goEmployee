@@ -42,6 +42,7 @@ class Routes {
   static const String listAbsen = '$karyawan/listAbsen';
   static const String profilePage = '$home/profilePage';
   static const String notificationPage = '$home/notificationPage';
+  static const String detailAbsensi = '$karyawan/detailAbsensi';
 
 
   // Daftar semua route
@@ -68,6 +69,16 @@ class Routes {
     GetPage(name: listAbsen, page: () => BlocProvider(create: (context) => getIt<ListAbsenBloc>(), child: ListAbsenPage())),
     GetPage(name: profilePage, page: () => ProfilePage()),
     GetPage(name: notificationPage, page: () => NotificationPage()),
+    GetPage(
+      name: detailAbsensi,
+      page: () {
+        final args = Get.arguments;
+        return DetailAbsensiPage(
+          userId: args["user_id"],
+          nama: args["nama"],
+        );
+      },
+    ),
   ];
 }
 

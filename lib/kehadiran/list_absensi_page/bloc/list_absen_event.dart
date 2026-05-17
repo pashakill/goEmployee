@@ -7,6 +7,14 @@ abstract class ListAbsenEvent extends Equatable {
   List<Object> get props => [];
 }
 
+
+class FetchSummaryEvent extends ListAbsenEvent {
+  final String? userId;
+  final String from;
+  final String to;
+  FetchSummaryEvent({this.userId, required this.from, required this.to});
+}
+
 class ListAbsenFetchedEvent extends ListAbsenEvent {
   final String? userId;
   final String from;

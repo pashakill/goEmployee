@@ -323,9 +323,21 @@ class _PresensiBackdatePageState extends State<PresensiBackdatePage> {
                             'editBackdate': presensiList[index]
                           });
                         },
-                        onDelete: (id) {
-                          _bloc.add(DeletePresensiBackdateEvent(userId: _currentUser!.id!, pengajuanId: id
-                          ));
+                        onDelete: (id) async {
+                          final confirm = await KonfirmasiDialog.show(
+                            context: context,
+                            title: "Pengajuan Presensi Backdate",
+                            message: "Yakin ingin menghapus data presensi backdate ini?",
+                            confirmText: "Hapus",
+                            confirmColor: Colors.green,
+                            icon: Icons.dangerous_rounded,
+                          );
+
+                          if (confirm) {
+                            _bloc.add(DeletePresensiBackdateEvent(userId: _currentUser!.id!, pengajuanId: id
+                            ));
+                          }
+
                         },
                         child: PresensiBackdateCard(presensiBackdateModel: presensiList[index]),
                       );

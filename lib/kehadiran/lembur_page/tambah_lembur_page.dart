@@ -134,7 +134,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
     return Scaffold(
       appBar: AppBar(
         title:
-        const Text('Formulir Lembur', style: TextStyle(color: Colors.white)),
+        Text(isEdit ? "Edit Lembur" : "Tambah Lembur", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -294,7 +294,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text(
-                      'Simpan Data Lembur',
+                      'Simpan Lembur',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),

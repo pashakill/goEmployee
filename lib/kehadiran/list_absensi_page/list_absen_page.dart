@@ -374,10 +374,50 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
         bloc: _bloc,
         listener: (context, state) {
           if (state is GetDataListAbsenSuccessState) {
+            LoadingDialog.hide(context);
             setState(() {
               absensiList = state.data;
               _isLoading = false;
             });
+          }
+
+          if (state is ListAbsenPageGlobalErorr) {
+            LoadingDialog.hide(context);
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
+              );
+            } else if (error is TimeoutError) {
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
+              );
+            } else if (error is ServerError) {
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
+              );
+            } else {
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
+              );
+            }
+            LoadingDialog.hide(context);
+          }
+
+          if(state is ListAbsenPageLoadingState){
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
+          }
+
+          if(state is ListAbsenPageFailedState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Gagal Menghapus Data Cuti")),
+            );
+            LoadingDialog.hide(context);
           }
         },
 
@@ -398,7 +438,18 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
                   child: ListView.builder(
                     itemCount: absensiList.length,
                     itemBuilder: (context, i) {
-                      return _card(absensiList[i]);
+                      return InkWell(
+                        onTap: () {
+                          AppNavigator.to(
+                            Routes.detailAbsensi,
+                            arguments: {
+                              "user_id": absensiList[i].userId,
+                              "nama": absensiList[i].nama,
+                            },
+                          );
+                        },
+                        child: _card(absensiList[i]),
+                      );
                     },
                   ),
                 ),

@@ -611,7 +611,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
         surfaceTintColor: Colors.white,
 
         title: const Text(
-          "Approval",
+          "Persetujuan",
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,

@@ -24,7 +24,7 @@ class AttendanceTimeline extends StatelessWidget {
     final String lateIn =
     (user.lateCheckin != null && user.lateCheckin!.isNotEmpty)
         ? user.lateCheckin!
-        : '0 Menit';
+        : '--:--';
 
     final List<Map<String, dynamic>> attendance = [
       {
@@ -41,7 +41,7 @@ class AttendanceTimeline extends StatelessWidget {
       },
       {
         "title": "Terlambat",
-        "time": lateIn,
+        "time": '${lateIn} menit',
         "icon": Icons.timer_off_rounded,
         "color": Colors.red,
       },

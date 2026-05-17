@@ -284,8 +284,10 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pengajuan Izin'),
-        backgroundColor: Colors.green, // Sesuaikan dengan tema Anda
+        title: Text(isEdit ? "Edit Izin" : "Tambah Izin", style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
         // HAPUS: 'bottom: TabBar(...)'
       ),
       // UBAH: 'TabBarView' menjadi 'SingleChildScrollView'
@@ -546,7 +548,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
         ),
         onPressed: onPressed, // Memanggil fungsi _handleSubmit
         child: Text(
-          isEdit ? 'Edit Izin' : 'Submit Pengajuan',
+          isEdit ? 'Simpan Izin' : 'Simpan Izin',
           style: TextStyle(
               fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
         ),

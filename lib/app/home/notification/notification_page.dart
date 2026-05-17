@@ -66,8 +66,10 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: const Color(0xFFF4F7FB),
 
       appBar: AppBar(
-        title: const Text("Notifikasi"),
+        title: const Text("Notifikasi", style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
+
       ),
 
       body: BlocConsumer<HomeBloc, HomeState>(

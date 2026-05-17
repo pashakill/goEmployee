@@ -25,6 +25,15 @@ class GetStatusAbsen extends KehadiranEvent {
   GetStatusAbsen({
     required this.user_id,
   });
+
+}
+
+class GetActiveLocation extends KehadiranEvent {
+  final String user_id;
+  GetActiveLocation({
+    required this.user_id,
+  });
+
 }
 
 class CheckinButtonPressed extends KehadiranEvent {

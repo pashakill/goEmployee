@@ -203,7 +203,8 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? "Edit Cuti" : "Tambah Cuti"),
+        title: Text(isEdit ? "Edit Cuti" : "Tambah Cuti", style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.green,
       ),
       body: BlocConsumer<CutiBloc, CutiState>(
@@ -387,7 +388,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(
-                      isEdit ? "Update Cuti" : "Simpan Cuti",
+                      isEdit ? "Simpan Cuti" : "Simpan Cuti",
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),

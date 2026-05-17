@@ -8,7 +8,6 @@ import 'package:geocoding/geocoding.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:intl/intl.dart';
 
-
 class KehadiranPage extends StatefulWidget {
   const KehadiranPage({super.key});
 
@@ -20,11 +19,13 @@ class _KehadiranPageState extends State<KehadiranPage> {
   GoogleMapController? _mapController;
   LatLng? _currentPosition;
   String _currentAddress = "Mendeteksi lokasi...";
+  String _officeAddress = "Mendeteksi alamat kantor...";
   double? _distanceInMeters;
-  double? checkInRadius; // radius check-in dalam meter
   final MobileSecurityChecker _security = MobileSecurityChecker();
   // Titik lokasi kantor
   LatLng? _officeLocation;
+  String locationType = "office";
+  double? checkInRadius;
 
   bool isCheckinDone = false;
   bool isCheckoutDone = false;
@@ -53,18 +54,10 @@ class _KehadiranPageState extends State<KehadiranPage> {
     setState(() {
       _currentUser = updatedUser;
       _isUserDataLoading = false;
-
-      _officeLocation = LatLng(
-        double.parse(_currentUser!.latitude ?? "0"),
-        double.parse(_currentUser!.longitude ?? "0"),
-      );
-
-      checkInRadius = double.parse(_currentUser!.radius ?? "0");
     });
 
-    _initLocation();
     context.read<KehadiranBloc>().add(
-      GetStatusAbsen(
+      GetActiveLocation(
         user_id: _currentUser!.id.toString(),
       ),
     );
@@ -298,7 +291,11 @@ class _KehadiranPageState extends State<KehadiranPage> {
   }
 
   Future<void> _updatePosition(Position position) async {
-    _currentPosition = LatLng(position.latitude, position.longitude);
+    if (_officeLocation == null) return;
+
+    setState(() {
+      _currentPosition = LatLng(position.latitude, position.longitude);
+    });
 
     // Hitung jarak ke kantor
     _distanceInMeters = Geolocator.distanceBetween(
@@ -382,6 +379,27 @@ class _KehadiranPageState extends State<KehadiranPage> {
       ),
       body: BlocConsumer<KehadiranBloc, KehadiranState>(
           listener: (context, state) async {
+            if(state is GetActiveLocationSuccess){
+              LoadingDialog.hide(context);
+
+              setState(() {
+                locationType = state.activeLocationResponseModel.data!.type ?? "office";
+                _officeLocation = LatLng(
+                  state.activeLocationResponseModel.data!.lat,
+                  state.activeLocationResponseModel.data!.lng,
+                );
+                checkInRadius = state.activeLocationResponseModel.data!.radius;
+              });
+              context.read<KehadiranBloc>().add(
+                GetStatusAbsen(
+                  user_id: _currentUser!.id.toString(),
+                ),
+              );
+
+              _restartLocationStream();
+              _getOfficeAddress();
+            }
+
             if(state is GetStatusAbsenSuccess){
               LoadingDialog.hide(context);
 
@@ -389,13 +407,6 @@ class _KehadiranPageState extends State<KehadiranPage> {
                 isCheckinDone = state.statusKehadiranModel.checkin;
                 isCheckoutDone = state.statusKehadiranModel.checkout;
               });
-
-              print('isCheckinDone${state.statusKehadiranModel.checkin}');
-              print('isCheckoutDone${state.statusKehadiranModel.checkout}');
-
-
-              print('variabel isCheckinDone ${isCheckinDone}');
-              print('variabel isCheckoutDone ${isCheckoutDone}');
             }
 
             if (state is KehadiranPageGlobalErorr) {
@@ -457,6 +468,7 @@ class _KehadiranPageState extends State<KehadiranPage> {
                 _currentPosition == null
                     ? const Center(child: CircularProgressIndicator())
                     : GoogleMap(
+                  key: ValueKey(_officeLocation),
                   mapType: MapType.normal,
                   initialCameraPosition: CameraPosition(
                     target: _currentPosition!,
@@ -567,7 +579,9 @@ class _KehadiranPageState extends State<KehadiranPage> {
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
-                                      _currentAddress,
+                                      locationType == "dinas"
+                                          ? _officeAddress
+                                          : _currentAddress,
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                                     ),
@@ -712,5 +726,40 @@ class _KehadiranPageState extends State<KehadiranPage> {
           },
           )
     );
+  }
+
+  void _restartLocationStream() {
+    _positionStream?.cancel();
+    _initLocation();
+  }
+
+  Future<void> _getOfficeAddress() async {
+    if (_officeLocation == null) return;
+
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        _officeLocation!.latitude,
+        _officeLocation!.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+
+        setState(() {
+          _officeAddress =
+          "${placemark.street}, ${placemark.subLocality}, ${placemark
+              .locality}, ${placemark.administrativeArea}, ${placemark
+              .country}";
+        });
+      } else {
+        setState(() {
+          _officeAddress = "--:--";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _officeAddress = "--:--";
+      });
+    }
   }
 }

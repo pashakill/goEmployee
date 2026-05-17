@@ -40,6 +40,26 @@ class KehadiranApi {
     }
   }
 
+  Future<ActiveLocationResponseModel> getActiveLocation({
+    String? userId,
+  }) async {
+    try {
+      String url = "/active-location";
+      List<String> query = [];
+      if (userId != null) query.add("user_id=$userId");
+      if (query.isNotEmpty) {
+        url += "?${query.join("&")}";
+      }
+      final response = await network.get(url);
+      final model = ActiveLocationResponseModel.fromJson(
+        Map<String, dynamic>.from(response),
+      );
+      return model;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<KehadiranModel> checkout({
     required String userId,
     required String longitude,

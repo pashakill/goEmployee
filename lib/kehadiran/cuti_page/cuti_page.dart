@@ -384,10 +384,21 @@ class _CutiPageState extends State<CutiPage> {
                           'editCuti': cutiList[index]
                         });
                       },
-                      onDelete: (id) {
-                        _bloc.add(DeleteCutiEvent(
-                            userId: _currentUser!.id!, id: id.toString()
-                        ));
+                      onDelete: (id) async {
+                        final confirm = await KonfirmasiDialog.show(
+                          context: context,
+                          title: "Pengajuan Cuti",
+                          message: "Yakin ingin menghapus data cuti ini?",
+                          confirmText: "Hapus",
+                          confirmColor: Colors.green,
+                          icon: Icons.dangerous_rounded,
+                        );
+
+                        if (confirm) {
+                          _bloc.add(DeleteCutiEvent(
+                              userId: _currentUser!.id!, id: id.toString()
+                          ));
+                        }
                       },
                       child: CutiCard(cuti: cutiList[index]),
                     );

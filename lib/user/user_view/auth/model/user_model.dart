@@ -104,7 +104,7 @@ class User {
       dateNow: loginResponse.dateNow,
       timeCheckin: loginResponse.timeCheckin,
       timeCheckout: loginResponse.timeCheckout,
-      lateCheckin: '${loginResponse.lateCheckin} menit',
+      lateCheckin: loginResponse.lateCheckin,
       photo: loginResponse.photo,
       jadwalMulaiKerja: loginResponse.jadwalMulaiKerja,
       jadwalSelesaiKerja: loginResponse.jadwalSelesaiKerja,

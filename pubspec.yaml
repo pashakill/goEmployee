@@ -60,6 +60,9 @@ dependencies:
   flutter_slidable: ^4.0.3
   safe_device: ^1.2.0
   location: ^7.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.7
+
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +80,15 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+flutter_native_splash:
+  color: "#34A853"
+  image: assets/icons/ic_goemployee.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/ic_goemployee.png"
 
 # The following section is specific to Flutter packages.
 flutter:
