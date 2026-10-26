@@ -322,6 +322,8 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           }
 
           if(state is EditIzinSuccessState){
+            _showSnackBar('Pengajuan Izin berhasil diedit');
+
             _onIzinAdded?.call();
             LoadingDialog.hide(context);
             Get.back();
@@ -332,13 +334,13 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
           }
 
           if (state is AddIzinSuccessState) {
-
+            print('AddIzinSuccessState');
             try {
               // final int newDbId = await _dbHelper.insertIzin(state.izinConverterModel); // Panggil fungsi insert DB
               // Panggil callback (jika ada) dan kembali
               _onIzinAdded?.call();
               LoadingDialog.hide(context);
-              //_showSnackBar('Pengajuan Izin berhasil disimpan! (DB ID: $newDbId)', isError: false);
+              _showSnackBar('Pengajuan Izin berhasil ditambahkan');
               Get.back();
             } catch (e) {
               _showSnackBar('Gagal menyimpan pengajuan Izin: ${e.toString()}', isError: true);
@@ -562,7 +564,7 @@ class _TambahIzinPageState extends State<TambahIzinPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: isError ? Colors.red : Colors.green,
+          backgroundColor: isError ? Colors.red : Colors.black,
         ),
       );
     }

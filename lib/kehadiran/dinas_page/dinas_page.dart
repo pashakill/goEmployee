@@ -159,7 +159,6 @@ class _DinasPageState extends State<DinasPage> {
         listener: (context, state) async {
           if (state is DinasPageGlobalErorr) {
             final error = state.error;
-            LoadingDialog.hide(context);
 
             if (error is NoInternetError) {
               ErrorBottomSheet.show(
@@ -194,9 +193,8 @@ class _DinasPageState extends State<DinasPage> {
           if(state is DeleteDinasSuccessState){
             LoadingDialog.hide(context);
 
-            ErrorBottomSheet.show(
-              context,
-              message: "Gagal Menghapus Data Dinas",
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sukses Menghapus Data Dinas')),
             );
 
             _loadUserData();

@@ -296,7 +296,6 @@ class _PresensiBackdatePageState extends State<PresensiBackdatePage> {
 
               // 📋 Daftar Presensi Backdate
               Expanded(
-                  // --- (TAMBAHKAN PENGECEKAN LOADING & DATA KOSONG) ---
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : presensiList.isEmpty

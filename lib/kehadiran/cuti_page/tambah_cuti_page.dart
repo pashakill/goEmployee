@@ -1,9 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:goemployee/goemployee.dart';
 import 'package:intl/intl.dart';
-
 
 class TambahCutiPage extends StatefulWidget {
   const TambahCutiPage({super.key});
@@ -25,8 +26,11 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   bool isEdit = false;
   CutiModel? editData;
   Function()? _onCutiAdded;
+  bool _isProcessingDocument = false;
 
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final TextEditingController _lamaCutiController =
+  TextEditingController(text: '0');
 
   final List<String> _jenisCutiList = [
     'Cuti Tahunan',
@@ -34,6 +38,45 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
     'Cuti Nikah',
     'Cuti Khusus',
   ];
+
+  Future<void> _ambilDokumenDariKamera() async {
+    if (_isProcessingDocument) return;
+
+    setState(() {
+      _isProcessingDocument = true;
+    });
+
+    try {
+      final String? base64Image =
+      await CameraHelper.pickFromCamera(quality: 70);
+
+      if (!mounted) return;
+
+      if (base64Image == null || base64Image.isEmpty) {
+        return;
+      }
+
+      setState(() {
+        _dokumen = base64Image;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal memproses dokumen: $error',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingDocument = false;
+        });
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -53,8 +96,10 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
       isEdit = true;
 
       _jenisCuti = editData!.jenisCuti;
-      _tanggalMulai = DateTime.parse(editData!.tanggalMulai);
-      _tanggalSelesai = DateTime.parse(editData!.tanggalSelesai);
+      _tanggalMulai =
+          DateTime.tryParse(editData!.tanggalMulai);
+      _tanggalSelesai =
+          DateTime.tryParse(editData!.tanggalSelesai);
       _alasan = editData!.alasan;
       _dokumen = editData!.dokumenUrl;
 
@@ -66,37 +111,124 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   /// HITUNG LAMA CUTI
   /// =========================
   void _hitungLamaCuti() {
-    if (_tanggalMulai != null && _tanggalSelesai != null) {
-      int totalHari = 0;
-      DateTime current = _tanggalMulai!;
+    int totalHari = 0;
 
-      while (!current.isAfter(_tanggalSelesai!)) {
-        if (current.weekday != DateTime.saturday &&
-            current.weekday != DateTime.sunday) {
+    if (_tanggalMulai != null &&
+        _tanggalSelesai != null &&
+        !_tanggalSelesai!.isBefore(_tanggalMulai!)) {
+      DateTime current = DateUtils.dateOnly(_tanggalMulai!);
+      final DateTime tanggalAkhir =
+      DateUtils.dateOnly(_tanggalSelesai!);
+
+      while (!current.isAfter(tanggalAkhir)) {
+        final bool hariKerja =
+            current.weekday != DateTime.saturday &&
+                current.weekday != DateTime.sunday;
+
+        if (hariKerja) {
           totalHari++;
         }
-        current = current.add(const Duration(days: 1));
-      }
 
-      _lamaCuti = totalHari;
+        current = current.add(
+          const Duration(days: 1),
+        );
+      }
     }
+
+    _lamaCuti = totalHari;
+    _lamaCutiController.text = totalHari.toString();
   }
 
   /// =========================
   /// DATE PICKER
   /// =========================
-  Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
+  Future<void> _selectDate(
+      BuildContext context,
+      bool isStart,
+      ) async {
+    final DateTime? pickedDate =
+    await DatePickerHelper.pickDate(context);
 
-    if (pickedDate != null) {
-      setState(() {
-        if (isStart) {
-          _tanggalMulai = pickedDate;
-        } else {
-          _tanggalSelesai = pickedDate;
+    if (pickedDate == null || !mounted) return;
+
+    setState(() {
+      if (isStart) {
+        _tanggalMulai = DateUtils.dateOnly(pickedDate);
+
+        // Jika tanggal selesai lebih awal dari tanggal mulai,
+        // reset tanggal selesai.
+        if (_tanggalSelesai != null &&
+            _tanggalSelesai!.isBefore(_tanggalMulai!)) {
+          _tanggalSelesai = null;
         }
-        _hitungLamaCuti();
-      });
+      } else {
+        _tanggalSelesai = DateUtils.dateOnly(pickedDate);
+      }
+
+      _hitungLamaCuti();
+    });
+  }
+
+
+  void _tampilkanGambarPenuh(String base64Image) {
+    try {
+      final String cleanBase64 = base64Image.contains(',')
+          ? base64Image.split(',').last
+          : base64Image;
+
+      final imageBytes = base64Decode(cleanBase64);
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) {
+            return Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                title: const Text('Dokumen'),
+                centerTitle: true,
+              ),
+              body: SafeArea(
+                child: Center(
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 5,
+                    boundaryMargin: const EdgeInsets.all(20),
+                    child: Image.memory(
+                      imageBytes,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                      errorBuilder: (
+                          context,
+                          error,
+                          stackTrace,
+                          ) {
+                        return const Center(
+                          child: Text(
+                            'Gambar gagal ditampilkan',
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Format gambar tidak valid',
+          ),
+        ),
+      );
     }
   }
 
@@ -104,23 +236,106 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
   /// SUBMIT (ADD / EDIT)
   /// =========================
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isProcessingDocument) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tunggu sampai dokumen selesai diproses',
+          ),
+        ),
+      );
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    final bool formValid =
+        _formKey.currentState?.validate() ?? false;
+
+    if (!formValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Lengkapi data pengajuan cuti terlebih dahulu',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Perlindungan tambahan agar tidak terjadi null assertion error.
+    if (_tanggalMulai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal mulai wajib dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalSelesai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal selesai wajib dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalSelesai!.isBefore(_tanggalMulai!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tanggal selesai tidak boleh sebelum tanggal mulai',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if ((_alasan ?? '').trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Alasan wajib diisi'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final user = await _dbHelper.getSingleUser();
 
-    if (user == null) return;
+    if (!mounted) return;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Data pengguna tidak ditemukan',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final cuti = CutiModel(
-      id: editData?.id, // penting untuk edit
+      lamaCutiInteger: _lamaCuti,
+      id: editData?.id,
       jenisCuti: _jenisCuti!,
-      tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
-      tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
-      alasan: _alasan ?? '',
+      tanggalMulai:
+      _tanggalMulai!.toIso8601String().split('T').first,
+      tanggalSelesai:
+      _tanggalSelesai!.toIso8601String().split('T').first,
+      alasan: _alasan!.trim(),
       dokumenUrl: _dokumen ?? '',
     );
 
     if (isEdit) {
-      /// 🔥 EDIT MODE
       context.read<CutiBloc>().add(
         UpdateCutiEvent(
           id: cuti.id!.toString(),
@@ -132,12 +347,13 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
           alasan: cuti.alasan,
           berkas: cuti.dokumenUrl,
           cutiModel: cuti,
+          lamaCuti: _lamaCuti,
         ),
       );
     } else {
-      /// 🔥 ADD MODE
       context.read<CutiBloc>().add(
         AddCutiEvent(
+          lamaCuti: _lamaCuti,
           userId: user.id!,
           kategori: PengajuanKategori.cuti.toString(),
           jenis_cuti: cuti.jenisCuti,
@@ -172,6 +388,7 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
 
         // 3. Buat model Cuti (kode Anda sudah benar)
         final cutiBaru = CutiModel(
+          lamaCutiInteger: _lamaCuti,
           jenisCuti: _jenisCuti!,
           tanggalMulai: _tanggalMulai!.toIso8601String().split('T').first,
           tanggalSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
@@ -194,6 +411,12 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _lamaCutiController.dispose();
+    super.dispose();
   }
 
   /// =========================
@@ -309,48 +532,121 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                   const SizedBox(height: 16),
 
                   /// TANGGAL MULAI
-                  InkWell(
-                    onTap: () => _selectDate(context, true),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Mulai',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(_tanggalMulai == null
-                          ? 'Pilih tanggal'
-                          : DateFormat('yyyy-MM-dd')
-                          .format(_tanggalMulai!)),
-                    ),
+                  FormField<DateTime>(
+                    initialValue: _tanggalMulai,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (_tanggalMulai == null) {
+                        return 'Tanggal mulai wajib dipilih';
+                      }
+
+                      return null;
+                    },
+                    builder: (field) {
+                      return InkWell(
+                        onTap: () async {
+                          await _selectDate(context, true);
+
+                          field.didChange(_tanggalMulai);
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Tanggal Mulai',
+                            border: const OutlineInputBorder(),
+                            errorText: field.errorText,
+                            suffixIcon: const Icon(Icons.calendar_month),
+                          ),
+                          child: Text(
+                            _tanggalMulai == null
+                                ? 'Pilih tanggal mulai'
+                                : DateFormat('yyyy-MM-dd').format(
+                              _tanggalMulai!,
+                            ),
+                            style: TextStyle(
+                              color: _tanggalMulai == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
 
                   /// TANGGAL SELESAI
-                  InkWell(
-                    onTap: () => _selectDate(context, false),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Selesai',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(_tanggalSelesai == null
-                          ? 'Pilih tanggal'
-                          : DateFormat('yyyy-MM-dd')
-                          .format(_tanggalSelesai!)),
-                    ),
+                  FormField<DateTime>(
+                    initialValue: _tanggalSelesai,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (_tanggalSelesai == null) {
+                        return 'Tanggal selesai wajib dipilih';
+                      }
+
+                      if (_tanggalMulai != null &&
+                          _tanggalSelesai!.isBefore(_tanggalMulai!)) {
+                        return 'Tanggal selesai tidak boleh sebelum tanggal mulai';
+                      }
+
+                      return null;
+                    },
+                    builder: (field) {
+                      return InkWell(
+                        onTap: () async {
+                          if (_tanggalMulai == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Pilih tanggal mulai terlebih dahulu',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await _selectDate(context, false);
+
+                          field.didChange(_tanggalSelesai);
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Tanggal Selesai',
+                            border: const OutlineInputBorder(),
+                            errorText: field.errorText,
+                            suffixIcon: const Icon(Icons.calendar_month),
+                          ),
+                          child: Text(
+                            _tanggalSelesai == null
+                                ? 'Pilih tanggal selesai'
+                                : DateFormat('yyyy-MM-dd').format(
+                              _tanggalSelesai!,
+                            ),
+                            style: TextStyle(
+                              color: _tanggalSelesai == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
 
                   /// LAMA CUTI
                   TextFormField(
+                    controller: _lamaCutiController,
                     readOnly: true,
                     decoration: const InputDecoration(
                       labelText: 'Lama Cuti',
+                      hintText: '0',
+                      suffixText: 'hari',
                       border: OutlineInputBorder(),
                     ),
-                    controller:
-                    TextEditingController(text: _lamaCuti.toString()),
                   ),
 
                   const SizedBox(height: 16),
@@ -359,22 +655,177 @@ class _TambahCutiPageState extends State<TambahCutiPage> {
                   TextFormField(
                     initialValue: _alasan,
                     maxLines: 3,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     decoration: const InputDecoration(
                       labelText: 'Alasan',
+                      hintText: 'Masukkan alasan pengajuan cuti',
                       border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
                     ),
-                    onChanged: (val) => _alasan = val,
+                    onChanged: (value) {
+                      _alasan = value;
+                    },
+                    validator: (value) {
+                      final alasan = value?.trim() ?? '';
+
+                      if (alasan.isEmpty) {
+                        return 'Alasan wajib diisi';
+                      }
+
+                      if (alasan.length < 5) {
+                        return 'Alasan minimal 5 karakter';
+                      }
+
+                      return null;
+                    },
                   ),
 
                   const SizedBox(height: 16),
 
                   // Dokumen Upload (simulasi)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      _dokumen = await CameraHelper.pickFromCamera();
-                    },
-                    icon: const Icon(Icons.upload_file),
-                    label: Text(_dokumen == null ? 'Upload Dokumen' : 'File: Memilih Gambar Dari Camera'),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isProcessingDocument
+                              ? null
+                              : _ambilDokumenDariKamera,
+                          icon: _isProcessingDocument
+                              ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                              : Icon(
+                            _dokumen == null || _dokumen!.isEmpty
+                                ? Icons.camera_alt
+                                : Icons.check_circle,
+                          ),
+                          label: Text(
+                            _isProcessingDocument
+                                ? 'Memproses gambar, tunggu...'
+                                : _dokumen == null || _dokumen!.isEmpty
+                                ? 'Ambil Dokumen dari Kamera'
+                                : 'Dokumen berhasil dipilih',
+                          ),
+                        ),
+                      ),
+
+                      if (_isProcessingDocument) ...[
+                        const SizedBox(height: 12),
+                        const Row(
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Sedang mengompres dan menyiapkan gambar...',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      if (!_isProcessingDocument &&
+                          _dokumen != null &&
+                          _dokumen!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+
+                        GestureDetector(
+                          onTap: () {
+                            _tampilkanGambarPenuh(_dokumen!);
+                          },
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.memory(
+                                  base64Decode(
+                                    _dokumen!.contains(',')
+                                        ? _dokumen!.split(',').last
+                                        : _dokumen!,
+                                  ),
+                                  width: double.infinity,
+                                  height: 180,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+
+                              Positioned(
+                                right: 8,
+                                bottom: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.65),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.zoom_in,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Lihat gambar',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Ketuk gambar untuk memperbesar',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Hapus dokumen',
+                              onPressed: () {
+                                setState(() {
+                                  _dokumen = null;
+                                });
+                              },
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
 
                   const SizedBox(height: 20),

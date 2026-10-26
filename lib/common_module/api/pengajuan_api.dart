@@ -118,15 +118,31 @@ class PengajuanApi {
     required String pengajuanId,
     required String userId,
   }) async {
-    try{
-      final body = {
-        "user_id": userId,
-        "id": pengajuanId,
+    try {
+      final body = <String, dynamic>{
+        'user_id': userId,
+        'id': pengajuanId,
       };
-      final response = await network.post("/pengajuan/delete", body);
+
+      final response = await network.post(
+        '/pengajuan/delete',
+        body,
+      );
+
+      final success = response['success'] == true;
+      final message = response['message']?.toString() ??
+          'Gagal menghapus pengajuan';
+      print('Response hapus pengajuan: $response');
+      if (!success) {
+        return false;
+      }
       return true;
-    }on DioException catch(e){
-      throw mapDioError(e);
+    } on NetworkError {
+      rethrow;
+    } catch (error) {
+      throw UnknownError(
+        'Gagal menghapus pengajuan: $error',
+      );
     }
   }
 }

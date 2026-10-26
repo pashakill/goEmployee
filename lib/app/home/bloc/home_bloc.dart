@@ -27,9 +27,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
     }catch (e){
       if (e is NetworkError) {
-        emit(GlobalErorr(e));
+        emit(HomePageGlobalErorr(e));
       } else {
-        emit(GlobalErorr(UnknownError()));
+        emit(HomePageGlobalErorr(UnknownError()));
       }
     }
   }

@@ -84,4 +84,19 @@ class PresensiBackdateModel {
       tanggalPengajuan: map['tanggal_pengajuan'],
     );
   }
+
+  @override
+  String toString() {
+    return 'PresensiBackdateModel('
+        'id: $id, '
+        'userId: $userId, '
+        'tanggal: $tanggal, '
+        'jamMasuk: $jamMasuk, '
+        'jamKeluar: $jamKeluar, '
+        'alasan: $alasan, '
+        'tanggalPengajuan: $tanggalPengajuan, '
+        'dokumenUrl: $dokumenUrl, '
+        'terlambat: $terlambat'
+        ')';
+  }
 }

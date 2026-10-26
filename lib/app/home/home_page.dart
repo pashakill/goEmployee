@@ -94,6 +94,34 @@ class _HomePageState extends State<HomePage> {
           bloc: _bloc,
 
           listener: (context, state) {
+            if (state is HomePageGlobalErorr) {
+              LoadingDialog.hide(context);
+              final error = state.error;
+
+              if (error is NoInternetError) {
+                ErrorBottomSheet.show(
+                  context,
+                  message: "Tidak Ada Koneksi Internet",
+                );
+              } else if (error is TimeoutError) {
+                ErrorBottomSheet.show(
+                  context,
+                  message: "Server Lambat",
+                );
+              } else if (error is ServerError) {
+                ErrorBottomSheet.show(
+                  context,
+                  message: "Server error ${error.code}",
+                );
+              } else {
+                ErrorBottomSheet.show(
+                  context,
+                  message: "${error.message}",
+                );
+              }
+
+            }
+
             if (state is HomePageLoadingState) {
               LoadingDialog.show(
                 context,
@@ -168,14 +196,15 @@ class _HomePageState extends State<HomePage> {
   /// HOME CONTENT
   /// =========================================
   Widget _buildHomeContent() {
-    final bool hasPhoto =
-        _currentUser!.photo != null && _currentUser!.photo!.isNotEmpty;
     if (_currentUser == null) {
       return const Center(
         child: Text("Gagal memuat data"),
       );
     }
 
+    final bool hasPhoto =
+        _currentUser!.photo != null &&
+            _currentUser!.photo!.isNotEmpty;
     return RefreshIndicator(
       onRefresh: () async {
         await _loadUserData();
@@ -218,157 +247,96 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   /// TOP BAR
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
                     children: [
-
-                      /// LOGO
-                      Row(
-                        children: [
-
-                          Container(
-                            padding: const EdgeInsets.all(10),
-
-                            decoration: BoxDecoration(
-                              color: Colors.white
-                                  .withOpacity(0.15),
-
-                              borderRadius:
-                              BorderRadius.circular(16),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.business_center_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
 
-                            child: const Icon(
-                              Icons.business_center_rounded,
-                              color: Colors.white,
-                              size: 28,
+                            const SizedBox(width: 12),
+
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "GoEmployee",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 2),
+
+                                  Text(
+                                    "Employee Management",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-
-                          const SizedBox(width: 12),
-
-                          const Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start,
-
-                            children: [
-
-                              Text(
-                                "GoEmployee",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight:
-                                  FontWeight.bold,
-                                ),
-                              ),
-
-                              SizedBox(height: 2),
-
-                              Text(
-                                "Employee Management",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
 
-                      /// ACTIONS
+                      const SizedBox(width: 12),
+
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-
-                          /// NOTIFICATION
-                          Stack(
-                            children: [
-
-                              GestureDetector(
-                                onTap: (){
-                                  AppNavigator.to(Routes.notificationPage);
-                                },
-                                child: Container(
-                                  padding:
-                                  const EdgeInsets.all(10),
-
-                                  decoration: BoxDecoration(
-                                    color: Colors.white
-                                        .withOpacity(0.15),
-
-                                    borderRadius:
-                                    BorderRadius.circular(
-                                        14),
-                                  ),
-
-                                  child: const Icon(
-                                    Icons.notifications_none,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                          GestureDetector(
+                            onTap: () {
+                              AppNavigator.to(
+                                Routes.notificationPage,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-
-                              if (notifList.isNotEmpty)
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 18,
-                                    height: 18,
-
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius:
-                                      BorderRadius.circular(
-                                          20),
-                                    ),
-
-                                    child: Center(
-                                      child: Text(
-                                        notifList.length > 9
-                                            ? "9+"
-                                            : notifList.length
-                                            .toString(),
-
-                                        style:
-                                        const TextStyle(
-                                          color:
-                                          Colors.white,
-                                          fontSize: 10,
-                                          fontWeight:
-                                          FontWeight
-                                              .bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
+                              child: const Icon(
+                                Icons.notifications_none,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
 
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
 
-                          /// PROFILE
                           GestureDetector(
                             onTap: () {
                               AppNavigator.to(
                                 Routes.profilePage,
                               );
                             },
-
                             child: Container(
-                              padding:
-                              const EdgeInsets.all(10),
-
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.white
-                                    .withOpacity(0.15),
-
-                                borderRadius:
-                                BorderRadius.circular(
-                                    14),
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-
                               child: const Icon(
                                 Icons.person,
                                 color: Colors.white,
@@ -441,13 +409,15 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(height: 4),
 
                               Text(
-                                _currentUser!.nama ?? "-",
-
+                                _currentUser!.nama?.isNotEmpty == true
+                                    ? _currentUser!.nama!
+                                    : "-",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
-                                  fontWeight:
-                                  FontWeight.bold,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
 
@@ -471,11 +441,12 @@ class _HomePageState extends State<HomePage> {
 
                                 child: Text(
                                   "${_currentUser!.role} • ${_currentUser!.division}",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
-                                    fontWeight:
-                                    FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),

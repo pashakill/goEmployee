@@ -606,37 +606,58 @@ class _KehadiranPageState extends State<KehadiranPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Column(
-                                        children: [
-                                          Text('Jadwal Mulai Kerja',
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            const Text(
+                                              'Jadwal Mulai Kerja',
+                                              textAlign: TextAlign.center,
                                               style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w500)),
-                                          Text(_currentUser?.jadwalMulaiKerja ?? '--:--',
-
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold))
-                                        ],
-                                      ),
-                                      SizedBox(width: 30,),
-                                      Column(
-                                        children: [
-                                          Text('Jadwal Selesai Kerja',
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w500
-                                              )),
-                                          Text(_currentUser?.jadwalSelesaiKerja ?? '--:--',
-                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _currentUser?.jadwalMulaiKerja ?? '--:--',
+                                              style: const TextStyle(
                                                 fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          )
-                                        ],
-                                      )
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      Container(
+                                        width: 1,
+                                        height: 45,
+                                        color: Colors.grey.shade300,
+                                      ),
+
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            const Text(
+                                              'Jadwal Selesai Kerja',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _currentUser?.jadwalSelesaiKerja ?? '--:--',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   )
                                 ],

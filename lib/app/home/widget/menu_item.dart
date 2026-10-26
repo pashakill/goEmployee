@@ -81,36 +81,51 @@ class MenuGridWidget extends StatelessWidget {
     ),
   ];
 
-  /// GAJADI DI PAKE
   List<AppMenuItem> get filteredMenu {
     return allMenuItems.where((item) {
       if (item.title == 'Laporan Absensi') {
         final r = role.toUpperCase();
         return r == 'HRD' || r == 'MANAGER';
       }
+
       return true;
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    //final displayItems = filteredMenu.length > 8 ? filteredMenu.sublist(0, 8) : filteredMenu;
-    final displayItems = allMenuItems.length > 8 ? allMenuItems.sublist(0, 8) : allMenuItems;
+    final displayItems = allMenuItems.length > 8
+        ? allMenuItems.sublist(0, 8)
+        : allMenuItems;
 
-    return Center(
-      child: SizedBox(
-        width: double.infinity,
-        child: GridView.builder(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double availableWidth = constraints.maxWidth;
+
+        // Responsive spacing
+        final double spacing = availableWidth < 350 ? 10 : 16;
+
+        // Ukuran icon menyesuaikan layar
+        final double iconSize = availableWidth < 350 ? 52 : 58;
+
+        return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(10),
+
+          padding: EdgeInsets.symmetric(
+            horizontal: spacing,
+            vertical: 8,
+          ),
+
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 4,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 30,
-            childAspectRatio: 0.60,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 10,
+            mainAxisExtent: 105,
           ),
+
           itemCount: displayItems.length,
+
           itemBuilder: (context, index) {
             final item = displayItems[index];
 
@@ -122,92 +137,125 @@ class MenuGridWidget extends StatelessWidget {
                   AppNavigator.to(item.routeName!);
                 }
               },
+
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: iconSize,
+                    height: iconSize,
+
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(16),
                     ),
+
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(11),
+
                       child: SvgImageWithColor(
                         path: item.iconPath,
-                        width: 36,
+                        width: iconSize - 20,
                         color: Colors.green,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item.title,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
+
+                  const SizedBox(height: 6),
+
+                  Expanded(
+                    child: Text(
+                      item.title,
+
+                      textAlign: TextAlign.center,
+
+                      maxLines: 2,
+
+                      overflow: TextOverflow.ellipsis,
+
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ],
               ),
             );
           },
-        ),
-      ),
+        );
+      },
     );
   }
 
   void _showAllMenuBottomSheet(BuildContext context) {
     final otherMenus = allMenuItems.skip(8).toList();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
+
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
+
       builder: (context) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
+
             child: GridView.builder(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+
+              padding: const EdgeInsets.only(
+                bottom: 20,
+              ),
+
+              gridDelegate:
+              const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
                 mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.65,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.75,
               ),
+
               itemCount: otherMenus.length,
+
               itemBuilder: (context, index) {
                 final menu = otherMenus[index];
 
                 return GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
+
                     if (menu.routeName != null) {
                       AppNavigator.to(menu.routeName!);
                     }
                   },
+
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+
                     children: [
                       Container(
-                        width: 60,
-                        height: 60,
+                        width: 56,
+                        height: 56,
+
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius:
+                          BorderRadius.circular(16),
                         ),
+
                         child: Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.all(11),
+
                           child: SvgImageWithColor(
                             path: menu.iconPath,
-                            width: 36,
+                            width: 34,
                             color: Colors.green,
                           ),
                         ),
@@ -216,15 +264,22 @@ class MenuGridWidget extends StatelessWidget {
                       const SizedBox(height: 6),
 
                       SizedBox(
-                        height: 32, // 🔥 penting biar tidak overflow
+                        height: 30,
+
                         child: Text(
                           menu.title,
+
                           textAlign: TextAlign.center,
+
                           maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+
+                          overflow:
+                          TextOverflow.ellipsis,
+
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w500,
+                            height: 1.2,
                             color: Colors.black87,
                           ),
                         ),

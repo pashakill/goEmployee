@@ -49,19 +49,35 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
     }
   }
 
-  Future<void> _selectDateTime(BuildContext context, bool isStart) async {
-    final DateTime? pickedDate = await DatePickerHelper.pickDate(context);
+  Future<void> _selectDateTime(
+      BuildContext context,
+      bool isStart,
+      ) async {
+    final DateTime? pickedDate =
+    await DatePickerHelper.pickDate(context);
 
-    if (pickedDate != null) {
-      setState(() {
-        if (isStart) {
-          _tanggalMulai = pickedDate;
-        } else {
-          _tanggalSelesai = pickedDate;
+    if (pickedDate == null || !mounted) return;
+
+    setState(() {
+      final selectedDate = DateUtils.dateOnly(pickedDate);
+
+      if (isStart) {
+        _tanggalMulai = selectedDate;
+
+        // Reset tanggal selesai apabila lebih kecil
+        // daripada tanggal mulai.
+        if (_tanggalSelesai != null &&
+            _tanggalSelesai!.isBefore(selectedDate)) {
+          _tanggalSelesai = null;
         }
-        _hitungLamaWfh();
-      });
-    }
+      } else {
+        _tanggalSelesai = selectedDate;
+      }
+
+      _hitungLamaWfh();
+    });
+
+    _formKey.currentState?.validate();
   }
 
   Future<void> _simpanWfh() async {
@@ -146,6 +162,9 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
           }
 
           if(state is EditWfhSuccessState){
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sukses merubah data WFH')),
+            );
             LoadingDialog.hide(context);
             _onWfhAdded?.call();
             Get.back();
@@ -156,10 +175,16 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
           }
 
           if (state is AddWfhSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sukses Menambahkan WFH')),
+            );
+
             LoadingDialog.hide(context);
             _onWfhAdded?.call();
             Get.back();
-          } else if (state is WfhPageFailedState) {
+          }
+
+          if (state is WfhPageFailedState) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Gagal Menambahkan WFH: ${state.error}')),
             );
@@ -173,36 +198,109 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
               child: ListView(
                 children: [
                   // Tanggal Mulai
-                  InkWell(
-                    onTap: () => _selectDateTime(context, true),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Mulai',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _tanggalMulai == null
-                            ? 'Pilih tanggal mulai'
-                            : _dateTimeFormat.format(_tanggalMulai!),
-                      ),
-                    ),
+                  FormField<DateTime>(
+                    initialValue: _tanggalMulai,
+                    autovalidateMode:
+                    AutovalidateMode.onUserInteraction,
+                    validator: (_) {
+                      if (_tanggalMulai == null) {
+                        return 'Tanggal mulai wajib dipilih';
+                      }
+
+                      return null;
+                    },
+                    builder: (field) {
+                      return InkWell(
+                        onTap: () async {
+                          await _selectDateTime(context, true);
+                          field.didChange(_tanggalMulai);
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Tanggal Mulai',
+                            border: const OutlineInputBorder(),
+                            suffixIcon:
+                            const Icon(Icons.calendar_month),
+                            errorText: field.errorText,
+                          ),
+                          child: Text(
+                            _tanggalMulai == null
+                                ? 'Pilih tanggal mulai'
+                                : _dateTimeFormat.format(
+                              _tanggalMulai!,
+                            ),
+                            style: TextStyle(
+                              color: _tanggalMulai == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
 
                   // Tanggal Selesai
-                  InkWell(
-                    onTap: () => _selectDateTime(context, false),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Selesai',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _tanggalSelesai == null
-                            ? 'Pilih tanggal selesai'
-                            : _dateTimeFormat.format(_tanggalSelesai!),
-                      ),
-                    ),
+                  FormField<DateTime>(
+                    initialValue: _tanggalSelesai,
+                    autovalidateMode:
+                    AutovalidateMode.onUserInteraction,
+                    validator: (_) {
+                      if (_tanggalSelesai == null) {
+                        return 'Tanggal selesai wajib dipilih';
+                      }
+
+                      if (_tanggalMulai != null &&
+                          _tanggalSelesai!
+                              .isBefore(_tanggalMulai!)) {
+                        return 'Tanggal selesai tidak boleh sebelum tanggal mulai';
+                      }
+
+                      return null;
+                    },
+                    builder: (field) {
+                      return InkWell(
+                        onTap: () async {
+                          if (_tanggalMulai == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Pilih tanggal mulai terlebih dahulu',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await _selectDateTime(context, false);
+                          field.didChange(_tanggalSelesai);
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Tanggal Selesai',
+                            border: const OutlineInputBorder(),
+                            suffixIcon:
+                            const Icon(Icons.calendar_month),
+                            errorText: field.errorText,
+                          ),
+                          child: Text(
+                            _tanggalSelesai == null
+                                ? 'Pilih tanggal selesai'
+                                : _dateTimeFormat.format(
+                              _tanggalSelesai!,
+                            ),
+                            style: TextStyle(
+                              color: _tanggalSelesai == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
 
                   // Durasi WFH (readonly)
@@ -236,65 +334,21 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
 
                   // Tombol Simpan
                   ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        if (_tanggalMulai == null || _tanggalSelesai == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pilih tanggal mulai dan selesai')),
-                          );
-                          return;
-                        }
-
-                        try {
-                          final User? currentUser = await _dbHelper.getSingleUser();
-                          final wfhBaru = WfhModel(
-                              userId: currentUser!.id!,
-                              lamaWfh: lamaWfh.toString(),
-                              alasanWfh: _alasanWfh ?? '',
-                              waktuMulai: _tanggalMulai!.toIso8601String().split('T').first,
-                              waktuSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
-                              tanggalPengajuan: _tglPengajuanController.text
-                          );
-
-                          if(isEdit){
-                            context.read<WfhBloc>().add(
-                              EditWfhEvent(wfhBaru, userId: currentUser.id!, lamaWfh: lamaWfh.toString(),
-                                  alasanWfh: _alasanWfh ?? '',
-                                  waktuMulai: _tanggalMulai!.toIso8601String().split('T').first,
-                                  waktuSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
-                                  tanggalPengajuan: _tglPengajuanController.text,
-                                  alasan: _alasanWfh!,
-                                  durasi: lamaWfh.toString(),
-                                  id: wfhModel!.id.toString()
-                              ),
-                            );
-                          }else{
-                            context.read<WfhBloc>().add(
-                              AddWfhEvent(wfhBaru, userId: currentUser.id!, lamaWfh: lamaWfh.toString(),
-                                  alasanWfh: _alasanWfh ?? '',
-                                  waktuMulai: _tanggalMulai!.toIso8601String().split('T').first,
-                                  waktuSelesai: _tanggalSelesai!.toIso8601String().split('T').first,
-                                  tanggalPengajuan: _tglPengajuanController.text,
-                                  alasan: _alasanWfh!,
-                                  durasi: lamaWfh.toString()
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          // Tangani jika ada error saat simpan ke DB
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
-                        }
-                      }
-                    },
+                    onPressed: _submitWfh,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
                     ),
                     child: Text(
-                      isEdit ? 'Simpan WFH' : 'Simpan WFH',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      isEdit
+                          ? 'Simpan Perubahan'
+                          : 'Simpan WFH',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],
@@ -306,20 +360,212 @@ class _TambahWfhPageState extends State<TambahWfhPage> {
     );
   }
 
-  void _hitungLamaWfh() {
-    if (_tanggalMulai != null && _tanggalSelesai != null) {
-      int totalHari = 0;
-      DateTime current = _tanggalMulai!;
+  Future<void> _submitWfh() async {
+    FocusScope.of(context).unfocus();
 
-      while (!current.isAfter(_tanggalSelesai!)) {
-        if (current.weekday != DateTime.saturday &&
-            current.weekday != DateTime.sunday) {
-          totalHari++;
-        }
-        current = current.add(const Duration(days: 1));
+    final bool formValid =
+        _formKey.currentState?.validate() ?? false;
+
+    if (!formValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Lengkapi data pengajuan WFH terlebih dahulu',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalMulai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tanggal mulai wajib dipilih',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalSelesai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tanggal selesai wajib dipilih',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalSelesai!.isBefore(_tanggalMulai!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tanggal selesai tidak boleh sebelum tanggal mulai',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final String alasan =
+    (_alasanWfh ?? '').trim();
+
+    if (alasan.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Alasan WFH wajib diisi',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    _hitungLamaWfh();
+
+    if (lamaWfh <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Durasi WFH tidak valid',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final User? currentUser =
+      await _dbHelper.getSingleUser();
+
+      if (!mounted) return;
+
+      if (currentUser == null ||
+          currentUser.id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Data pengguna tidak ditemukan',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
       }
 
-      lamaWfh = totalHari;
+      final String waktuMulai =
+          _tanggalMulai!
+              .toIso8601String()
+              .split('T')
+              .first;
+
+      final String waktuSelesai =
+          _tanggalSelesai!
+              .toIso8601String()
+              .split('T')
+              .first;
+
+      final WfhModel wfhBaru = WfhModel(
+        userId: currentUser.id!,
+        lamaWfh: lamaWfh.toString(),
+        alasanWfh: alasan,
+        waktuMulai: waktuMulai,
+        waktuSelesai: waktuSelesai,
+        tanggalPengajuan:
+        _tglPengajuanController.text,
+      );
+
+      if (!mounted) return;
+
+      if (isEdit) {
+        if (wfhModel?.id == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'ID pengajuan WFH tidak ditemukan',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        context.read<WfhBloc>().add(
+          EditWfhEvent(
+            wfhBaru,
+            id: wfhModel!.id.toString(),
+            userId: currentUser.id!,
+            lamaWfh: lamaWfh.toString(),
+            alasanWfh: alasan,
+            waktuMulai: waktuMulai,
+            waktuSelesai: waktuSelesai,
+            tanggalPengajuan:
+            _tglPengajuanController.text,
+            alasan: alasan,
+            durasi: lamaWfh.toString(),
+          ),
+        );
+      } else {
+        context.read<WfhBloc>().add(
+          AddWfhEvent(
+            wfhBaru,
+            userId: currentUser.id!,
+            lamaWfh: lamaWfh.toString(),
+            alasanWfh: alasan,
+            waktuMulai: waktuMulai,
+            waktuSelesai: waktuSelesai,
+            tanggalPengajuan:
+            _tglPengajuanController.text,
+            alasan: alasan,
+            durasi: lamaWfh.toString(),
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Terjadi kesalahan: $error',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
+  }
+
+  void _hitungLamaWfh() {
+    if (_tanggalMulai == null ||
+        _tanggalSelesai == null ||
+        _tanggalSelesai!.isBefore(_tanggalMulai!)) {
+      lamaWfh = 0;
+      return;
+    }
+
+    int totalHari = 0;
+    DateTime current = DateUtils.dateOnly(_tanggalMulai!);
+    final DateTime tanggalAkhir =
+    DateUtils.dateOnly(_tanggalSelesai!);
+
+    while (!current.isAfter(tanggalAkhir)) {
+      if (current.weekday != DateTime.saturday &&
+          current.weekday != DateTime.sunday) {
+        totalHari++;
+      }
+
+      current = current.add(const Duration(days: 1));
+    }
+
+    lamaWfh = totalHari;
   }
 }

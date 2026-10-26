@@ -13,7 +13,9 @@ class CutiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      // Jangan tambahkan margin horizontal lagi karena
+      // CutiCard sudah berada di dalam _modernCard PersetujuanPage.
+      margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -35,12 +37,13 @@ class CutiCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// ================= HEADER =================
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -65,6 +68,8 @@ class CutiCard extends StatelessWidget {
                       children: [
                         Text(
                           cuti.jenisCuti,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -76,6 +81,8 @@ class CutiCard extends StatelessWidget {
 
                         Text(
                           "Pengajuan Cuti Karyawan",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey.shade600,
@@ -105,7 +112,7 @@ class CutiCard extends StatelessWidget {
               _buildInfoTile(
                 icon: Icons.timelapse_rounded,
                 title: "Durasi",
-                value: "${cuti.lamaCuti} Hari",
+                value: "${cuti.lamaCutiInteger} Hari",
               ),
 
               const SizedBox(height: 16),
@@ -126,19 +133,31 @@ class CutiCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.description_outlined,
-                          size: 18,
-                          color: Colors.grey.shade700,
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.description_outlined,
+                            size: 18,
+                            color: Colors.green.shade700,
+                          ),
                         ),
 
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
 
-                        const Text(
-                          "Alasan Pengajuan",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                        Expanded(
+                          child: Text(
+                            'Alasan Pengajuan',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -147,9 +166,8 @@ class CutiCard extends StatelessWidget {
                     const SizedBox(height: 10),
 
                     Text(
-                      cuti.alasan.isEmpty
-                          ? "-"
-                          : cuti.alasan,
+                      cuti.alasan.isEmpty ? "-" : cuti.alasan,
+                      softWrap: true,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade800,
@@ -166,6 +184,8 @@ class CutiCard extends StatelessWidget {
 
                 const Text(
                   "Dokumen Lampiran",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -184,8 +204,6 @@ class CutiCard extends StatelessWidget {
                           insetPadding: const EdgeInsets.all(12),
                           child: Stack(
                             children: [
-
-                              /// IMAGE FULLSCREEN
                               InteractiveViewer(
                                 minScale: 0.5,
                                 maxScale: 4,
@@ -205,7 +223,6 @@ class CutiCard extends StatelessWidget {
                                 ),
                               ),
 
-                              /// CLOSE BUTTON
                               Positioned(
                                 top: 12,
                                 right: 12,
@@ -215,7 +232,8 @@ class CutiCard extends StatelessWidget {
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(30),
+                                      borderRadius:
+                                      BorderRadius.circular(30),
                                     ),
                                     child: const Icon(
                                       Icons.close,
@@ -233,7 +251,6 @@ class CutiCard extends StatelessWidget {
 
                   child: Hero(
                     tag: cuti.dokumenUrl,
-
                     child: Container(
                       width: double.infinity,
                       height: 180,
@@ -264,6 +281,7 @@ class CutiCard extends StatelessWidget {
 
               /// ================= FOOTER =================
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
                     Icons.access_time_rounded,
@@ -276,7 +294,14 @@ class CutiCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       "Diajukan pada "
-                          "${DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.parse(cuti.tanggalPengajuan ?? DateTime.now().toString()))}",
+                          "${DateFormat('dd MMMM yyyy', 'id_ID').format(
+                        DateTime.parse(
+                          cuti.tanggalPengajuan ??
+                              DateTime.now().toString(),
+                        ),
+                      )}",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade700,
@@ -299,9 +324,11 @@ class CutiCard extends StatelessWidget {
     required String value,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: Colors.green.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
@@ -321,6 +348,8 @@ class CutiCard extends StatelessWidget {
             children: [
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.shade600,
@@ -331,6 +360,9 @@ class CutiCard extends StatelessWidget {
 
               Text(
                 value,
+                softWrap: true,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

@@ -12,9 +12,12 @@ class ErrorBottomSheet {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return _ErrorContent(
-          title: title,
-          message: message,
+        return SafeArea(
+          top: false,
+          child: _ErrorContent(
+            title: title,
+            message: message,
+          ),
         );
       },
     );
@@ -43,7 +46,6 @@ class _ErrorContent extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // drag indicator
           Container(
             width: 40,
             height: 4,
@@ -54,7 +56,6 @@ class _ErrorContent extends StatelessWidget {
             ),
           ),
 
-          // icon
           const Icon(
             Icons.error_outline,
             color: Colors.red,
@@ -63,7 +64,6 @@ class _ErrorContent extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // title
           Text(
             title,
             style: const TextStyle(
@@ -74,7 +74,6 @@ class _ErrorContent extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // message
           Text(
             message,
             textAlign: TextAlign.center,
@@ -83,7 +82,6 @@ class _ErrorContent extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

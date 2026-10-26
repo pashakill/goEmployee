@@ -28,6 +28,14 @@ class _SlipGajiPageState extends State<SlipGajiPage> {
   List<UserModel> users = [];
   UserModel? selectedUser;
 
+  bool get isHRAccess {
+    final role = (_currentUser?.division ?? '')
+        .toLowerCase();
+
+    return role == 'hrd' ||
+        role == 'hr';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -61,7 +69,7 @@ class _SlipGajiPageState extends State<SlipGajiPage> {
 
   /// ================= UPLOAD =================
   Future<void> _uploadSlip() async {
-    if (_currentUser?.role != 'hrd') return;
+    if (!isHRAccess) return;
 
     if (selectedUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -89,7 +97,7 @@ class _SlipGajiPageState extends State<SlipGajiPage> {
   /// ================= UI =================
   @override
   Widget build(BuildContext context) {
-    final isHRD = _currentUser?.role == 'hrd';
+    final isHRD = isHRAccess;
 
     return Scaffold(
       appBar: AppBar(
@@ -115,6 +123,7 @@ class _SlipGajiPageState extends State<SlipGajiPage> {
 
           /// 🔥 GET USER SUCCESS
           if (state is FetchUserSuccessState) {
+
             setState(() {
               users = state.userModel;
             });
@@ -127,7 +136,7 @@ class _SlipGajiPageState extends State<SlipGajiPage> {
 
           /// LIST
           if (state is GetDataListSlipGajiSuccessState) {
-            print('CALL GetDataListSlipGajiSuccessState');
+
             list.clear();
 
             final data = state.slipGajiResponseModel.data;
@@ -145,12 +154,11 @@ class _SlipGajiPageState extends State<SlipGajiPage> {
 
           /// UPLOAD SUCCESS
           if (state is UploadSlipGajiSuccessState) {
+            LoadingDialog.hide(context);
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Upload berhasil")),
             );
-
-            LoadingDialog.hide(context);
-            _fetchHistory();
           }
 
           /// FAILED

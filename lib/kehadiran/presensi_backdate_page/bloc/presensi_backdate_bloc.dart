@@ -68,8 +68,10 @@ class PresensiBackdateBloc extends Bloc<PresensiBackdateEvent, PresensiBackdateS
   void _onEditPresensiBackdate(EditPresensiBackdateEvent event, Emitter<PresensiBackdateState> emit) async {
     emit(PresensiBackdatePageLoadingState());
     try{
-      var data = await pengajuanApi.addPengajuan(
+      var data = await pengajuanApi.editPengajuan(
         userId: event.userId.toString(),
+        pengajuanId: event.pengajuanId,
+        berkas: event.berkas,
         kategori: PengajuanKategori.presensiBackdate,
         tanggalMulai: event.tanggal_mulai,
         tanggalSelesai: event.tanggal_selesai,

@@ -22,9 +22,11 @@ class UpdateCutiEvent extends CutiEvent {
   final String berkas;
   final String jenis_cuti;
   final CutiModel cutiModel;
+  final int lamaCuti;
 
   const UpdateCutiEvent({required this.id, required this.userId, required this.kategori,
     required this.tanggal_mulai, required this.tanggal_selesai, required this.alasan,
+    required this.lamaCuti,
     required this.berkas, required this.cutiModel, required this.jenis_cuti});
 }
 
@@ -45,8 +47,9 @@ class AddCutiEvent extends CutiEvent {
   final String berkas;
   final String jenis_cuti;
   final CutiModel cutiModel;
+  final int lamaCuti;
 
   const AddCutiEvent({required this.userId, required this.kategori,
     required this.tanggal_mulai, required this.tanggal_selesai, required this.alasan,
-    required this.berkas, required this.cutiModel, required this.jenis_cuti});
+    required this.berkas, required this.cutiModel, required this.jenis_cuti, required this.lamaCuti});
 }

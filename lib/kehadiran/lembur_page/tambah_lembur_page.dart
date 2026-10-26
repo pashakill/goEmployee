@@ -40,12 +40,20 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
   }
 
   void _hitungDurasi() {
-    if (_tanggalMulai != null && _tanggalSelesai != null) {
-      final selisih =
-      _tanggalSelesai!.difference(_tanggalMulai!).inMinutes.abs();
-
-      lamaLembur = (selisih / 60).ceil();
+    if (_tanggalMulai == null || _tanggalSelesai == null) {
+      lamaLembur = 0;
+      return;
     }
+
+    if (!_tanggalSelesai!.isAfter(_tanggalMulai!)) {
+      lamaLembur = 0;
+      return;
+    }
+
+    final int selisihMenit =
+        _tanggalSelesai!.difference(_tanggalMulai!).inMinutes;
+
+    lamaLembur = (selisihMenit / 60).ceil();
   }
 
   Future<void> _selectDateTime(BuildContext context, bool isStart) async {
@@ -168,7 +176,7 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
 
           if(state is EditLemburSuccessState){
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sukses Melakukan update Lembur')));
+              const SnackBar(content: Text('Sukses Melakukan edit Lembur')));
 
             _onLemburAdded?.call();
             LoadingDialog.hide(context);
@@ -180,6 +188,11 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
           }
 
           if (state is AddLemburSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Lembur berhasil ditambahkan"),
+              ),
+            );
             _onLemburAdded?.call();
             LoadingDialog.hide(context);
             Get.back(result: true);
@@ -197,36 +210,106 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
               child: ListView(
                 children: [
                   // Tanggal Mulai
-                  InkWell(
-                    onTap: () => _selectDateTime(context, true),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Mulai',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _tanggalMulai == null
-                            ? 'Pilih tanggal mulai'
-                            : DateHelper.formatDisplay(_tanggalMulai!),
-                      ),
+                  FormField<DateTime>(
+                    key: ValueKey(
+                      'tanggal_mulai_${_tanggalMulai?.millisecondsSinceEpoch}',
                     ),
+                    initialValue: _tanggalMulai,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (_) {
+                      if (_tanggalMulai == null) {
+                        return 'Tanggal mulai wajib dipilih';
+                      }
+
+                      return null;
+                    },
+                    builder: (field) {
+                      return InkWell(
+                        onTap: () async {
+                          await _selectDateTime(context, true);
+                          field.didChange(_tanggalMulai);
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Tanggal Mulai',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: const Icon(Icons.calendar_month),
+                            errorText: field.errorText,
+                          ),
+                          child: Text(
+                            _tanggalMulai == null
+                                ? 'Pilih tanggal mulai'
+                                : DateHelper.formatDisplay(_tanggalMulai!),
+                            style: TextStyle(
+                              color: _tanggalMulai == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
 
                   // Tanggal Selesai
-                  InkWell(
-                    onTap: () => _selectDateTime(context, false),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Selesai',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _tanggalSelesai == null
-                            ? 'Pilih tanggal selesai'
-                            : DateHelper.formatDisplay(_tanggalSelesai!),
-                      ),
+                  FormField<DateTime>(
+                    key: ValueKey(
+                      'tanggal_selesai_${_tanggalSelesai?.millisecondsSinceEpoch}',
                     ),
+                    initialValue: _tanggalSelesai,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (_) {
+                      if (_tanggalSelesai == null) {
+                        return 'Tanggal selesai wajib dipilih';
+                      }
+
+                      if (_tanggalMulai != null &&
+                          !_tanggalSelesai!.isAfter(_tanggalMulai!)) {
+                        return 'Tanggal selesai harus setelah tanggal mulai';
+                      }
+
+                      return null;
+                    },
+                    builder: (field) {
+                      return InkWell(
+                        onTap: () async {
+                          if (_tanggalMulai == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Pilih tanggal mulai terlebih dahulu',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await _selectDateTime(context, false);
+                          field.didChange(_tanggalSelesai);
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Tanggal Selesai',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: const Icon(Icons.calendar_month),
+                            errorText: field.errorText,
+                          ),
+                          child: Text(
+                            _tanggalSelesai == null
+                                ? 'Pilih tanggal selesai'
+                                : DateHelper.formatDisplay(_tanggalSelesai!),
+                            style: TextStyle(
+                              color: _tanggalSelesai == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
 
                   // Durasi Lembur (readonly)
@@ -249,53 +332,48 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
                   TextFormField(
                     initialValue: _catatanLembur ?? '',
                     maxLines: 3,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     decoration: const InputDecoration(
                       labelText: 'Alasan Lembur',
+                      hintText: 'Masukkan alasan lembur',
                       border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
                     ),
-                    onChanged: (val) => _catatanLembur = val,
+                    onChanged: (value) {
+                      _catatanLembur = value;
+                    },
+                    validator: (value) {
+                      final alasan = value?.trim() ?? '';
+
+                      if (alasan.isEmpty) {
+                        return 'Alasan lembur wajib diisi';
+                      }
+
+                      if (alasan.length < 5) {
+                        return 'Alasan lembur minimal 5 karakter';
+                      }
+
+                      return null;
+                    },
                   ),
 
                   const SizedBox(height: 24),
 
                   // Tombol Simpan
                   ElevatedButton(
-                    onPressed: () async {
-                      final User? currentUser = await _dbHelper.getSingleUser();
-                      final lemburBaru = LemburModel(
-                        lamaLembur: lamaLembur.toString(),
-                        catatanLembur: _catatanLembur ?? '',
-                        waktuMulai: DateHelper.toBackend(_tanggalMulai!),
-                        waktuSelesai: DateHelper.toBackend(_tanggalSelesai!), userId: currentUser!.id!,
-                      );
-                      if(isEdit){
-                        context.read<LemburBloc>().add(
-                          EditLemburEvent(pengajuanId: lemburModel!.id.toString(), lemburBaru,
-                              userId: currentUser.id!,
-                              kategori: PengajuanKategori.lembur.toString(),
-                              tanggal_mulai: DateHelper.toBackend(_tanggalMulai!),
-                              alasan: _catatanLembur ?? '',
-                              tanggal_selesai: DateHelper.toBackend(_tanggalSelesai!),
-                              durasi: lamaLembur.toString()),
-                        );
-                      }else{
-                        context.read<LemburBloc>().add(
-                          AddLemburEvent(lemburBaru, userId: currentUser.id!,
-                              kategori: PengajuanKategori.lembur.toString(),
-                              tanggal_mulai: DateHelper.toBackend(_tanggalMulai!),
-                              alasan: _catatanLembur ?? '',
-                              tanggal_selesai: DateHelper.toBackend(_tanggalSelesai!),
-                              durasi: lamaLembur.toString()),
-                        );
-                      }
-                    },
+                    onPressed: _submitLembur,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
                     ),
-                    child: const Text(
-                      'Simpan Lembur',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    child: Text(
+                      isEdit ? 'Simpan Perubahan' : 'Simpan Lembur',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],
@@ -305,5 +383,148 @@ class _TambahLemburPageState extends State<TambahLemburPage> {
         },
       ),
     );
+  }
+
+  Future<void> _submitLembur() async {
+    FocusScope.of(context).unfocus();
+
+    final bool formValid =
+        _formKey.currentState?.validate() ?? false;
+
+    if (!formValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Lengkapi data lembur terlebih dahulu',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalMulai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal mulai wajib dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_tanggalSelesai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal selesai wajib dipilih'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!_tanggalSelesai!.isAfter(_tanggalMulai!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tanggal selesai harus setelah tanggal mulai',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if ((_catatanLembur ?? '').trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Alasan lembur wajib diisi'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    _hitungDurasi();
+
+    if (lamaLembur <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Durasi lembur harus lebih dari 0 jam',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final User? currentUser =
+    await _dbHelper.getSingleUser();
+
+    if (!mounted) return;
+
+    if (currentUser == null || currentUser.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Data pengguna tidak ditemukan',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final LemburModel lemburBaru = LemburModel(
+      lamaLembur: lamaLembur.toString(),
+      catatanLembur: _catatanLembur!.trim(),
+      waktuMulai: DateHelper.toBackend(_tanggalMulai!),
+      waktuSelesai: DateHelper.toBackend(_tanggalSelesai!),
+      userId: currentUser.id!,
+    );
+
+    if (isEdit) {
+      if (lemburModel?.id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'ID lembur tidak ditemukan',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      context.read<LemburBloc>().add(
+        EditLemburEvent(
+          pengajuanId: lemburModel!.id.toString(),
+          lemburBaru,
+          userId: currentUser.id!,
+          kategori: PengajuanKategori.lembur.toString(),
+          tanggal_mulai:
+          DateHelper.toBackend(_tanggalMulai!),
+          tanggal_selesai:
+          DateHelper.toBackend(_tanggalSelesai!),
+          alasan: _catatanLembur!.trim(),
+          durasi: lamaLembur.toString(),
+        ),
+      );
+    } else {
+      context.read<LemburBloc>().add(
+        AddLemburEvent(
+          lemburBaru,
+          userId: currentUser.id!,
+          kategori: PengajuanKategori.lembur.toString(),
+          tanggal_mulai:
+          DateHelper.toBackend(_tanggalMulai!),
+          tanggal_selesai:
+          DateHelper.toBackend(_tanggalSelesai!),
+          alasan: _catatanLembur!.trim(),
+          durasi: lamaLembur.toString(),
+        ),
+      );
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 // ===== ERROR TYPE =====
@@ -40,11 +42,8 @@ NetworkError mapDioError(DioException e) {
 
     case DioExceptionType.badResponse:
     /// 🔥 AMBIL MESSAGE BACKEND
-      final message =
-          e.response?.data?['message'] ??
-              e.error?.toString() ??
-              "Server error";
-
+      final message = getDioErrorMessage(e);
+      print('errorr disini DIO EXCEPTION ${e.message}');
       return ServerError(
         e.response?.statusCode,
         message,
@@ -60,4 +59,39 @@ NetworkError mapDioError(DioException e) {
     default:
       return UnknownError();
   }
+}
+
+String getDioErrorMessage(DioException e) {
+  final responseData = e.response?.data;
+
+  if (responseData == null) {
+    return e.message ?? "Server error";
+  }
+
+  // Jika response sudah berbentuk Map
+  if (responseData is Map<String, dynamic>) {
+    return responseData['message']?.toString() ?? "Server error";
+  }
+
+  // Jika response Map tapi belum typed
+  if (responseData is Map) {
+    return responseData['message']?.toString() ?? "Server error";
+  }
+
+  // Jika response masih berbentuk String JSON
+  if (responseData is String) {
+    try {
+      final decoded = jsonDecode(responseData);
+
+      if (decoded is Map) {
+        return decoded['message']?.toString() ?? responseData;
+      }
+
+      return responseData;
+    } catch (_) {
+      return responseData;
+    }
+  }
+
+  return e.message ?? "Server error";
 }

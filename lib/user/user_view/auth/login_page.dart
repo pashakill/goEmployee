@@ -27,6 +27,38 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) async {
+          if(state is LoginLoading){
+            LoadingDialog.show(context, message: "Tunggu Sebentar...");
+          }
+
+          if (state is LoginPageGlobalErorr) {
+            LoadingDialog.hide(context);
+            final error = state.error;
+
+            if (error is NoInternetError) {
+              ErrorBottomSheet.show(
+                context,
+                message: "Tidak Ada Koneksi Internet",
+              );
+            } else if (error is TimeoutError) {
+              ErrorBottomSheet.show(
+                context,
+                message: "Server Lambat",
+              );
+            } else if (error is ServerError) {
+              ErrorBottomSheet.show(
+                context,
+                message: "Server error ${error.code}",
+              );
+            } else {
+              ErrorBottomSheet.show(
+                context,
+                message: "${error.message}",
+              );
+            }
+
+          }
+
           if (state is LoginSuccess) {
             final newUser = User.fromLogin(state.loginResponse);
 
@@ -46,14 +78,17 @@ class _LoginPageState extends State<LoginPage> {
           }
 
           if (state is LoginFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Login Gagal: ${state.error}')),
+            LoadingDialog.hide(context);
+
+            ErrorBottomSheet.show(
+              context,
+              message: "Login Gagal ${state.error}",
             );
           }
         },
 
         builder: (context, state) {
-          return Container(
+          return SafeArea(child: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color(0xFF0F9D58), Color(0xFF34A853)],
@@ -137,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-          );
+          ));
         },
       ),
     );

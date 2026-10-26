@@ -5,7 +5,7 @@ class LoadingDialog {
   static void show(BuildContext context, {String? message}) {
     showDialog(
       context: context,
-      barrierDismissible: false, // ❌ tidak bisa ditutup user
+      barrierDismissible: true, // ❌ tidak bisa ditutup user
       builder: (_) {
         return PopScope(
           canPop: false, // ❌ disable tombol back

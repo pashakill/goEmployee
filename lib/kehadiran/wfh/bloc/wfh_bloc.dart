@@ -72,7 +72,7 @@ class WfhBloc extends Bloc<WfhEvent, WfhState> {
         alasan: event.alasan, pengajuanId: event.id,
       );
       if(data.success){
-        emit(AddWfhSuccessState(wfhModel: event.wfhModel));
+        emit(EditWfhSuccessState(wfhModel: event.wfhModel));
       }else{
         emit(WfhPageFailedState(error: 'Edit Wfh Gagal'));
       }

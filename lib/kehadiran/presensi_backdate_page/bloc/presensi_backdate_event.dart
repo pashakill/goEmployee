@@ -43,6 +43,7 @@ class EditPresensiBackdateEvent extends PresensiBackdateEvent {
   final PresensiBackdateModel presensiBackdateModel;
   final String pengajuanId;
   final int userId;
+  final String? berkas;
   final String kategori;
   final String tanggal_mulai;
   final String tanggal_selesai;
@@ -51,6 +52,7 @@ class EditPresensiBackdateEvent extends PresensiBackdateEvent {
   final String alasan;
 
   EditPresensiBackdateEvent({
+    this.berkas,
     required this.presensiBackdateModel,
     required this.pengajuanId,
     required this.userId,

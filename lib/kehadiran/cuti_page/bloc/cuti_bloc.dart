@@ -39,7 +39,11 @@ class CutiBloc extends Bloc<CutiEvent, CutiState> {
     try{
       var data = await pengajuanApi.addPengajuan(userId: event.userId.toString(), kategori: PengajuanKategori.cuti,
           cuti_kategori: event.jenis_cuti,
-          tanggalMulai: event.tanggal_mulai, tanggalSelesai: event.tanggal_selesai, alasan: event.alasan, berkas: event.berkas);
+          tanggalMulai: event.tanggal_mulai,
+          tanggalSelesai: event.tanggal_selesai,
+          lama: event.lamaCuti,
+          alasan: event.alasan,
+          berkas: event.berkas);
       if(data.success){
         emit(AddCutiSuccessState(cutiModel: event.cutiModel));
       }else{

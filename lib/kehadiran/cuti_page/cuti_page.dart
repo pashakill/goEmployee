@@ -21,12 +21,264 @@ class _CutiPageState extends State<CutiPage> {
   bool sortByTanggal = false;
   late CutiBloc _bloc;
   bool isOffline = false;
+  final CutiQuotaManager _cutiQuotaManager = CutiQuotaManager();
+  int _cutiLimit = CutiQuotaManager.defaultAnnualLimit;
+  int _cutiTerpakai = 0;
+  int _cutiSisa = CutiQuotaManager.defaultAnnualLimit;
+
+  bool _loadingCutiQuota = true;
 
   @override
   void initState() {
     super.initState();
     _bloc = CutiBloc(pengajuanApi: GetIt.I<PengajuanApi>());
     _loadUserData();
+  }
+
+  Future<void> _loadCutiQuota() async {
+    if (!mounted) return;
+
+    setState(() {
+      _loadingCutiQuota = true;
+    });
+
+    try {
+      final userId = await SessionManager().getSession();
+
+      if (userId == null || userId.isEmpty) {
+        if (!mounted) return;
+
+        setState(() {
+          _loadingCutiQuota = false;
+        });
+
+        return;
+      }
+
+      final int tahun = DateTime.now().year;
+
+      // Ambil limit lokal
+      final int limit = await _cutiQuotaManager.getLimit(
+        userId: userId,
+        year: tahun,
+      );
+
+      // Hitung cuti yang sudah digunakan
+      final int terpakai = _hitungCutiTerpakai(
+        year: tahun,
+      );
+
+      final int sisa =
+      _cutiQuotaManager.calculateRemaining(
+        limit: limit,
+        used: terpakai,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _cutiLimit = limit;
+        _cutiTerpakai = terpakai;
+        _cutiSisa = sisa;
+        _loadingCutiQuota = false;
+      });
+    } catch (e) {
+      print(
+        'CutiPage: Gagal load quota: $e',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _loadingCutiQuota = false;
+      });
+    }
+  }
+
+  int _hitungCutiTerpakai({
+    required int year,
+  }) {
+    int total = 0;
+
+    // Pastikan kedua list memiliki pasangan data
+    final int jumlahData = cutiList.length < pengajuanData.length
+        ? cutiList.length
+        : pengajuanData.length;
+
+    for (int i = 0; i < jumlahData; i++) {
+      final cuti = cutiList[i];
+      final pengajuan = pengajuanData[i];
+
+      // ==========================================================
+      // HANYA CUTI YANG SUDAH APPROVED
+      // ==========================================================
+
+      final bool approved =
+          pengajuan.status_manager == 'approve' &&
+              pengajuan.status_hrd == 'approve';
+
+      if (!approved) {
+        continue;
+      }
+
+      // ==========================================================
+      // CEK TAHUN CUTI
+      // ==========================================================
+
+      final DateTime? tanggalMulai =
+      DateTime.tryParse(cuti.tanggalMulai);
+
+      if (tanggalMulai == null) {
+        continue;
+      }
+
+      if (tanggalMulai.year != year) {
+        continue;
+      }
+
+      // ==========================================================
+      // TAMBAHKAN LAMA CUTI
+      // ==========================================================
+
+      total += cuti.lamaCutiInteger;
+    }
+
+    return total;
+  }
+
+  Widget _buildCutiQuotaCard() {
+    if (_loadingCutiQuota) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final double progress = _cutiLimit <= 0
+        ? 0
+        : (_cutiTerpakai / _cutiLimit).clamp(0.0, 1.0);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.green.shade50,
+            Colors.white,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.green.shade100,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.event_available_rounded,
+                  color: Colors.green.shade700,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Kuota Cuti Tahunan',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                '${DateTime.now().year}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$_cutiSisa',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'hari tersisa',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$_cutiTerpakai / $_cutiLimit hari',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.green.shade100,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.green.shade600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -125,6 +377,8 @@ class _CutiPageState extends State<CutiPage> {
           _isLoading = false;
         });
       }
+
+      await _loadCutiQuota();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -164,25 +418,37 @@ class _CutiPageState extends State<CutiPage> {
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle),
+            icon: Semantics(
+              button: true,
+              label: 'Tambah Cuti',
+              child: const Icon(Icons.add_circle),
+            ),
             color: Colors.white,
-            onPressed: () {
-              // Logika navigasi Anda sudah benar
-              AppNavigator.to(Routes.tambahCutiPage, arguments: {
-                'onCutiAdded': () {
-                  // Ini akan menambah CutiModel baru ke list secara instan
-                  // (tanpa perlu load ulang dari DB, UI terasa cepat)
-                  /*
-                  setState(() {
-                    cutiList.add(newCuti);
-                  });
+            onPressed: _loadingCutiQuota
+                ? null
+                : () {
+              if (_cutiSisa <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Kuota cuti tahunan Anda sudah habis.',
+                    ),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                return;
+              }
 
-                   */
-                  _loadUserData();
+              AppNavigator.to(
+                Routes.tambahCutiPage,
+                arguments: {
+                  'onCutiAdded': () {
+                    _loadUserData();
+                  },
                 },
-              });
+              );
             },
-          )
+          ),
         ],
         backgroundColor: Colors.green,
         title: const Text('Cuti', style: TextStyle(color: Colors.white)),
@@ -229,7 +495,7 @@ class _CutiPageState extends State<CutiPage> {
             if(mounted){
               _loadRiwayatCuti();
             }
-            LoadingDialog.hide(context);
+
           }
 
           if(state is CutiPageLoadingState){
@@ -238,12 +504,6 @@ class _CutiPageState extends State<CutiPage> {
 
           if(state is DeleteCutiSuccessState){
             LoadingDialog.hide(context);
-
-            ErrorBottomSheet.show(
-              context,
-              message: "Gagal Menghapus Data Cuti",
-            );
-
             _loadUserData();
           }
 
@@ -254,33 +514,51 @@ class _CutiPageState extends State<CutiPage> {
             LoadingDialog.hide(context);
           }
 
-          if(state is GetDataListCutiSuccessState){
+          if (state is GetDataListCutiSuccessState) {
             isOffline = false;
 
-            if(!cutiList.isEmpty){
+            if (cutiList.isNotEmpty) {
               cutiList.clear();
             }
 
-            if(!pengajuanData.isEmpty){
+            if (pengajuanData.isNotEmpty) {
               pengajuanData.clear();
             }
 
-            List<CutiModel> listFromServer = state.dataCutiModel.data!.pengajuan
-                .map((p) => CutiModel.fromApi(p, _currentUser!.id.toString()))
+            final List<CutiModel> listFromServer =
+            state.dataCutiModel.data!.pengajuan
+                .map(
+                  (p) => CutiModel.fromApi(
+                p,
+                _currentUser!.id.toString(),
+              ),
+            )
                 .toList();
 
-            if(listFromServer.isEmpty){
+            if (listFromServer.isEmpty) {
               cutiList.clear();
               pengajuanData.clear();
             }
 
             setState(() {
               cutiList.addAll(listFromServer);
-              pengajuanData.addAll(state.dataCutiModel.data!.pengajuan);
+              pengajuanData.addAll(
+                state.dataCutiModel.data!.pengajuan,
+              );
               _isLoading = false;
             });
 
-            await DatabaseHelper.instance.replaceCuti(cutiList, _currentUser!.id!);
+            await DatabaseHelper.instance.replaceCuti(
+              cutiList,
+              _currentUser!.id!,
+            );
+
+            // ==========================================================
+            // REFRESH KUOTA SETELAH DATA TERBARU DITERIMA
+            // ==========================================================
+
+            await _loadCutiQuota();
+
             LoadingDialog.hide(context);
           }
 
@@ -354,6 +632,8 @@ class _CutiPageState extends State<CutiPage> {
                 ],
               ),
               const Divider(),
+
+              _buildCutiQuotaCard(),
 
               // 📋 Daftar Cuti
               Expanded(

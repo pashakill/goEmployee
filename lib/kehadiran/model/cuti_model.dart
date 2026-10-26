@@ -12,10 +12,12 @@ class CutiModel {
   final String dokumenUrl;
   final String? status;
   final String? tanggalPengajuan;
+  final int lamaCutiInteger;
 
   CutiModel({
     this.id,
     this.userId,
+    required this.lamaCutiInteger,
     required this.jenisCuti,
     required this.tanggalMulai,
     required this.tanggalSelesai,
@@ -41,7 +43,7 @@ class CutiModel {
     return CutiModel(
       id: data.id,
       userId: int.tryParse(userId) ?? 0,
-      jenisCuti: data.cuti_kategori,
+      lamaCutiInteger: int.tryParse(data.lama ?? '0') ?? 0,      jenisCuti: data.cuti_kategori,
       tanggalMulai: data.tanggal_mulai.isNotEmpty
           ? data.tanggal_mulai
           : "0000-00-00",
@@ -58,6 +60,7 @@ class CutiModel {
   /// Factory constructor untuk membuat CutiModel dari Map (hasil database)
   factory CutiModel.fromMap(Map<String, dynamic> map) {
     return CutiModel(
+      lamaCutiInteger: map['lamaCutiInteger'],
       id: map['id'],
       userId: map['user_id'],
       jenisCuti: map['jenis_cuti'],

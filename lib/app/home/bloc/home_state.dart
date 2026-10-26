@@ -9,6 +9,11 @@ abstract class HomeState extends Equatable {
   List<Object> get props => [];
 }
 
+class HomePageGlobalErorr extends HomeState {
+  final NetworkError error;
+  HomePageGlobalErorr(this.error);
+}
+
 class HomePageInitialState extends HomeState {}
 
 class HomePageLoadingState extends HomeState {}

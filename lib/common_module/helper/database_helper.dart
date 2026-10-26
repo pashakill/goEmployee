@@ -196,6 +196,7 @@ class DatabaseHelper {
         tanggal_selesai TEXT NOT NULL,
         alasan TEXT NOT NULL,
         dokumen_url TEXT,
+        lamaCutiInteger, TEXT,
         status TEXT NOT NULL DEFAULT 'PENDING',
         tanggal_pengajuan TEXT NOT NULL,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -310,6 +311,7 @@ class DatabaseHelper {
     // 3. Insert ulang data
     for (var cuti in limitedList) {
       final data = {
+        'lamaCutiInteger': cuti.lamaCutiInteger,
         'user_id': userId,
         'jenis_cuti': cuti.jenisCuti,
         'tanggal_mulai': cuti.tanggalMulai,

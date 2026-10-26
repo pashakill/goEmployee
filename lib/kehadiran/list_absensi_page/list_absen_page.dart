@@ -31,6 +31,7 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
     "WFH",
     "DINAS",
     "BACKDATE",
+    "BELUM ABSEN"
     "ALPHA",
   ];
 
@@ -95,6 +96,8 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
         return Colors.teal;
       case 'ALPHA':
         return Colors.red;
+      case 'BELUM ABSEN':
+        return Colors.grey;
       case 'HADIR':
         return Colors.green;
       default:
@@ -362,7 +365,8 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        title: const Text("Laporan Absensi"),
+        title: const Text("Laporan Absensi", style: TextStyle(color: Colors.white),),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.green,
       ),
 
@@ -371,6 +375,7 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
         listener: (context, state) {
           if (state is GetDataListAbsenSuccessState) {
             LoadingDialog.hide(context);
+
             setState(() {
               absensiList = state.data;
               _isLoading = false;
@@ -402,7 +407,6 @@ class _ListAbsenPageState extends State<ListAbsenPage> {
                 message: "${error.message}",
               );
             }
-            LoadingDialog.hide(context);
           }
 
           if(state is ListAbsenPageLoadingState){
